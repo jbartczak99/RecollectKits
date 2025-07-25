@@ -15,7 +15,7 @@ export default function Navigation() {
 
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
-    { name: 'Jerseys', href: '/jerseys', icon: HomeIcon },
+    { name: 'Kits', href: '/jerseys', icon: HomeIcon },
     { name: 'Collection', href: '/collection', icon: HomeIcon, protected: true },
     { name: 'Bounties', href: '/bounties', icon: HomeIcon },
     { name: 'Spots', href: '/spots', icon: HomeIcon },
@@ -38,7 +38,7 @@ export default function Navigation() {
             RecollectKits
           </Link>
           
-          <div className="navbar-nav">
+          <div className="navbar-nav" style={{marginLeft: '2rem'}}>
             {navigation.map((item) => {
               if (item.protected && !user) return null
               const Icon = item.icon

@@ -199,7 +199,7 @@ body {
 
 /* Navigation Styles */
 .navbar {
-  background: linear-gradient(to right, rgba(209, 250, 229, 0.3), rgba(52, 211, 153, 0.6));
+  background: linear-gradient(to right, rgba(209, 250, 229, 0.95), rgba(52, 211, 153, 0.95));
   box-shadow: var(--shadow-lg);
   position: sticky;
   top: 0;
@@ -389,6 +389,10 @@ body {
   box-shadow: var(--shadow-md);
   overflow: hidden;
   transition: box-shadow 0.2s;
+}
+
+.card-equal-height {
+  height: 400px;
 }
 
 .card:hover {

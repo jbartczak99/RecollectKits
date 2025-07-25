@@ -31,16 +31,16 @@ export default function JerseyCard({ jersey, onCollectionUpdate }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="card">
       {jersey.image_url && (
         <img
           src={jersey.image_url}
           alt={`${jersey.team_name} ${jersey.season_year}`}
-          className="w-full h-48 object-cover"
+          className="card-image"
         />
       )}
       
-      <div className="p-4">
+      <div className="card-body">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           {jersey.team_name}
         </h3>
@@ -53,11 +53,11 @@ export default function JerseyCard({ jersey, onCollectionUpdate }) {
           )}
           {jersey.rarity_level && (
             <p><span className="font-medium">Rarity:</span> 
-              <span className={`ml-1 px-2 py-1 rounded text-xs ${
-                jersey.rarity_level === 'ultra_rare' ? 'bg-purple-100 text-purple-800' :
-                jersey.rarity_level === 'rare' ? 'bg-red-100 text-red-800' :
-                jersey.rarity_level === 'uncommon' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
+              <span className={`badge ml-1 ${
+                jersey.rarity_level === 'ultra_rare' ? 'badge-purple' :
+                jersey.rarity_level === 'rare' ? 'badge-red' :
+                jersey.rarity_level === 'uncommon' ? 'badge-yellow' :
+                'badge-gray'
               }`}>
                 {jersey.rarity_level.replace('_', ' ')}
               </span>
@@ -74,22 +74,22 @@ export default function JerseyCard({ jersey, onCollectionUpdate }) {
             <button
               onClick={() => addToCollection('have')}
               disabled={loading}
-              className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors ${
+              className={`btn btn-sm flex-1 ${
                 collectionStatus === 'have'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700'
-              } disabled:opacity-50`}
+                  ? 'btn-primary'
+                  : 'btn-secondary'
+              }`}
             >
               Have
             </button>
             <button
               onClick={() => addToCollection('want')}
               disabled={loading}
-              className={`flex-1 px-3 py-2 text-sm rounded-md transition-colors ${
+              className={`btn btn-sm flex-1 ${
                 collectionStatus === 'want'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-700'
-              } disabled:opacity-50`}
+                  ? 'btn-primary'
+                  : 'btn-secondary'
+              }`}
             >
               Want
             </button>

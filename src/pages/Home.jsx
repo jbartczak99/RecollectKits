@@ -19,23 +19,23 @@ export default function Home() {
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <div className="text-center py-12 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg">
+      <div className="hero">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Welcome to RecollectKits
         </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-600 mb-8">
           The ultimate platform for jersey collectors. Discover, collect, and connect with fellow enthusiasts.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link
             to="/jerseys"
-            className="bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors font-medium"
+            className="btn btn-primary btn-lg"
           >
             Browse Jerseys
           </Link>
           <Link
             to="/bounties"
-            className="bg-yellow-500 text-white px-6 py-3 rounded-md hover:bg-yellow-600 transition-colors font-medium"
+            className="btn btn-yellow btn-lg"
           >
             View Bounties
           </Link>
@@ -48,7 +48,8 @@ export default function Home() {
           <h2 className="text-2xl font-bold text-gray-900">Featured Jerseys</h2>
           <Link
             to="/jerseys"
-            className="text-primary-600 hover:text-primary-700 font-medium"
+            className="text-primary-600 font-medium"
+            style={{textDecoration: 'none'}}
           >
             View all →
           </Link>
@@ -57,11 +58,11 @@ export default function Home() {
         {jerseysLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
-                <div className="w-full h-48 bg-gray-200"></div>
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div key={i} className="card animate-pulse">
+                <div className="skeleton" style={{width: '100%', height: '12rem'}}></div>
+                <div className="card-body space-y-3">
+                  <div className="skeleton" style={{height: '1rem', width: '75%'}}></div>
+                  <div className="skeleton" style={{height: '0.75rem', width: '50%'}}></div>
                 </div>
               </div>
             ))}

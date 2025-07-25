@@ -18,12 +18,47 @@ body {
 
 /* CSS Custom Properties */
 :root {
-  --primary-50: #f0fdf4;
-  --primary-100: #dcfce7;
-  --primary-500: #22c55e;
-  --primary-600: #16a34a;
-  --primary-700: #15803d;
+  /* Primary Brand Colors */
+  --primary-50: #f5f3ff;
+  --primary-100: #ede9fe;
+  --primary-200: #ddd6fe;
+  --primary-300: #c4b5fd;
+  --primary-400: #a78bfa;
+  --primary-500: #8b5cf6;
+  --primary-600: #6b46c1;
+  --primary-700: #553c9a;
+  --primary-800: #4c1d95;
+  --primary-900: #3b0764;
   
+  /* Secondary Colors */
+  --secondary-50: #f0f9ff;
+  --secondary-100: #e0f2fe;
+  --secondary-200: #bae6fd;
+  --secondary-300: #7dd3fc;
+  --secondary-400: #38bdf8;
+  --secondary-500: #0ea5e9;
+  --secondary-600: #0284c7;
+  --secondary-700: #0369a1;
+  
+  /* Accent Colors - Using exact hex values requested */
+  --accent-amber-50: #fffbeb;
+  --accent-amber-100: #fef3c7;
+  --accent-amber-200: #fde68a;
+  --accent-amber-400: #fbbf24;
+  --accent-amber-500: #F59E0B;
+  --accent-amber-600: #d97706;
+  --accent-amber-700: #b45309;
+  
+  --accent-green-50: #ecfdf5;
+  --accent-green-100: #d1fae5;
+  --accent-green-200: #a7f3d0;
+  --accent-green-300: #6ee7b7;
+  --accent-green-400: #34d399;
+  --accent-green-500: #059669;
+  --accent-green-600: #047857;
+  --accent-green-700: #065f46;
+  
+  /* Neutral Colors */
   --gray-50: #f9fafb;
   --gray-100: #f3f4f6;
   --gray-200: #e5e7eb;
@@ -35,23 +70,24 @@ body {
   --gray-800: #1f2937;
   --gray-900: #111827;
   
-  --blue-100: #dbeafe;
-  --blue-500: #3b82f6;
-  --blue-600: #2563eb;
-  --blue-700: #1d4ed8;
+  /* Legacy color aliases for compatibility */
+  --blue-100: var(--secondary-100);
+  --blue-500: var(--secondary-500);
+  --blue-600: var(--secondary-600);
+  --blue-700: var(--secondary-700);
   
-  --yellow-100: #fef3c7;
-  --yellow-500: #eab308;
-  --yellow-600: #ca8a04;
+  --yellow-100: var(--accent-amber-100);
+  --yellow-500: var(--accent-amber-500);
+  --yellow-600: var(--accent-amber-600);
   
   --red-100: #fee2e2;
   --red-500: #ef4444;
   --red-600: #dc2626;
   --red-700: #b91c1c;
   
-  --green-100: #dcfce7;
-  --green-600: #16a34a;
-  --green-800: #166534;
+  --green-100: var(--accent-green-100);
+  --green-600: var(--accent-green-500);
+  --green-800: var(--accent-green-700);
   
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -163,11 +199,13 @@ body {
 
 /* Navigation Styles */
 .navbar {
-  background: white;
+  background: linear-gradient(to right, rgba(209, 250, 229, 0.3), rgba(52, 211, 153, 0.6));
   box-shadow: var(--shadow-lg);
   position: sticky;
   top: 0;
   z-index: 50;
+  border-bottom: 2px solid var(--accent-green-300);
+  backdrop-filter: blur(10px);
 }
 
 .navbar-container {
@@ -316,13 +354,22 @@ body {
   background: var(--gray-200);
 }
 
-.btn-yellow {
-  background: var(--yellow-500);
+.btn-amber {
+  background: var(--accent-amber-500);
   color: white;
 }
 
-.btn-yellow:hover:not(:disabled) {
-  background: var(--yellow-600);
+.btn-amber:hover:not(:disabled) {
+  background: var(--accent-amber-600);
+}
+
+.btn-green {
+  background: var(--accent-green-500);
+  color: white;
+}
+
+.btn-green:hover:not(:disabled) {
+  background: var(--accent-green-600);
 }
 
 .btn-sm {
@@ -503,7 +550,8 @@ body {
 .text-primary-700 { color: var(--primary-700); }
 .text-blue-600 { color: var(--blue-600); }
 .text-green-600 { color: var(--green-600); }
-.text-yellow-600 { color: var(--yellow-600); }
+.text-amber-600 { color: var(--accent-amber-600); }
+.text-yellow-600 { color: var(--accent-amber-600); }
 .text-red-600 { color: var(--red-600); }
 
 /* Spacing Utilities */
@@ -584,8 +632,8 @@ body {
 }
 
 .badge-green {
-  background: var(--green-100);
-  color: var(--green-800);
+  background: var(--accent-green-100);
+  color: var(--accent-green-700);
 }
 
 .badge-blue {
@@ -593,9 +641,9 @@ body {
   color: var(--blue-600);
 }
 
-.badge-yellow {
-  background: var(--yellow-100);
-  color: var(--yellow-600);
+.badge-amber {
+  background: var(--accent-amber-100);
+  color: var(--accent-amber-700);
 }
 
 .badge-gray {
@@ -604,8 +652,8 @@ body {
 }
 
 .badge-purple {
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: var(--primary-100);
+  color: var(--primary-700);
 }
 
 .badge-red {
@@ -615,7 +663,7 @@ body {
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(to right, var(--primary-50), var(--primary-100));
+  background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
   border-radius: 0.5rem;
   padding: 3rem 1rem;
   text-align: center;

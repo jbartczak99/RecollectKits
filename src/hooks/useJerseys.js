@@ -343,3 +343,105 @@ export function useJerseys(searchTerm = '') {
 
   return { jerseys, loading, error, createJersey }
 }
+
+// Hook for fetching a weekly random jersey from public_jerseys
+// Updates every Sunday at 12:00am EST
+export function useRandomJersey() {
+  const [jersey, setJersey] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Get the current week number (starting from a fixed epoch)
+  const getCurrentWeekSeed = () => {
+    const now = new Date()
+    
+    // Convert to EST (UTC-5) or EDT (UTC-4)
+    // For simplicity, we'll use a fixed UTC-5 offset
+    const estOffset = -5 * 60 // EST is UTC-5
+    const estTime = new Date(now.getTime() + estOffset * 60 * 1000)
+    
+    // Get the most recent Sunday at 12:00am EST
+    const dayOfWeek = estTime.getDay() // 0 = Sunday, 1 = Monday, etc.
+    const daysSinceSunday = dayOfWeek === 0 ? 0 : dayOfWeek
+    
+    const currentSunday = new Date(estTime)
+    currentSunday.setDate(estTime.getDate() - daysSinceSunday)
+    currentSunday.setHours(0, 0, 0, 0) // Set to midnight
+    
+    // Use the current Sunday's timestamp as our seed
+    // This ensures the same jersey is shown for the entire week
+    const weekSeed = Math.floor(currentSunday.getTime() / (1000 * 60 * 60 * 24 * 7))
+    
+    return weekSeed
+  }
+
+  // Simple pseudo-random number generator using the week seed
+  const seededRandom = (seed) => {
+    const x = Math.sin(seed) * 10000
+    return x - Math.floor(x)
+  }
+
+  const fetchWeeklyJersey = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      // First get the count of total jerseys
+      const { count, error: countError } = await supabase
+        .from('public_jerseys')
+        .select('*', { count: 'exact', head: true })
+      
+      if (countError) throw countError
+      
+      if (count === 0) {
+        setJersey(null)
+        setLoading(false)
+        return
+      }
+      
+      // Generate a deterministic offset based on the current week
+      const weekSeed = getCurrentWeekSeed()
+      const randomValue = seededRandom(weekSeed)
+      const weeklyOffset = Math.floor(randomValue * count)
+      
+      // Fetch one jersey at the weekly offset
+      const { data, error } = await supabase
+        .from('public_jerseys')
+        .select('*')
+        .range(weeklyOffset, weeklyOffset)
+        .limit(1)
+      
+      if (error) throw error
+      setJersey(data && data.length > 0 ? data[0] : null)
+    } catch (err) {
+      setError(err.message)
+      setJersey(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchWeeklyJersey()
+    
+    // Set up an interval to check for week changes
+    // Check every hour to see if we've crossed into a new week
+    const interval = setInterval(() => {
+      const currentWeekSeed = getCurrentWeekSeed()
+      
+      // Store the current week seed to detect changes
+      if (!fetchWeeklyJersey.lastWeekSeed || fetchWeeklyJersey.lastWeekSeed !== currentWeekSeed) {
+        fetchWeeklyJersey.lastWeekSeed = currentWeekSeed
+        fetchWeeklyJersey()
+      }
+    }, 60 * 60 * 1000) // Check every hour
+    
+    return () => clearInterval(interval)
+  }, [])
+
+  return { 
+    jersey, 
+    loading, 
+    error
+  }
+}

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useJerseys } from '../hooks/useJerseys'
+import { useJerseys, useRandomJersey } from '../hooks/useJerseys'
 import JerseyCard from '../components/jerseys/JerseyCard'
 
 export default function Home() {
   const { jerseys, loading: jerseysLoading } = useJerseys()
+  const { jersey: randomJersey, loading: randomLoading } = useRandomJersey()
+  const [imageState, setImageState] = useState(false) // false = front, true = back
 
   const featuredJerseys = jerseys.slice(0, 4)
 
@@ -110,7 +112,7 @@ export default function Home() {
               <span className="badge badge-amber">Weekly Pick</span>
             </div>
             
-            {jerseysLoading ? (
+            {randomLoading ? (
               <div className="card animate-pulse">
                 <div className="skeleton" style={{width: '100%', height: '12rem'}}></div>
                 <div className="card-body space-y-3">
@@ -118,33 +120,116 @@ export default function Home() {
                   <div className="skeleton" style={{height: '0.75rem', width: '50%'}}></div>
                 </div>
               </div>
+            ) : randomJersey ? (
+              <div className="card card-equal-height border-2 border-red-200 flex flex-col">
+                {/* Jersey Image */}
+                {randomJersey.front_image_url || randomJersey.back_image_url ? (
+                  <div className="h-40 overflow-hidden flex items-center justify-center bg-gray-50 relative mt-3">
+                    <img
+                      src={(
+                        randomJersey.front_image_url && randomJersey.back_image_url
+                          ? (imageState ? randomJersey.back_image_url : randomJersey.front_image_url)
+                          : (randomJersey.front_image_url || randomJersey.back_image_url)
+                      )}
+                      alt={`${randomJersey.team_name} ${randomJersey.jersey_type} kit`}
+                      className="max-w-full max-h-full object-contain transition-opacity duration-300"
+                      style={{maxWidth: '200px', maxHeight: '200px'}}
+                      onError={(e) => {
+                        e.target.style.display = 'none'
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-40 bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white relative mt-3">
+                    <div className="text-lg font-bold">{randomJersey.team_name}</div>
+                  </div>
+                )}
+                
+                {/* Front | Back toggle - only show for jerseys with both images */}
+                {randomJersey.front_image_url && randomJersey.back_image_url && (
+                  <div className="px-4 py-0.5 text-center border-b border-gray-100">
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <button
+                        onClick={() => setImageState(false)}
+                        className={`font-medium transition-colors duration-200 ${
+                          !imageState 
+                            ? 'text-blue-600' 
+                            : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                      >
+                        Front
+                      </button>
+                      <span className="text-gray-300">|</span>
+                      <button
+                        onClick={() => setImageState(true)}
+                        className={`font-medium transition-colors duration-200 ${
+                          imageState 
+                            ? 'text-blue-600' 
+                            : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="card-body flex-1 flex flex-col pt-2 pb-3">
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    {randomJersey.team_name || 'Unknown Team'}
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {randomJersey.player_name && (
+                      <span className="font-medium">{randomJersey.player_name} • </span>
+                    )}
+                    {randomJersey.jersey_type || 'Jersey'}{randomJersey.season ? ` • ${randomJersey.season}` : ''}
+                  </p>
+                  <div className="mb-2">
+                    <span className="badge badge-amber text-xs">⭐ Weekly</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-auto">
+                    <div className="flex flex-wrap gap-1">
+                      {randomJersey.jersey_type && (
+                        <span className="badge badge-blue text-xs">
+                          {randomJersey.jersey_type}
+                        </span>
+                      )}
+                      {randomJersey.manufacturer && (
+                        <span className="badge badge-gray text-xs">
+                          {randomJersey.manufacturer}
+                        </span>
+                      )}
+                    </div>
+                    <Link
+                      to="/jerseys"
+                      className="btn btn-sm btn-primary"
+                    >
+                      View All Kits
+                    </Link>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="card card-equal-height border-2 border-red-200 flex flex-col">
-                <div className="relative">
-                  <div className="w-full h-48 bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-xl">
-                    Manchester United
-                  </div>
-                  <div className="absolute top-2 left-2 bg-amber-500 text-white px-2 py-1 rounded text-xs font-medium">
-                    ⭐ Pick
-                  </div>
-                  <div className="absolute top-2 right-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs font-medium text-gray-800">
-                    2023/24
+                <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-500">
+                  <div className="text-center">
+                    <svg className="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-6" />
+                    </svg>
+                    <div className="text-sm">No kits available</div>
                   </div>
                 </div>
                 <div className="card-body flex-1 flex flex-col">
-                  <h4 className="font-semibold text-gray-900 mb-1">Home Kit</h4>
-                  <p className="text-sm text-gray-600 mb-2">Classic red with devil details</p>
-                  <div className="flex items-center gap-2 mb-3" style={{minHeight: '24px'}}>
-                    <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                    <span className="text-sm text-gray-600">Editor's Choice</span>
-                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">No Kits Found</h4>
+                  <p className="text-sm text-gray-600 mb-2">Add some jerseys to see them featured here!</p>
                   <div className="flex items-center justify-between mt-auto">
-                    <div className="flex gap-1">
-                      <span className="badge badge-red">Premier League</span>
-                    </div>
-                    <button className="btn btn-sm btn-primary">View Details</button>
+                    <div></div>
+                    <Link
+                      to="/jerseys"
+                      className="btn btn-sm btn-primary"
+                    >
+                      Add Kits
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -162,48 +247,36 @@ export default function Home() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">International Kit</h3>
               </div>
-              <span className="badge badge-green">Randomly Selected</span>
+              <span className="badge badge-blue">Coming Soon</span>
             </div>
             
-            {jerseysLoading ? (
-              <div className="card animate-pulse">
-                <div className="skeleton" style={{width: '100%', height: '12rem'}}></div>
-                <div className="card-body space-y-3">
-                  <div className="skeleton" style={{height: '1rem', width: '75%'}}></div>
-                  <div className="skeleton" style={{height: '0.75rem', width: '50%'}}></div>
+            <div className="card card-equal-height border-2 border-blue-200 flex flex-col">
+              <div className="h-32 bg-gradient-to-br from-blue-100 to-green-200 flex items-center justify-center text-blue-600 relative mt-3">
+                <div className="text-center">
+                  <svg className="mx-auto h-6 w-6 text-blue-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm font-semibold text-blue-700">Feature Coming Soon</div>
                 </div>
               </div>
-            ) : (
-              <div className="card card-equal-height border-2 border-green-200 flex flex-col">
-                <div className="relative">
-                  <div className="w-full h-48 bg-gradient-to-br from-green-600 to-yellow-400 flex items-center justify-center text-white font-bold text-xl">
-                    Brazil
-                  </div>
-                  <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
-                    🎲 Random
-                  </div>
-                  <div className="absolute top-2 right-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs font-medium text-gray-800">
-                    2024
-                  </div>
+              
+              <div className="card-body flex-1 flex flex-col pt-1 pb-4">
+                <h4 className="font-semibold text-gray-900 mb-1">International Selection</h4>
+                <p className="text-xs text-gray-600 mb-1">International jersey curation</p>
+                <div className="mb-1">
+                  <span className="badge badge-blue text-xs">🌍 In Development</span>
                 </div>
-                <div className="card-body flex-1 flex flex-col">
-                  <h4 className="font-semibold text-gray-900 mb-1">Home Kit</h4>
-                  <p className="text-sm text-gray-600 mb-2">Iconic yellow with green accents</p>
-                  <div className="flex items-center gap-2 mb-3" style={{minHeight: '24px'}}>
-                    <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                    <span className="text-sm text-gray-600">Weekly Selection</span>
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex flex-wrap gap-1">
+                    <span className="badge badge-gray text-xs">International</span>
+                    <span className="badge badge-gray text-xs">Global</span>
                   </div>
-                  <div className="flex items-center justify-between mt-auto">
-                    <div className="flex gap-1">
-                      <span className="badge badge-green">Copa America</span>
-                    </div>
-                    <button className="btn btn-sm btn-primary">View Details</button>
-                  </div>
+                  <button className="btn btn-sm btn-secondary" disabled>
+                    Coming Soon
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* User Voted Kit of the Week */}
@@ -217,48 +290,36 @@ export default function Home() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">User Voted</h3>
               </div>
-              <span className="badge badge-purple">Most Votes</span>
+              <span className="badge badge-purple">Coming Soon</span>
             </div>
             
-            {jerseysLoading ? (
-              <div className="card animate-pulse">
-                <div className="skeleton" style={{width: '100%', height: '12rem'}}></div>
-                <div className="card-body space-y-3">
-                  <div className="skeleton" style={{height: '1rem', width: '75%'}}></div>
-                  <div className="skeleton" style={{height: '0.75rem', width: '50%'}}></div>
+            <div className="card card-equal-height border-2 border-purple-200 flex flex-col">
+              <div className="h-32 bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center text-purple-600 relative mt-3">
+                <div className="text-center">
+                  <svg className="mx-auto h-6 w-6 text-purple-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm font-semibold text-purple-700">Feature Coming Soon</div>
                 </div>
               </div>
-            ) : (
-              <div className="card card-equal-height border-2 border-primary-200 flex flex-col">
-                <div className="relative">
-                  <div className="w-full h-48 bg-gradient-to-br from-blue-600 to-red-500 flex items-center justify-center text-white font-bold text-xl">
-                    FC Barcelona
-                  </div>
-                  <div className="absolute top-2 left-2 bg-primary-500 text-white px-2 py-1 rounded text-xs font-medium">
-                    🏆 Winner
-                  </div>
-                  <div className="absolute top-2 right-2 bg-white bg-opacity-90 px-2 py-1 rounded text-xs font-medium text-gray-800">
-                    2023/24
-                  </div>
+              
+              <div className="card-body flex-1 flex flex-col pt-1 pb-4">
+                <h4 className="font-semibold text-gray-900 mb-1">Community Voting</h4>
+                <p className="text-xs text-gray-600 mb-1">Community-driven kit selection</p>
+                <div className="mb-1">
+                  <span className="badge badge-purple text-xs">🚧 In Development</span>
                 </div>
-                <div className="card-body flex-1 flex flex-col">
-                  <h4 className="font-semibold text-gray-900 mb-1">Home Kit</h4>
-                  <p className="text-sm text-gray-600 mb-2">Classic blaugrana stripes</p>
-                  <div className="flex items-center gap-2 mb-3" style={{minHeight: '24px'}}>
-                    <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                    <span className="text-sm text-gray-600">1,247 votes</span>
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex flex-wrap gap-1">
+                    <span className="badge badge-gray text-xs">Voting</span>
+                    <span className="badge badge-gray text-xs">Community</span>
                   </div>
-                  <div className="flex items-center justify-between mt-auto">
-                    <div className="flex gap-1">
-                      <span className="badge badge-blue">La Liga</span>
-                    </div>
-                    <button className="btn btn-sm btn-primary">View Details</button>
-                  </div>
+                  <button className="btn btn-sm btn-secondary" disabled>
+                    Coming Soon
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 

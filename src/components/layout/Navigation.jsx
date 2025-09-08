@@ -17,8 +17,6 @@ export default function Navigation() {
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Kits', href: '/jerseys', icon: HomeIcon },
     { name: 'Collection', href: '/collection', icon: HomeIcon, protected: true },
-    { name: 'Bounties', href: '/bounties', icon: HomeIcon },
-    { name: 'Spots', href: '/spots', icon: HomeIcon },
   ]
 
   const handleSignOut = async () => {
@@ -60,7 +58,7 @@ export default function Navigation() {
           {user ? (
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-700">
-                Welcome, {user.user_metadata?.username || user.email}
+                Welcome, {user.user_metadata?.display_name || user.user_metadata?.username || user.email}
               </span>
               <button
                 onClick={handleSignOut}
@@ -120,7 +118,7 @@ export default function Navigation() {
                   <UserIcon className="h-8 w-8 text-gray-400" />
                   <div className="ml-3">
                     <div className="text-gray-800 font-medium">
-                      {user.user_metadata?.username || user.email}
+                      {user.user_metadata?.display_name || user.user_metadata?.username || user.email}
                     </div>
                   </div>
                 </div>

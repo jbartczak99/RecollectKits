@@ -1,6 +1,14 @@
 import { useState } from 'react'
-import { HeartIcon, StarIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
-import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+import { Link } from 'react-router-dom'
+import { HeartIcon } from '@heroicons/react/24/outline'
+import { StarIcon } from '@heroicons/react/24/outline'
+import { ArrowPathIcon } from '@heroicons/react/24/outline'
+import { EyeIcon } from '@heroicons/react/24/outline'
+import { FireIcon } from '@heroicons/react/24/outline'
+import { PlusIcon } from '@heroicons/react/24/outline'
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid'
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+import { FireIcon as FireIconSolid } from '@heroicons/react/24/solid'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { usePublicJerseys, useUserCollections } from '../hooks/useJerseys'
 import JerseySearch from '../components/jerseys/JerseySearch'
@@ -22,7 +30,7 @@ export default function Jerseys() {
 
   const handleAddToCollection = async (jerseyId, type) => {
     if (!user) {
-      alert('Please sign in to add jerseys to your collection')
+      alert('Please sign in to add kits to your collection')
       return
     }
     
@@ -52,9 +60,12 @@ export default function Jerseys() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Jersey Database</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Kit Database</h1>
           <p className="text-gray-600 mt-1">
-            Discover and collect football jerseys from around the world
+            Discover and collect football kits from around the world
+          </p>
+          <p className="text-sm text-blue-600 mt-2 font-medium">
+            💡 Click on kit images to view full details
           </p>
         </div>
         
@@ -89,13 +100,13 @@ export default function Jerseys() {
                 onMouseOver={(e) => e.target.style.backgroundColor = '#2563eb'}
                 onMouseOut={(e) => e.target.style.backgroundColor = '#3b82f6'}
               >
-                Add New Jersey
+                Add New Kit
               </button>
             )}
           </div>
           
           <div className="text-sm text-gray-500 text-center sm:text-right">
-            {loading ? 'Loading...' : `${jerseys.length} jerseys found`}
+            {loading ? 'Loading...' : `${jerseys.length} kits found`}
           </div>
         </div>
       </div>
@@ -106,7 +117,7 @@ export default function Jerseys() {
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
-            Error loading jerseys: {error}
+            Error loading kits: {error}
           </div>
         </div>
       )}
@@ -131,9 +142,9 @@ export default function Jerseys() {
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-6" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No jerseys found</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No kits found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            {searchTerm ? `No jerseys match "${searchTerm}"` : 'No jerseys in the database yet.'}
+            {searchTerm ? `No kits match "${searchTerm}"` : 'No kits in the database yet.'}
           </p>
           {user && (
             <div className="mt-6">
@@ -142,7 +153,7 @@ export default function Jerseys() {
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
               >
                 <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                Add the first jersey
+                Add the first kit
               </button>
             </div>
           )}
@@ -155,9 +166,12 @@ export default function Jerseys() {
             return (
             <div key={jersey.id} className="card border-2 border-gray-200 hover:border-primary-300 transition-all duration-200 overflow-hidden max-w-md mx-auto w-full flex flex-col">
               
-              {/* Jersey Images - Fixed without problematic fallback */}
+              {/* Jersey Images - Clickable with hover effects */}
               {jersey.front_image_url || jersey.back_image_url ? (
-                <div className="h-64 overflow-hidden flex items-center justify-center bg-gray-50">
+                <Link 
+                  to={`/jerseys/${jersey.id}`}
+                  className="h-64 overflow-hidden flex items-center justify-center bg-gray-50 group cursor-pointer transition-all duration-300 hover:bg-gray-100"
+                >
                   <img
                     src={(
                       jersey.front_image_url && jersey.back_image_url
@@ -165,19 +179,22 @@ export default function Jerseys() {
                         : (jersey.front_image_url || jersey.back_image_url)
                     )}
                     alt={`${jersey.team_name} ${jersey.jersey_type} kit`}
-                    className="max-w-full max-h-full object-contain transition-opacity duration-300"
+                    className="max-w-full max-h-full object-contain transition-all duration-300 group-hover:scale-105 group-hover:opacity-90"
                     style={{maxWidth: '250px', maxHeight: '280px'}}
                     onError={(e) => {
                       e.target.style.display = 'none'
                     }}
                   />
-                </div>
+                </Link>
               ) : (
-                <div className="h-64 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center overflow-hidden">
-                  <div className="text-lg font-medium text-gray-500">
+                <Link 
+                  to={`/jerseys/${jersey.id}`}
+                  className="h-64 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center overflow-hidden group cursor-pointer transition-all duration-300 hover:from-green-200 hover:to-blue-200"
+                >
+                  <div className="text-lg font-medium text-gray-500 group-hover:text-gray-600 transition-colors duration-300">
                     No Image Available
                   </div>
-                </div>
+                </Link>
               )}
               
               {/* Front | Back toggle - only show for jerseys with both images */}
@@ -185,8 +202,12 @@ export default function Jerseys() {
                 <div className="px-4 py-2 text-center border-b border-gray-100">
                   <div className="flex items-center justify-center gap-2 text-sm">
                     <button
-                      onClick={() => setImageStates(prev => ({...prev, [jersey.id]: false}))}
-                      className={`font-medium transition-colors duration-200 ${
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setImageStates(prev => ({...prev, [jersey.id]: false}))
+                      }}
+                      className={`font-medium transition-colors duration-200 hover:bg-gray-100 px-2 py-1 rounded ${
                         !imageStates[jersey.id] 
                           ? 'text-blue-600' 
                           : 'text-gray-400 hover:text-gray-600'
@@ -196,8 +217,12 @@ export default function Jerseys() {
                     </button>
                     <span className="text-gray-300">|</span>
                     <button
-                      onClick={() => setImageStates(prev => ({...prev, [jersey.id]: true}))}
-                      className={`font-medium transition-colors duration-200 ${
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setImageStates(prev => ({...prev, [jersey.id]: true}))
+                      }}
+                      className={`font-medium transition-colors duration-200 hover:bg-gray-100 px-2 py-1 rounded ${
                         imageStates[jersey.id] 
                           ? 'text-blue-600' 
                           : 'text-gray-400 hover:text-gray-600'
@@ -237,7 +262,23 @@ export default function Jerseys() {
                 
                 {/* Collection Buttons */}
                 {user && (
-                  <div className="flex gap-2 mt-auto">
+                  <div className="mt-auto flex gap-2">
+                    <button
+                      onClick={() => handleAddToCollection(jersey.id, 'like')}
+                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        isInCollection(jersey.id, 'like')
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-blue-50 hover:text-blue-600'
+                      }`}
+                    >
+                      {isInCollection(jersey.id, 'like') ? (
+                        <FireIconSolid className="h-4 w-4" />
+                      ) : (
+                        <FireIcon className="h-4 w-4" />
+                      )}
+                      Like
+                    </button>
+
                     <button
                       onClick={() => handleAddToCollection(jersey.id, 'have')}
                       className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -273,7 +314,7 @@ export default function Jerseys() {
                 )}
                 
                 {!user && (
-                  <div className="text-center mt-auto">
+                  <div className="text-center">
                     <p className="text-sm text-gray-500 mb-2">Sign in to add to collection</p>
                     <button className="w-full px-3 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm cursor-not-allowed">
                       Add to Collection

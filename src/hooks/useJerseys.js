@@ -281,6 +281,7 @@ export function useUserCollections() {
     isInCollection,
     haveCollection: getCollectionByType('have'),
     wantCollection: getCollectionByType('want'),
+    likeCollection: getCollectionByType('like'),
     refetch: () => {
       setLoading(true)
       // This will trigger the useEffect to refetch

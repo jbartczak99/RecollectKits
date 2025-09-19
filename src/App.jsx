@@ -6,6 +6,7 @@ import AuthLayout from './components/auth/AuthLayout'
 import Home from './pages/Home'
 import Jerseys from './pages/Jerseys'
 import Collection from './pages/Collection'
+import JerseyDetails from './components/jerseys/JerseyDetails'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<AuthLayout />} />
               <Route path="/jerseys" element={<Jerseys />} />
+              <Route path="/jerseys/:id" element={<JerseyDetails />} />
               <Route 
                 path="/collection" 
                 element={

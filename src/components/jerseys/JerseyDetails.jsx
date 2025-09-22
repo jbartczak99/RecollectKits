@@ -140,64 +140,110 @@ export default function JerseyDetails() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
             {/* Left Column - Images */}
             <div className="space-y-6">
-              {/* Main Image */}
-              <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                {selectedImage ? (
-                  <div className="flex items-center justify-center bg-gray-50 p-6" style={{minHeight: '400px', maxHeight: '500px'}}>
-                    <img
-                      src={selectedImage}
-                      alt={`${jersey.team_name} ${jersey.jersey_type} kit`}
-                      className="max-w-full max-h-full object-contain"
-                      style={{maxWidth: '400px', maxHeight: '500px'}}
-                      onError={(e) => {
-                        e.target.style.display = 'none'
+              {/* Main Image with Gallery directly below */}
+              <div className="space-y-1">
+                {/* Main Image */}
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  {selectedImage ? (
+                    <div className="flex items-center justify-center bg-gray-50 p-6" style={{minHeight: '400px', maxHeight: '500px'}}>
+                      <img
+                        src={selectedImage}
+                        alt={`${jersey.team_name} ${jersey.jersey_type} kit`}
+                        className="max-w-full max-h-full object-contain"
+                        style={{maxWidth: '400px', maxHeight: '500px'}}
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center bg-gradient-to-br from-green-100 to-blue-100" style={{minHeight: '400px'}}>
+                      <div className="text-center">
+                        <div className="text-6xl mb-4">👕</div>
+                        <div className="text-lg font-medium text-gray-500">
+                          No Image Available
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Gallery Area */}
+                <div className="flex justify-center">
+                  <div
+                    className="bg-white rounded-lg shadow-md overflow-hidden"
+                    style={{
+                      maxWidth: '400px',
+                      width: '100%'
+                    }}
+                  >
+                    <div
+                      className="bg-gray-50 p-4"
+                      style={{
+                        minHeight: '120px'
                       }}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center bg-gradient-to-br from-green-100 to-blue-100" style={{minHeight: '400px'}}>
-                    <div className="text-center">
-                      <div className="text-6xl mb-4">👕</div>
-                      <div className="text-lg font-medium text-gray-500">
-                        No Image Available
+                    >
+                      <div className="flex gap-4 justify-center items-center h-full">
+                        {/* Front Jersey Thumbnail */}
+                        {jersey.front_image_url && (
+                          <div className="flex flex-col items-center">
+                            <div
+                              className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 ${
+                                selectedImage === jersey.front_image_url
+                                  ? 'border-blue-300 shadow-lg'
+                                  : 'border-white hover:border-gray-200'
+                              }`}
+                              style={{width: '80px', height: '80px', cursor: 'pointer'}}
+                              onClick={() => setSelectedImage(jersey.front_image_url)}
+                            >
+                              <img
+                                src={jersey.front_image_url}
+                                alt="Front jersey"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                              />
+                            </div>
+                            <span className="text-gray-700 text-sm mt-1 font-medium">Front</span>
+                          </div>
+                        )}
+
+                        {/* Back Jersey Thumbnail */}
+                        {jersey.back_image_url && (
+                          <div className="flex flex-col items-center">
+                            <div
+                              className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 ${
+                                selectedImage === jersey.back_image_url
+                                  ? 'border-blue-300 shadow-lg'
+                                  : 'border-white hover:border-gray-200'
+                              }`}
+                              style={{width: '80px', height: '80px', cursor: 'pointer'}}
+                              onClick={() => setSelectedImage(jersey.back_image_url)}
+                            >
+                              <img
+                                src={jersey.back_image_url}
+                                alt="Back jersey"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                              />
+                            </div>
+                            <span className="text-gray-700 text-sm mt-1 font-medium">Back</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Front/Back Toggle Buttons */}
-              {jersey.front_image_url && jersey.back_image_url && (
-                <div className="text-center">
-                  <div className="inline-flex items-center bg-white rounded-lg shadow-md p-2 gap-1">
-                    <button
-                      onClick={() => setSelectedImage(jersey.front_image_url)}
-                      className={`px-3 py-2 text-sm font-medium rounded transition-colors duration-200 ${
-                        selectedImage === jersey.front_image_url
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
-                    >
-                      Front
-                    </button>
-                    <span className="text-gray-300">|</span>
-                    <button
-                      onClick={() => setSelectedImage(jersey.back_image_url)}
-                      className={`px-3 py-2 text-sm font-medium rounded transition-colors duration-200 ${
-                        selectedImage === jersey.back_image_url
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                      }`}
-                    >
-                      Back
-                    </button>
-                  </div>
                 </div>
-              )}
+              </div>
 
             </div>
 

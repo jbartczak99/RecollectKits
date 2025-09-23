@@ -12,7 +12,7 @@ import { FireIcon as FireIconSolid } from '@heroicons/react/24/solid'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { usePublicJerseys, useUserCollections } from '../hooks/useJerseys'
 import JerseySearch from '../components/jerseys/JerseySearch'
-import JerseyForm from '../components/jerseys/JerseyForm'
+import KitSubmissionWizard from '../components/jerseys/KitSubmissionWizard'
 
 export default function Jerseys() {
   const { user } = useAuth()
@@ -49,8 +49,7 @@ export default function Jerseys() {
 
   if (showForm) {
     return (
-      <JerseyForm
-        onSuccess={handleFormSuccess}
+      <KitSubmissionWizard
         onCancel={() => setShowForm(false)}
       />
     )

@@ -1,17 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.jsx'
-import { 
-  Bars3Icon, 
+import { supabase } from '../../lib/supabase'
+import {
+  Bars3Icon,
   XMarkIcon,
   HomeIcon,
-  UserIcon
+  UserIcon,
+  ChevronDownIcon,
+  CogIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline'
+import './Navigation.css'
 
 export default function Navigation() {
   const { user, signOut } = useAuth()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
@@ -19,10 +26,56 @@ export default function Navigation() {
     { name: 'Collection', href: '/collection', icon: HomeIcon, protected: true },
   ]
 
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setIsAdmin(false)
+        return
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+
+        if (error) {
+          console.error('Error checking admin status:', error)
+          setIsAdmin(false)
+          return
+        }
+
+        setIsAdmin(data?.is_admin || false)
+      } catch (err) {
+        console.error('Error checking admin status:', err)
+        setIsAdmin(false)
+      }
+    }
+
+    checkAdminStatus()
+  }, [user])
+
   const handleSignOut = async () => {
     await signOut()
     setMobileMenuOpen(false)
+    setUserDropdownOpen(false)
   }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userDropdownOpen && !event.target.closest('.user-dropdown')) {
+        setUserDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [userDropdownOpen])
 
   const isActive = (href) => {
     return location.pathname === href
@@ -56,16 +109,63 @@ export default function Navigation() {
 
         <div className="navbar-user">
           {user ? (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-700">
-                Welcome, {user.user_metadata?.display_name || user.user_metadata?.username || user.email}
-              </span>
+            <div className="user-dropdown">
               <button
-                onClick={handleSignOut}
-                className="btn btn-secondary"
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="dropdown-trigger"
               >
-                Sign Out
+                <div className="user-avatar user-avatar-small">
+                  {(user.user_metadata?.display_name || user.user_metadata?.username || user.email)?.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden sm:block text-sm">
+                  {user.user_metadata?.display_name || user.user_metadata?.username || user.email?.split('@')[0]}
+                </span>
+                <ChevronDownIcon className={`dropdown-chevron ${userDropdownOpen ? 'open' : ''}`} />
               </button>
+
+              {userDropdownOpen && (
+                <div className="user-dropdown-menu">
+                  {/* Profile Header */}
+                  <div className="user-dropdown-header">
+                    <div className="flex items-center gap-3">
+                      <div className="user-avatar">
+                        {(user.user_metadata?.display_name || user.user_metadata?.username || user.email)?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate">
+                          {user.user_metadata?.display_name || user.user_metadata?.username || user.email?.split('@')[0]}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {user.email}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="user-dropdown-item"
+                      >
+                        <ShieldCheckIcon className="user-dropdown-icon" />
+                        <span>Admin Panel</span>
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleSignOut}
+                      className="user-dropdown-item"
+                    >
+                      <svg className="user-dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <Link
@@ -122,13 +222,25 @@ export default function Navigation() {
                     </div>
                   </div>
                 </div>
-                <button
-                  onClick={handleSignOut}
-                  className="btn btn-secondary"
-                  style={{width: '100%'}}
-                >
-                  Sign Out
-                </button>
+                <div className="space-y-2">
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ShieldCheckIcon className="h-4 w-4" />
+                      Admin Portal
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleSignOut}
+                    className="btn btn-secondary"
+                    style={{width: '100%'}}
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
             ) : (
               <Link

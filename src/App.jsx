@@ -7,6 +7,7 @@ import Home from './pages/Home'
 import Jerseys from './pages/Jerseys'
 import Collection from './pages/Collection'
 import JerseyDetails from './components/jerseys/JerseyDetails'
+import AdminPanel from './components/admin/AdminPanel'
 
 function App() {
   return (
@@ -21,13 +22,21 @@ function App() {
               <Route path="/auth" element={<AuthLayout />} />
               <Route path="/jerseys" element={<Jerseys />} />
               <Route path="/jerseys/:id" element={<JerseyDetails />} />
-              <Route 
-                path="/collection" 
+              <Route
+                path="/collection"
                 element={
                   <ProtectedRoute>
                     <Collection />
                   </ProtectedRoute>
-                } 
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminPanel />
+                  </ProtectedRoute>
+                }
               />
             </Routes>
           </main>

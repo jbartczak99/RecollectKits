@@ -184,14 +184,23 @@ export default function AdminPanel() {
     setProcessingAction(true)
     try {
       if (action === 'approve') {
+        console.log('Approving account in admin panel:', account.username)
         const { error } = await approveAccount(account.id, notes)
         if (error) throw error
+        console.log('Account approved, refreshing list...')
       } else if (action === 'reject') {
+        console.log('Rejecting account in admin panel:', account.username)
         const { error } = await rejectAccount(account.id, notes)
         if (error) throw error
+        console.log('Account rejected, refreshing list...')
       }
 
       await fetchPendingAccounts()
+      console.log('Pending accounts list refreshed')
+
+      // Show success message
+      alert(`Account ${action}d successfully! ${account.username} has been ${action}d.`)
+
     } catch (err) {
       console.error(`Error ${action}ing account:`, err)
       alert(`Error ${action}ing account: ${err.message}`)

@@ -216,15 +216,49 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Admin access required')
       }
 
-      const { error } = await supabase.rpc('approve_user_account', {
-        user_id: userId,
-        admin_id: user.id,
-        notes
-      })
+      console.log('Approving account:', { userId, adminId: user.id, notes })
 
-      if (error) throw error
+      // First check if user exists
+      const { data: userCheck } = await supabase
+        .from('profiles')
+        .select('id, username, approval_status')
+        .eq('id', userId)
+        .single()
+
+      console.log('User before approval:', userCheck)
+
+      // BYPASS THE DATABASE FUNCTION - do direct UPDATE instead
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          approval_status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: user.id,
+          admin_notes: notes
+        })
+        .eq('id', userId)
+        .select()
+
+      console.log('Direct update result:', { data, error })
+
+      // Check if user status actually changed
+      const { data: userAfter } = await supabase
+        .from('profiles')
+        .select('id, username, approval_status, approved_at, admin_notes')
+        .eq('id', userId)
+        .single()
+
+      console.log('User after approval:', userAfter)
+
+      if (error) {
+        console.error('Database error approving account:', error)
+        throw error
+      }
+
+      console.log('Account approved successfully')
       return { error: null }
     } catch (error) {
+      console.error('Error in approveAccount:', error)
       return { error }
     }
   }

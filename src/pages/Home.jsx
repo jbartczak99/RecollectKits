@@ -40,13 +40,13 @@ export default function Home() {
       <section>
         <div className="card" style={{background: 'linear-gradient(135deg, var(--accent-amber-50), var(--accent-green-50))', border: '2px solid var(--accent-amber-200)'}}>
           <div className="card-body text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">🚧 Coming Soon!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">🚀 Alpha Stage!</h2>
             <p className="text-lg text-gray-700 mb-4">
-              RecollectKits is currently in development. We're building the ultimate platform for kit collectors.
+              RecollectKits is now in alpha testing! Experience early features and help shape the ultimate platform for kit collectors.
             </p>
             <div className="flex flex-wrap justify-center gap-2 mb-4">
-              <span className="badge badge-amber">In Development</span>
-              <span className="badge badge-green">Beta Testing</span>
+              <span className="badge badge-green">Alpha Testing</span>
+              <span className="badge badge-amber">Early Access</span>
               <span className="badge badge-purple">Coming 2025</span>
             </div>
             <p className="text-sm text-gray-600 mb-6">

@@ -10,16 +10,20 @@ import {
   ChevronRightIcon,
   ExclamationTriangleIcon,
   ClockIcon,
-  PencilSquareIcon
+  PencilSquareIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../contexts/AuthContext.jsx'
 import './AdminPanel.css'
 
 export default function AdminPanel() {
-  const { user } = useAuth()
+  const { user, getPendingAccounts, approveAccount, rejectAccount } = useAuth()
+  const [activeTab, setActiveTab] = useState('submissions')
   const [submissions, setSubmissions] = useState([])
+  const [pendingAccounts, setPendingAccounts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [accountsLoading, setAccountsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [selectedSubmission, setSelectedSubmission] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -92,8 +96,29 @@ export default function AdminPanel() {
   useEffect(() => {
     if (isAdmin) {
       fetchSubmissions()
+      if (activeTab === 'accounts') {
+        fetchPendingAccounts()
+      }
     }
-  }, [isAdmin])
+  }, [isAdmin, activeTab])
+
+  // Fetch pending accounts
+  const fetchPendingAccounts = async () => {
+    try {
+      setAccountsLoading(true)
+      setError(null)
+      const { data, error: fetchError } = await getPendingAccounts()
+
+      if (fetchError) throw fetchError
+
+      setPendingAccounts(data || [])
+    } catch (err) {
+      console.error('Error fetching pending accounts:', err)
+      setError('Failed to load pending accounts. Please try again.')
+    } finally {
+      setAccountsLoading(false)
+    }
+  }
 
   // Real-time subscription for submissions
   useEffect(() => {
@@ -146,6 +171,26 @@ export default function AdminPanel() {
   const handleShowDetails = (submission) => {
     setSelectedSubmissionDetails(submission)
     setShowDetailsModal(true)
+  }
+
+  const handleAccountAction = async (account, action, notes = '') => {
+    setProcessingAction(true)
+    try {
+      if (action === 'approve') {
+        const { error } = await approveAccount(account.id, notes)
+        if (error) throw error
+      } else if (action === 'reject') {
+        const { error } = await rejectAccount(account.id, notes)
+        if (error) throw error
+      }
+
+      await fetchPendingAccounts()
+    } catch (err) {
+      console.error(`Error ${action}ing account:`, err)
+      alert(`Error ${action}ing account: ${err.message}`)
+    } finally {
+      setProcessingAction(false)
+    }
   }
 
   const processAction = async () => {
@@ -888,23 +933,90 @@ export default function AdminPanel() {
   return (
     <div className="admin-panel">
       {/* Header */}
-      <div className="admin-header mb-6">
+      <div className="admin-header mb-6 bg-blue-50">
         <div className="admin-container py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
-              <p className="text-gray-600 mt-1">Review and manage kit submissions</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center text-sm text-gray-500">
-                <ClockIcon className="w-4 h-4 mr-2" />
-                <span>{submissions.length} pending</span>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                  <ShieldCheckIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>System Active</span>
+                  </div>
+                </div>
               </div>
+              <p className="text-gray-600 mb-4 text-lg">
+                {activeTab === 'submissions' ? 'Review and manage kit submissions' : 'Review and manage user accounts'}
+              </p>
+            </div>
+
+            {/* Clickable Column Cards */}
+            <div className="flex gap-4">
+              {/* Kit Submissions Column */}
               <button
-                onClick={fetchSubmissions}
-                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => setActiveTab('submissions')}
+                className={`rounded-xl border-2 transition-all hover:shadow-lg ${
+                  activeTab === 'submissions'
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-gray-200 bg-white hover:border-blue-300'
+                }`}
               >
-                Refresh
+                <div className="p-5 text-center min-w-[130px]">
+                  <h3 className="font-semibold text-sm mb-4 mt-2">Kit Submissions</h3>
+                  <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 mb-2">
+                    <ClockIcon className="w-4 h-4" />
+                    <span>{submissions.length} pending</span>
+                  </div>
+                  {submissions.length > 0 && (
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      activeTab === 'submissions' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {submissions.length}
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              {/* Account Reviews Column */}
+              <button
+                onClick={() => setActiveTab('accounts')}
+                className={`rounded-xl border-2 transition-all hover:shadow-lg ${
+                  activeTab === 'accounts'
+                    ? 'border-amber-500 bg-amber-50 shadow-md'
+                    : 'border-gray-200 bg-white hover:border-amber-300'
+                }`}
+              >
+                <div className="p-5 text-center min-w-[130px]">
+                  <h3 className="font-semibold text-sm mb-4 mt-2">Account Reviews</h3>
+                  <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 mb-2">
+                    <ClockIcon className="w-4 h-4" />
+                    <span>{pendingAccounts.length} pending</span>
+                  </div>
+                  {pendingAccounts.length > 0 && (
+                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      activeTab === 'accounts' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {pendingAccounts.length}
+                    </div>
+                  )}
+                </div>
+              </button>
+
+              {/* Refresh Button */}
+              <button
+                onClick={activeTab === 'submissions' ? fetchSubmissions : fetchPendingAccounts}
+                className="px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors shadow-md hover:shadow-lg self-start"
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="font-medium">Refresh</span>
+                </div>
               </button>
             </div>
           </div>
@@ -912,106 +1024,213 @@ export default function AdminPanel() {
       </div>
 
       <div className="admin-container py-8">
-        {submissions.length === 0 ? (
-          // Empty state
-          <div className="text-center py-12">
-            <CheckCircleIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
-            <p className="text-gray-600">No pending submissions to review.</p>
-          </div>
-        ) : (
-          // Submissions grid/list
-          <div className="space-y-4">
-            {submissions.map((submission) => (
-              <div
-                key={submission.id}
-                className="submission-card"
-              >
-                <div className="p-4 md:p-6">
-                  <div className="flex flex-col md:flex-row md:items-start gap-4">
-                    {/* Image */}
-                    <div className="flex-shrink-0">
-                      <ImageToggle submission={submission} />
-                    </div>
+        {activeTab === 'submissions' ? (
+          submissions.length === 0 ? (
+            // Empty state for submissions
+            <div className="text-center py-12">
+              <CheckCircleIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
+              <p className="text-gray-600">No pending submissions to review.</p>
+            </div>
+          ) : (
+            // Submissions grid/list
+            <div className="space-y-4">
+              {submissions.map((submission) => (
+                <div
+                  key={submission.id}
+                  className="submission-card"
+                >
+                  <div className="p-4 md:p-6">
+                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                      {/* Image */}
+                      <div className="flex-shrink-0">
+                        <ImageToggle submission={submission} />
+                      </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                        <div className="space-y-3 flex-1">
-                          {/* Team/Title - Clickable */}
-                          <button
-                            onClick={() => handleShowDetails(submission)}
-                            className="text-lg font-semibold text-gray-900 leading-tight hover:text-blue-600 transition-colors text-left cursor-pointer"
-                          >
-                            {submission.team_name}
-                          </button>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                          <div className="space-y-3 flex-1">
+                            {/* Team/Title - Clickable */}
+                            <button
+                              onClick={() => handleShowDetails(submission)}
+                              className="text-lg font-semibold text-gray-900 leading-tight hover:text-blue-600 transition-colors text-left cursor-pointer"
+                            >
+                              {submission.team_name}
+                            </button>
 
-                          {/* Details Grid */}
-                          <div className="submission-details-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-2 text-sm">
-                            <div className="submission-details-item text-gray-600">
-                              <span className="font-medium text-gray-700">Season:</span>
-                              <span>{submission.season}</span>
+                            {/* Details Grid */}
+                            <div className="submission-details-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-2 text-sm">
+                              <div className="submission-details-item text-gray-600">
+                                <span className="font-medium text-gray-700">Season:</span>
+                                <span>{submission.season}</span>
+                              </div>
+                              <div className="submission-details-item text-gray-600">
+                                <span className="font-medium text-gray-700">Type:</span>
+                                <span className="capitalize">{submission.jersey_type}</span>
+                              </div>
+                              <div className="submission-details-item text-gray-600">
+                                <span className="font-medium text-gray-700">League:</span>
+                                <span>{submission.league || 'N/A'}</span>
+                              </div>
+                              <div className="submission-details-item text-gray-600">
+                                <span className="font-medium text-gray-700">Kit Type:</span>
+                                <span className="capitalize">{submission.kit_type}</span>
+                              </div>
                             </div>
-                            <div className="submission-details-item text-gray-600">
-                              <span className="font-medium text-gray-700">Type:</span>
-                              <span className="capitalize">{submission.jersey_type}</span>
-                            </div>
-                            <div className="submission-details-item text-gray-600">
-                              <span className="font-medium text-gray-700">League:</span>
-                              <span>{submission.league || 'N/A'}</span>
-                            </div>
-                            <div className="submission-details-item text-gray-600">
-                              <span className="font-medium text-gray-700">Kit Type:</span>
-                              <span className="capitalize">{submission.kit_type}</span>
+
+                            {/* Player info if available */}
+                            {submission.player_name && (
+                              <div className="submission-info text-sm text-gray-600">
+                                <UserIcon className="w-4 h-4 text-gray-400" />
+                                <span className="font-medium">{submission.player_name}</span>
+                                {submission.jersey_number && (
+                                  <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                                    #{submission.jersey_number}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Submission info */}
+                            <div className="submission-info text-sm text-gray-500">
+                              <CalendarIcon className="w-4 h-4" />
+                              <span>Submitted {formatDate(submission.created_at)}</span>
+                              <span>•</span>
+                              <span>by {submission.profiles?.username || 'Unknown'}</span>
                             </div>
                           </div>
 
-                          {/* Player info if available */}
-                          {submission.player_name && (
-                            <div className="submission-info text-sm text-gray-600">
-                              <UserIcon className="w-4 h-4 text-gray-400" />
-                              <span className="font-medium">{submission.player_name}</span>
-                              {submission.jersey_number && (
-                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                                  #{submission.jersey_number}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Submission info */}
-                          <div className="submission-info text-sm text-gray-500">
-                            <CalendarIcon className="w-4 h-4" />
-                            <span>Submitted {formatDate(submission.created_at)}</span>
-                            <span>•</span>
-                            <span>by {submission.profiles?.username || 'Unknown'}</span>
+                          {/* Actions */}
+                          <div className="flex flex-row lg:flex-col gap-2 lg:ml-4 flex-shrink-0">
+                            <button
+                              onClick={() => handleAction(submission, 'approve')}
+                              className="action-button action-button-approve"
+                            >
+                              <CheckCircleIcon className="w-4 h-4" />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleAction(submission, 'reject')}
+                              className="action-button action-button-reject"
+                            >
+                              <XCircleIcon className="w-4 h-4" />
+                              Reject
+                            </button>
                           </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex flex-row lg:flex-col gap-2 lg:ml-4 flex-shrink-0">
-                          <button
-                            onClick={() => handleAction(submission, 'approve')}
-                            className="action-button action-button-approve"
-                          >
-                            <CheckCircleIcon className="w-4 h-4" />
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleAction(submission, 'reject')}
-                            className="action-button action-button-reject"
-                          >
-                            <XCircleIcon className="w-4 h-4" />
-                            Reject
-                          </button>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
+        ) : (
+          // Account Reviews Tab
+          accountsLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading pending accounts...</p>
+            </div>
+          ) : pendingAccounts.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircleIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">All accounts reviewed!</h3>
+              <p className="text-gray-600">No pending account requests to review.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingAccounts.map((account) => (
+                <div
+                  key={account.id}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            {(account.full_name || account.username || account.email || 'U').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {account.full_name || account.username || 'Unknown'}
+                            </h3>
+                            <p className="text-gray-600">{account.email}</p>
+                            <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
+                              <div className="flex items-center">
+                                <UserIcon className="w-4 h-4 mr-1" />
+                                <span>@{account.username}</span>
+                              </div>
+                              <div className="flex items-center">
+                                <CalendarIcon className="w-4 h-4 mr-1" />
+                                <span>Requested {formatDate(account.requested_at)}</span>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                account.approval_status === 'pending'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : account.approval_status === 'approved'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {account.approval_status}
+                              </span>
+                            </div>
+                            {account.admin_notes && (
+                              <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                                <p className="text-sm text-gray-700">
+                                  <span className="font-medium">Admin Notes:</span> {account.admin_notes}
+                                </p>
+                                {account.approved_by_username && account.approved_at && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    By {account.approved_by_username} on {formatDate(account.approved_at)}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {account.approval_status === 'pending' && (
+                        <div className="flex space-x-2 ml-4">
+                          <button
+                            onClick={() => {
+                              const notes = prompt('Optional approval notes:')
+                              if (notes !== null) { // User didn't cancel
+                                handleAccountAction(account, 'approve', notes)
+                              }
+                            }}
+                            disabled={processingAction}
+                            className="flex items-center space-x-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                          >
+                            <CheckCircleIcon className="w-4 h-4" />
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              const notes = prompt('Reason for rejection (required):')
+                              if (notes && notes.trim()) {
+                                handleAccountAction(account, 'reject', notes)
+                              } else if (notes !== null) {
+                                alert('Please provide a reason for rejection.')
+                              }
+                            }}
+                            disabled={processingAction}
+                            className="flex items-center space-x-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                          >
+                            <XCircleIcon className="w-4 h-4" />
+                            <span>Reject</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 

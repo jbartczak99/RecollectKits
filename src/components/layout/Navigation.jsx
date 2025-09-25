@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../contexts/AuthContext.jsx'
 import { supabase } from '../../lib/supabase'
 import {
   Bars3Icon,
@@ -14,11 +14,10 @@ import {
 import './Navigation.css'
 
 export default function Navigation() {
-  const { user, signOut } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
 
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
@@ -26,36 +25,8 @@ export default function Navigation() {
     { name: 'Collection', href: '/collection', icon: HomeIcon, protected: true },
   ]
 
-  // Check if user is admin
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) {
-        setIsAdmin(false)
-        return
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single()
-
-        if (error) {
-          console.error('Error checking admin status:', error)
-          setIsAdmin(false)
-          return
-        }
-
-        setIsAdmin(data?.is_admin || false)
-      } catch (err) {
-        console.error('Error checking admin status:', err)
-        setIsAdmin(false)
-      }
-    }
-
-    checkAdminStatus()
-  }, [user])
+  // Get admin status from profile
+  const isAdmin = profile?.is_admin || false
 
   const handleSignOut = async () => {
     await signOut()

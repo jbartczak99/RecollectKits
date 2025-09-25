@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../contexts/AuthContext.jsx'
 
 export default function LoginForm({ onSuccess }) {
   const [email, setEmail] = useState('')

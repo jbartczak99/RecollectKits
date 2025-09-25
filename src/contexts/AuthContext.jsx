@@ -60,6 +60,14 @@ export const AuthProvider = ({ children }) => {
         throw error
       }
 
+      if (!data) {
+        // If no profile exists, create one for existing user
+        const { data: userData } = await supabase.auth.getUser()
+        if (userData.user) {
+          return await createProfile(userData.user)
+        }
+      }
+
       setProfile(data)
       return data
     } catch (error) {
@@ -74,7 +82,9 @@ export const AuthProvider = ({ children }) => {
         id: user.id,
         username: user.user_metadata?.username || user.email.split('@')[0],
         full_name: user.user_metadata?.full_name || '',
-        avatar_url: user.user_metadata?.avatar_url || null
+        avatar_url: user.user_metadata?.avatar_url || null,
+        approval_status: 'pending',
+        requested_at: new Date().toISOString()
       }
 
       const { data, error } = await supabase
@@ -84,7 +94,7 @@ export const AuthProvider = ({ children }) => {
         .single()
 
       if (error) throw error
-      
+
       setProfile(data)
       return data
     } catch (error) {
@@ -114,14 +124,47 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const signIn = async ({ email, password }) => {
+  const signIn = async (email, password) => {
     try {
       setLoading(true)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      return { data, error }
+
+      if (error) {
+        return { data: null, error }
+      }
+
+      // Check user's approval status after successful auth
+      if (data.user) {
+        const profileData = await getProfile(data.user.id)
+
+        // If profile exists and user is not admin, check approval status
+        if (profileData && !profileData.is_admin) {
+          if (profileData.approval_status === 'pending') {
+            // Sign them out immediately and return custom error
+            await supabase.auth.signOut()
+            return {
+              data: null,
+              error: {
+                message: 'Your account is still under review. Please allow 24-48 hours for approval. You will receive an email notification once your account is approved.'
+              }
+            }
+          } else if (profileData.approval_status === 'rejected') {
+            // Sign them out immediately and return custom error
+            await supabase.auth.signOut()
+            return {
+              data: null,
+              error: {
+                message: 'Your account request was not approved. Please contact support if you believe this is an error.'
+              }
+            }
+          }
+        }
+      }
+
+      return { data, error: null }
     } catch (error) {
       return { data: null, error }
     } finally {
@@ -162,6 +205,57 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const getPendingAccounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('pending_accounts')
+        .select('*')
+
+      if (error) throw error
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error }
+    }
+  }
+
+  const approveAccount = async (userId, notes = null) => {
+    try {
+      if (!user || !profile?.is_admin) {
+        throw new Error('Admin access required')
+      }
+
+      const { error } = await supabase.rpc('approve_user_account', {
+        user_id: userId,
+        admin_id: user.id,
+        notes
+      })
+
+      if (error) throw error
+      return { error: null }
+    } catch (error) {
+      return { error }
+    }
+  }
+
+  const rejectAccount = async (userId, notes = null) => {
+    try {
+      if (!user || !profile?.is_admin) {
+        throw new Error('Admin access required')
+      }
+
+      const { error } = await supabase.rpc('reject_user_account', {
+        user_id: userId,
+        admin_id: user.id,
+        notes
+      })
+
+      if (error) throw error
+      return { error: null }
+    } catch (error) {
+      return { error }
+    }
+  }
+
   const value = {
     user,
     profile,
@@ -170,7 +264,10 @@ export const AuthProvider = ({ children }) => {
     signIn,
     signOut,
     updateProfile,
-    getProfile
+    getProfile,
+    getPendingAccounts,
+    approveAccount,
+    rejectAccount
   }
 
   return (

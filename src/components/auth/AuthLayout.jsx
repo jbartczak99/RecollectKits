@@ -16,7 +16,8 @@ export default function AuthLayout() {
     )
   }
 
-  if (user) {
+  // Don't redirect immediately to allow error messages to show
+  if (user && !loading) {
     return <Navigate to="/" replace />
   }
 

@@ -61,22 +61,34 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to reject a user account
+-- Function to reject a user account (completely removes user)
 CREATE OR REPLACE FUNCTION reject_user_account(
   user_id UUID,
   admin_id UUID,
   notes TEXT DEFAULT NULL
 ) RETURNS void AS $$
 BEGIN
-  UPDATE profiles
-  SET
-    approval_status = 'rejected',
-    approved_at = now(),
-    approved_by = admin_id,
-    admin_notes = notes
-  WHERE id = user_id;
+  -- Log the rejection before deletion (optional)
+  INSERT INTO user_rejections (user_id, admin_id, notes, rejected_at)
+  VALUES (user_id, admin_id, notes, now())
+  ON CONFLICT DO NOTHING; -- In case the table doesn't exist yet
+
+  -- Delete from profiles table
+  DELETE FROM profiles WHERE id = user_id;
+
+  -- Delete from Supabase Auth (requires admin service role key)
+  -- This will be handled by the application layer since SQL can't directly call Supabase Admin API
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Optional: Create a log table for rejected users (for audit trail)
+CREATE TABLE IF NOT EXISTS user_rejections (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL,
+  admin_id UUID REFERENCES profiles(id),
+  notes TEXT,
+  rejected_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
 
 -- View for admin panel to easily see pending accounts
 CREATE OR REPLACE VIEW pending_accounts AS

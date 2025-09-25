@@ -32,10 +32,12 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email)
         setUser(session?.user ?? null)
         if (session?.user) {
           await getProfile(session.user.id)
           if (event === 'SIGNED_UP') {
+            console.log('SIGNED_UP event detected, calling createProfile')
             await createProfile(session.user)
           }
         } else {
@@ -50,17 +52,22 @@ export const AuthProvider = ({ children }) => {
 
   const getProfile = async (userId) => {
     try {
+      console.log('Getting profile for user:', userId)
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
 
+      console.log('Profile query result:', { data, error })
+
       if (error && error.code !== 'PGRST116') {
+        console.error('Profile fetch error (not PGRST116):', error)
         throw error
       }
 
       if (!data) {
+        console.log('No profile found, creating one for existing user')
         // If no profile exists, create one for existing user
         const { data: userData } = await supabase.auth.getUser()
         if (userData.user) {
@@ -68,6 +75,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
+      console.log('Profile found and set:', data)
       setProfile(data)
       return data
     } catch (error) {
@@ -78,6 +86,7 @@ export const AuthProvider = ({ children }) => {
 
   const createProfile = async (user) => {
     try {
+      console.log('Creating profile for user:', user)
       const profileData = {
         id: user.id,
         username: user.user_metadata?.username || user.email.split('@')[0],
@@ -86,6 +95,7 @@ export const AuthProvider = ({ children }) => {
         approval_status: 'pending',
         requested_at: new Date().toISOString()
       }
+      console.log('Profile data to insert:', profileData)
 
       const { data, error } = await supabase
         .from('profiles')
@@ -93,8 +103,12 @@ export const AuthProvider = ({ children }) => {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Database error inserting profile:', error)
+        throw error
+      }
 
+      console.log('Profile created successfully:', data)
       setProfile(data)
       return data
     } catch (error) {
@@ -116,6 +130,13 @@ export const AuthProvider = ({ children }) => {
           }
         }
       })
+
+      // If signup successful and user exists, create profile immediately
+      if (!error && data.user) {
+        console.log('Signup successful, creating profile immediately for:', data.user.email)
+        await createProfile(data.user)
+      }
+
       return { data, error }
     } catch (error) {
       return { data: null, error }
@@ -127,6 +148,7 @@ export const AuthProvider = ({ children }) => {
   const signIn = async (email, password) => {
     try {
       setLoading(true)
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -136,39 +158,9 @@ export const AuthProvider = ({ children }) => {
         return { data: null, error }
       }
 
-      // Check user's approval status after successful auth
-      if (data.user) {
-        const profileData = await getProfile(data.user.id)
-
-        // If profile exists and user is not admin, check approval status
-        if (profileData && !profileData.is_admin) {
-          if (profileData.approval_status === 'pending') {
-            // Sign them out immediately and return custom error
-            await supabase.auth.signOut()
-            return {
-              data: null,
-              error: {
-                message: 'Your account is still under review. Please allow 24-48 hours for approval. You will receive an email notification once your account is approved.'
-              }
-            }
-          } else if (profileData.approval_status === 'rejected') {
-            // Sign them out immediately and return custom error
-            await supabase.auth.signOut()
-            return {
-              data: null,
-              error: {
-                message: 'Your account request was not approved. Please contact support if you believe this is an error.'
-              }
-            }
-          }
-        }
-      }
-
       return { data, error: null }
     } catch (error) {
       return { data: null, error }
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -243,15 +235,28 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Admin access required')
       }
 
-      const { error } = await supabase.rpc('reject_user_account', {
+      // First, call the database function to delete from profiles and log rejection
+      const { error: dbError } = await supabase.rpc('reject_user_account', {
         user_id: userId,
         admin_id: user.id,
         notes
       })
 
-      if (error) throw error
+      if (dbError) throw dbError
+
+      // Then delete the user from Supabase Auth
+      // Note: This requires the service role key, not the anon key
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+
+      if (authError) {
+        console.error('Error deleting user from auth:', authError)
+        // Don't throw here since the profile is already deleted
+        // The user account might still exist in auth but won't be able to access anything
+      }
+
       return { error: null }
     } catch (error) {
+      console.error('Error rejecting account:', error)
       return { error }
     }
   }

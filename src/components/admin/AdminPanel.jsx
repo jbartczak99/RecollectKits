@@ -38,16 +38,21 @@ export default function AdminPanel() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user) {
+        console.log('No user, setting isAdmin to false')
         setIsAdmin(false)
         return
       }
 
+      console.log('Checking admin status for user:', user.email)
+
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('is_admin')
+          .select('is_admin, approval_status')
           .eq('id', user.id)
           .single()
+
+        console.log('Admin status query result:', { data, error })
 
         if (error) {
           console.error('Error checking admin status:', error)
@@ -55,7 +60,9 @@ export default function AdminPanel() {
           return
         }
 
-        setIsAdmin(data?.is_admin || false)
+        const isAdminUser = data?.is_admin || false
+        console.log('Setting isAdmin to:', isAdminUser)
+        setIsAdmin(isAdminUser)
       } catch (err) {
         console.error('Error checking admin status:', err)
         setIsAdmin(false)
@@ -1144,87 +1151,105 @@ export default function AdminPanel() {
               {pendingAccounts.map((account) => (
                 <div
                   key={account.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
+                  className="submission-card"
                 >
-                  <div className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                            {(account.full_name || account.username || account.email || 'U').charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900">
-                              {account.full_name || account.username || 'Unknown'}
-                            </h3>
-                            <p className="text-gray-600">{account.email}</p>
-                            <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
-                              <div className="flex items-center">
-                                <UserIcon className="w-4 h-4 mr-1" />
-                                <span>@{account.username}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <CalendarIcon className="w-4 h-4 mr-1" />
-                                <span>Requested {formatDate(account.requested_at)}</span>
-                              </div>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                account.approval_status === 'pending'
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : account.approval_status === 'approved'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {account.approval_status}
-                              </span>
-                            </div>
-                            {account.admin_notes && (
-                              <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                                <p className="text-sm text-gray-700">
-                                  <span className="font-medium">Admin Notes:</span> {account.admin_notes}
-                                </p>
-                                {account.approved_by_username && account.approved_at && (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    By {account.approved_by_username} on {formatDate(account.approved_at)}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                  <div className="p-4 md:p-6">
+                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                      {/* Avatar */}
+                      <div className="flex-shrink-0">
+                        <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                          {(account.full_name || account.username || account.email || 'U').charAt(0).toUpperCase()}
                         </div>
                       </div>
 
-                      {account.approval_status === 'pending' && (
-                        <div className="flex space-x-2 ml-4">
-                          <button
-                            onClick={() => {
-                              const notes = prompt('Optional approval notes:')
-                              if (notes !== null) { // User didn't cancel
-                                handleAccountAction(account, 'approve', notes)
-                              }
-                            }}
-                            disabled={processingAction}
-                            className="flex items-center space-x-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                          >
-                            <CheckCircleIcon className="w-4 h-4" />
-                            <span>Approve</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              const notes = prompt('Reason for rejection (required):')
-                              if (notes && notes.trim()) {
-                                handleAccountAction(account, 'reject', notes)
-                              } else if (notes !== null) {
-                                alert('Please provide a reason for rejection.')
-                              }
-                            }}
-                            disabled={processingAction}
-                            className="flex items-center space-x-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                          >
-                            <XCircleIcon className="w-4 h-4" />
-                            <span>Reject</span>
-                          </button>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                          <div className="space-y-3 flex-1">
+                            {/* Name/Title */}
+                            <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                              {account.full_name || account.username || 'Unknown'}
+                            </h3>
+
+                            {/* Details Grid */}
+                            <div className="submission-details-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                              <div className="submission-details-item text-gray-600">
+                                <span className="font-medium text-gray-700">Email:</span>
+                                <span>{account.email}</span>
+                              </div>
+                              <div className="submission-details-item text-gray-600">
+                                <span className="font-medium text-gray-700">Username:</span>
+                                <span>@{account.username}</span>
+                              </div>
+                              <div className="submission-details-item text-gray-600">
+                                <span className="font-medium text-gray-700">Status:</span>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  account.approval_status === 'pending'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : account.approval_status === 'approved'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {account.approval_status}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Admin Notes if available */}
+                            {account.admin_notes && (
+                              <div className="submission-info text-sm text-gray-600">
+                                <span className="font-medium">Admin Notes:</span>
+                                <span>{account.admin_notes}</span>
+                                {account.approved_by_username && account.approved_at && (
+                                  <span className="text-xs text-gray-500">
+                                    By {account.approved_by_username} on {formatDate(account.approved_at)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Request info */}
+                            <div className="submission-info text-sm text-gray-500">
+                              <CalendarIcon className="w-4 h-4" />
+                              <span>Requested {formatDate(account.requested_at)}</span>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          {account.approval_status === 'pending' && (
+                            <div className="flex flex-row lg:flex-col gap-2 lg:ml-4 flex-shrink-0">
+                              <button
+                                onClick={() => {
+                                  const notes = prompt('Optional approval notes:')
+                                  if (notes !== null) { // User didn't cancel
+                                    handleAccountAction(account, 'approve', notes)
+                                  }
+                                }}
+                                disabled={processingAction}
+                                className="action-button action-button-approve"
+                              >
+                                <CheckCircleIcon className="w-4 h-4" />
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const notes = prompt('Reason for rejection (required):')
+                                  if (notes && notes.trim()) {
+                                    handleAccountAction(account, 'reject', notes)
+                                  } else if (notes !== null) {
+                                    alert('Please provide a reason for rejection.')
+                                  }
+                                }}
+                                disabled={processingAction}
+                                className="action-button action-button-reject"
+                              >
+                                <XCircleIcon className="w-4 h-4" />
+                                Reject
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>

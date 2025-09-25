@@ -6,6 +6,7 @@ export default function LoginForm({ onSuccess }) {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
   const { signIn } = useAuth()
 
   const handleSubmit = async (e) => {
@@ -13,19 +14,31 @@ export default function LoginForm({ onSuccess }) {
     setLoading(true)
     setError('')
 
-    const { error } = await signIn(email, password)
-    
-    if (error) {
-      setError(error.message)
+    const result = await signIn(email, password)
+
+    if (result.error) {
+      // Custom message for unconfirmed emails during alpha
+      if (result.error.message === 'Email not confirmed') {
+        const customMessage = 'Your account is still under review. Please allow 24-48 hours for approval. You will receive an email notification once your account is approved.'
+
+        // Show alert for immediate feedback
+        alert(customMessage)
+        setError(customMessage)
+      } else {
+        setError(result.error.message)
+      }
       setLoading(false)
     } else {
-      onSuccess?.()
+      setLoading(false)
+      // Don't call onSuccess to prevent navigation issues
+      // onSuccess?.()
     }
   }
 
   return (
     <div className="max-w-md mx-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8">
       <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Welcome Back</h2>
+
       
       {error && (
         <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-700 rounded-lg shadow-sm">

@@ -13,6 +13,8 @@ export default function RegisterForm({ onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
+
     setLoading(true)
     setError('')
 
@@ -22,13 +24,21 @@ export default function RegisterForm({ onSuccess }) {
       return
     }
 
-    const { error } = await signUp(email, password, username, fullName)
-    
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-    } else {
-      setSuccess(true)
+    try {
+      console.log('SignUp data:', { email, password, username, fullName })
+      const result = await signUp({ email, password, username, fullName })
+      console.log('SignUp result:', result)
+
+      if (result.error) {
+        setError(result.error.message)
+      } else {
+        setSuccess(true)
+        console.log('Setting success to true')
+      }
+    } catch (error) {
+      console.error('Signup error:', error)
+      setError('An unexpected error occurred')
+    } finally {
       setLoading(false)
     }
   }
@@ -43,9 +53,29 @@ export default function RegisterForm({ onSuccess }) {
             </svg>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Welcome to RecollectKits!</h2>
-          <p className="text-gray-600 text-lg leading-relaxed">
+          <p className="text-gray-600 text-lg leading-relaxed mb-4">
             Thank you for joining RecollectKits! Please check your email for the confirmation link.
           </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-amber-800">
+                  Account Under Review
+                </h3>
+                <div className="mt-1 text-sm text-amber-700">
+                  <p>
+                    Your account is now under review. Please allow 24-48 hours for approval.
+                    You'll receive an email notification once approved.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )

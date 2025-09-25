@@ -10,7 +10,7 @@ import {
   GlobeAltIcon
 } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../contexts/AuthContext.jsx'
 
 // Separate form components to prevent re-creation on renders
 const ClubKitBasicInfoForm = ({ formData, handleFormChange, nextStep, prevStep, currentStep, stepsLength }) => (

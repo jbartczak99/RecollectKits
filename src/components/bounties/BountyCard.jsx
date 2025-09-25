@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../contexts/AuthContext.jsx'
 import { TrophyIcon, UserIcon } from '@heroicons/react/24/outline'
 
 export default function BountyCard({ bounty, onFulfill }) {

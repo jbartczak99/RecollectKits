@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import { useAuth } from '../hooks/useAuth.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { useBounties } from '../hooks/useBounties'
 import BountyBoard from '../components/bounties/BountyBoard'
 import BountyForm from '../components/bounties/BountyForm'

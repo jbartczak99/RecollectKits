@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { useAuth } from './useAuth.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
 
 // Hook for fetching all jerseys from public_jerseys table
 export function usePublicJerseys(searchTerm = '', filters = {}) {

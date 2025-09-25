@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeftIcon, HeartIcon, StarIcon, FireIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid, FireIcon as FireIconSolid } from '@heroicons/react/24/solid'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../contexts/AuthContext.jsx'
 import { useUserCollections } from '../../hooks/useJerseys'
 import { supabase } from '../../lib/supabase'
 

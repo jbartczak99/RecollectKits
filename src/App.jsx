@@ -13,38 +13,40 @@ import AdminPanel from './components/admin/AdminPanel'
 function App() {
   return (
     <AuthProvider>
-      <ApprovalGate>
-        <Router>
-          <div className="min-h-screen">
-            <Navigation />
+      <Router>
+        <div className="min-h-screen">
+          <Navigation />
 
-            <main className="container py-8">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/auth" element={<AuthLayout />} />
-                <Route path="/jerseys" element={<Jerseys />} />
-                <Route path="/jerseys/:id" element={<JerseyDetails />} />
-                <Route
-                  path="/collection"
-                  element={
+          <main className="container py-8">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/auth" element={<AuthLayout />} />
+              <Route path="/jerseys" element={<Jerseys />} />
+              <Route path="/jerseys/:id" element={<JerseyDetails />} />
+              <Route
+                path="/collection"
+                element={
+                  <ApprovalGate>
                     <ProtectedRoute>
                       <Collection />
                     </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin"
-                  element={
+                  </ApprovalGate>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ApprovalGate>
                     <ProtectedRoute>
                       <AdminPanel />
                     </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </main>
-          </div>
-        </Router>
-      </ApprovalGate>
+                  </ApprovalGate>
+                }
+              />
+            </Routes>
+          </main>
+        </div>
+      </Router>
     </AuthProvider>
   )
 }

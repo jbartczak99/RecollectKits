@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import { useAuth } from '../hooks/useAuth.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { useSpots } from '../hooks/useSpots'
 import SpottingFeed from '../components/spots/SpottingFeed'
 import SpotForm from '../components/spots/SpotForm'

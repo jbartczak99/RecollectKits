@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PhotoIcon, XMarkIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { usePublicJerseys } from '../../hooks/useJerseys'
-import { useAuth } from '../../hooks/useAuth.jsx'
+import { useAuth } from '../../contexts/AuthContext.jsx'
 import { supabase } from '../../lib/supabase'
 
 export default function JerseyForm({ onSuccess, onCancel }) {

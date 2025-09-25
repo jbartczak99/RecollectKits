@@ -1,4 +1,4 @@
-import { useAuth } from '../hooks/useAuth.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import { useCollection } from '../hooks/useCollection'
 import CollectionView from '../components/collection/CollectionView'
 import CollectionStats from '../components/collection/CollectionStats'

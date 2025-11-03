@@ -76,6 +76,7 @@ export default function AdminPanel() {
   const fetchSubmissions = async () => {
     try {
       setError(null)
+      console.log('Fetching submissions...')
       const { data, error: fetchError } = await supabase
         .from('jersey_submissions')
         .select(`
@@ -89,8 +90,12 @@ export default function AdminPanel() {
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
 
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        console.error('Fetch error:', fetchError)
+        throw fetchError
+      }
 
+      console.log('Fetched submissions:', data?.length || 0)
       setSubmissions(data || [])
     } catch (err) {
       console.error('Error fetching submissions:', err)
@@ -250,26 +255,51 @@ export default function AdminPanel() {
         if (insertError) throw insertError
 
       } else if (modalAction === 'reject') {
-        // For reject: completely delete the submission from the database
-        const { error: deleteError } = await supabase
+        // For reject: delete the submission from the database
+        console.log('Deleting submission:', selectedSubmission.id)
+
+        const { data, error: deleteError, count } = await supabase
           .from('jersey_submissions')
           .delete()
           .eq('id', selectedSubmission.id)
+          .select()
 
-        if (deleteError) throw deleteError
+        console.log('Delete response:', { data, error: deleteError, count, rowsAffected: data?.length })
+
+        if (deleteError) {
+          console.error('Delete error:', deleteError)
+          throw deleteError
+        }
+
+        // Check if any rows were actually deleted
+        if (!data || data.length === 0) {
+          console.error('Delete returned no error but no rows were deleted - likely RLS policy blocking')
+          throw new Error('Failed to delete submission. You may not have permission to delete this record.')
+        }
+
+        console.log('Submission deleted successfully:', data)
       }
 
-      // Refresh submissions list
-      await fetchSubmissions()
-
+      // Close modal and clear state first
       setShowModal(false)
       setSelectedSubmission(null)
       setModalAction(null)
       setAdminNotes('')
 
+      // Then refresh submissions list
+      console.log('Refreshing submissions list...')
+      await fetchSubmissions()
+      console.log('Submissions list refreshed')
+
     } catch (err) {
       console.error('Error processing action:', err)
       alert(`Error ${modalAction}ing submission: ${err.message}`)
+
+      // Still close the modal even if there was an error
+      setShowModal(false)
+      setSelectedSubmission(null)
+      setModalAction(null)
+      setAdminNotes('')
     } finally {
       setProcessingAction(false)
     }
@@ -471,8 +501,11 @@ export default function AdminPanel() {
 
         if (insertError) throw insertError
 
+        // Close modal first
         onClose()
-        // Refresh parent component would go here
+
+        // Refresh parent component submissions list
+        await fetchSubmissions()
 
       } catch (err) {
         console.error('Error approving with changes:', err)
@@ -854,7 +887,7 @@ export default function AdminPanel() {
                     Edit
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const confirmed = window.confirm(
                         `Are you sure you want to approve this submission?\n\n` +
                         `Team: ${submission.team_name}\n` +
@@ -874,9 +907,19 @@ export default function AdminPanel() {
                     Approve
                   </button>
                   <button
-                    onClick={() => {
-                      onClose()
-                      handleAction(submission, 'reject')
+                    onClick={async () => {
+                      const confirmed = window.confirm(
+                        `Are you sure you want to reject this submission?\n\n` +
+                        `Team: ${submission.team_name}\n` +
+                        `Season: ${submission.season}\n` +
+                        `Type: ${submission.jersey_type}\n\n` +
+                        `This will permanently delete the submission.`
+                      )
+
+                      if (confirmed) {
+                        onClose()
+                        handleAction(submission, 'reject')
+                      }
                     }}
                     className="action-button action-button-reject"
                   >

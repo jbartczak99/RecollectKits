@@ -9,6 +9,7 @@ import Jerseys from './pages/Jerseys'
 import Collection from './pages/Collection'
 import JerseyDetails from './components/jerseys/JerseyDetails'
 import AdminPanel from './components/admin/AdminPanel'
+import MySubmissions from './pages/MySubmissions'
 
 function App() {
   return (
@@ -39,6 +40,16 @@ function App() {
                   <ApprovalGate>
                     <ProtectedRoute>
                       <AdminPanel />
+                    </ProtectedRoute>
+                  </ApprovalGate>
+                }
+              />
+              <Route
+                path="/my-submissions"
+                element={
+                  <ApprovalGate>
+                    <ProtectedRoute>
+                      <MySubmissions />
                     </ProtectedRoute>
                   </ApprovalGate>
                 }

@@ -9,7 +9,8 @@ import {
   UserIcon,
   ChevronDownIcon,
   CogIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import './Navigation.css'
 
@@ -115,6 +116,14 @@ export default function Navigation() {
 
                   {/* Menu Items */}
                   <div>
+                    <Link
+                      to="/my-submissions"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="user-dropdown-item"
+                    >
+                      <DocumentTextIcon className="user-dropdown-icon" />
+                      <span>My Submissions</span>
+                    </Link>
                     {isAdmin && (
                       <Link
                         to="/admin"
@@ -194,6 +203,14 @@ export default function Navigation() {
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <Link
+                    to="/my-submissions"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <DocumentTextIcon className="h-4 w-4" />
+                    My Submissions
+                  </Link>
                   {isAdmin && (
                     <Link
                       to="/admin"

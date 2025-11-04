@@ -7,6 +7,7 @@ import AuthLayout from './components/auth/AuthLayout'
 import Home from './pages/Home'
 import Jerseys from './pages/Jerseys'
 import Collection from './pages/Collection'
+import CollectionDetail from './pages/CollectionDetail'
 import JerseyDetails from './components/jerseys/JerseyDetails'
 import AdminPanel from './components/admin/AdminPanel'
 import MySubmissions from './pages/MySubmissions'
@@ -30,6 +31,16 @@ function App() {
                   <ApprovalGate>
                     <ProtectedRoute>
                       <Collection />
+                    </ProtectedRoute>
+                  </ApprovalGate>
+                }
+              />
+              <Route
+                path="/collection/:collectionId"
+                element={
+                  <ApprovalGate>
+                    <ProtectedRoute>
+                      <CollectionDetail />
                     </ProtectedRoute>
                   </ApprovalGate>
                 }

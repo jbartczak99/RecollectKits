@@ -123,6 +123,68 @@ export function usePublicJerseys(searchTerm = '', filters = {}) {
   }
 }
 
+// Hook for checking if jerseys are in user's main collection (user_jerseys)
+export function useUserJerseys() {
+  const { user } = useAuth()
+  const [userJerseys, setUserJerseys] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) {
+      setUserJerseys([])
+      setLoading(false)
+      return
+    }
+
+    const fetchUserJerseys = async () => {
+      setLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from('user_jerseys')
+          .select('public_jersey_id')
+          .eq('user_id', user.id)
+
+        if (error) throw error
+        setUserJerseys(data || [])
+      } catch (err) {
+        console.error('Error fetching user jerseys:', err)
+        setUserJerseys([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserJerseys()
+  }, [user])
+
+  const isInMainCollection = (publicJerseyId) => {
+    return userJerseys.some(item => item.public_jersey_id === publicJerseyId)
+  }
+
+  const refetch = async () => {
+    if (!user) return
+
+    try {
+      const { data, error } = await supabase
+        .from('user_jerseys')
+        .select('public_jersey_id')
+        .eq('user_id', user.id)
+
+      if (error) throw error
+      setUserJerseys(data || [])
+    } catch (err) {
+      console.error('Error refetching user jerseys:', err)
+    }
+  }
+
+  return {
+    userJerseys,
+    loading,
+    isInMainCollection,
+    refetch
+  }
+}
+
 // Hook for managing user's personal collections
 export function useUserCollections() {
   const { user } = useAuth()
@@ -140,7 +202,7 @@ export function useUserCollections() {
     const fetchUserCollections = async () => {
       setLoading(true)
       setError(null)
-      
+
       try {
         const { data, error } = await supabase
           .from('user_collections')
@@ -150,7 +212,7 @@ export function useUserCollections() {
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-        
+
         if (error) throw error
         setCollections(data || [])
       } catch (err) {

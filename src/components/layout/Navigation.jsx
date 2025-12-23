@@ -58,7 +58,11 @@ export default function Navigation() {
       <div className="navbar-container">
         <div className="flex items-center">
           <Link to="/" className="navbar-brand">
-            RecollectKits
+            <img
+              src="/logo.png"
+              alt="RecollectKits"
+              className="navbar-logo"
+            />
           </Link>
           
           <div className="navbar-nav" style={{marginLeft: '2rem'}}>

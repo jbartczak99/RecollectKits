@@ -1,3 +1,10 @@
+/* Navigation Logo */
+.navbar-logo {
+  height: 64px;
+  width: auto;
+  display: block;
+}
+
 /* Navigation Dropdown Styles */
 .user-dropdown {
   position: relative;

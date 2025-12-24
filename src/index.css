@@ -206,6 +206,7 @@ body {
   z-index: 50;
   border-bottom: 2px solid var(--accent-green-300);
   backdrop-filter: blur(10px);
+  padding-top: env(safe-area-inset-top);
 }
 
 .navbar-container {

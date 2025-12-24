@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { supabase } from '../../lib/supabase'
 import {
+  Bars3Icon,
+  XMarkIcon,
   HomeIcon,
   UserIcon,
   ChevronDownIcon,
@@ -17,6 +19,7 @@ import './Navigation.css'
 export default function Navigation() {
   const { user, profile, signOut } = useAuth()
   const location = useLocation()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
 
   const navigation = [
@@ -31,6 +34,7 @@ export default function Navigation() {
 
   const handleSignOut = async () => {
     await signOut()
+    setMobileMenuOpen(false)
     setUserDropdownOpen(false)
   }
 
@@ -160,65 +164,52 @@ export default function Navigation() {
           )}
         </div>
 
-        {/* Mobile user button - only show sign in on mobile header if not logged in */}
-        <div className="mobile-menu-toggle">
+        {/* Mobile: Sign In button and Hamburger menu */}
+        <div className="mobile-header-right">
           {!user && (
             <Link to="/auth" className="btn btn-primary btn-sm">
               Sign In
             </Link>
           )}
+          <button
+            className="mobile-menu-toggle-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <XMarkIcon className="h-6 w-6" />
+            ) : (
+              <Bars3Icon className="h-6 w-6" />
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="mobile-bottom-nav">
-        {navigation.map((item) => {
-          if (item.protected && !user) return null
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`mobile-bottom-nav-item ${isActive(item.href) ? 'active' : ''}`}
-            >
-              <Icon className="h-6 w-6" />
-              <span>{item.name}</span>
-            </Link>
-          )
-        })}
-        {user ? (
-          <button
-            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-            className={`mobile-bottom-nav-item ${userDropdownOpen ? 'active' : ''}`}
-          >
-            <div className="mobile-user-avatar">
-              {(user.user_metadata?.display_name || user.user_metadata?.username || user.email)?.charAt(0).toUpperCase()}
-            </div>
-            <span>Account</span>
-          </button>
-        ) : null}
-      </div>
+      {/* Mobile Dropdown Menu */}
+      {mobileMenuOpen && (
+        <div className="mobile-dropdown-menu">
+          {navigation.map((item) => {
+            if (item.protected && !user) return null
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`mobile-dropdown-item ${isActive(item.href) ? 'active' : ''}`}
+              >
+                <Icon className="h-5 w-5" />
+                {item.name}
+              </Link>
+            )
+          })}
 
-      {/* Mobile Account Menu Popup */}
-      {userDropdownOpen && (
-        <div className="mobile-account-popup">
-          <div className="mobile-account-popup-content">
-            <div className="flex items-center gap-3 p-4 border-b border-gray-200">
-              <div className="user-avatar">
-                {(user?.user_metadata?.display_name || user?.user_metadata?.username || user?.email)?.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div className="font-medium text-gray-900">
-                  {user?.user_metadata?.display_name || user?.user_metadata?.username || user?.email?.split('@')[0]}
-                </div>
-                <div className="text-xs text-gray-500">{user?.email}</div>
-              </div>
-            </div>
-            <div className="p-2">
+          {user && (
+            <>
+              <div className="mobile-dropdown-divider" />
               <Link
                 to="/my-submissions"
-                onClick={() => setUserDropdownOpen(false)}
-                className="mobile-account-item"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mobile-dropdown-item"
               >
                 <DocumentTextIcon className="h-5 w-5" />
                 My Submissions
@@ -226,8 +217,8 @@ export default function Navigation() {
               {isAdmin && (
                 <Link
                   to="/admin"
-                  onClick={() => setUserDropdownOpen(false)}
-                  className="mobile-account-item"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="mobile-dropdown-item"
                 >
                   <ShieldCheckIcon className="h-5 w-5" />
                   Admin Panel
@@ -235,16 +226,15 @@ export default function Navigation() {
               )}
               <button
                 onClick={handleSignOut}
-                className="mobile-account-item text-red-600"
+                className="mobile-dropdown-item text-red-600"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 Sign Out
               </button>
-            </div>
-          </div>
-          <div className="mobile-account-overlay" onClick={() => setUserDropdownOpen(false)} />
+            </>
+          )}
         </div>
       )}
     </nav>

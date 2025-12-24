@@ -23,6 +23,7 @@ export default function Navigation() {
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Kits', href: '/jerseys', icon: HomeIcon },
+    { name: 'About', href: '/about', icon: HomeIcon },
     { name: 'Collection', href: '/collection', icon: HomeIcon, protected: true },
   ]
 

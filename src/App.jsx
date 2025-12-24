@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import Navigation from './components/layout/Navigation'
+import Footer from './components/layout/Footer'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import ApprovalGate from './components/auth/ApprovalGate'
 import AuthLayout from './components/auth/AuthLayout'
@@ -11,6 +12,7 @@ import CollectionDetail from './pages/CollectionDetail'
 import JerseyDetails from './components/jerseys/JerseyDetails'
 import AdminPanel from './components/admin/AdminPanel'
 import MySubmissions from './pages/MySubmissions'
+import About from './pages/About'
 
 function App() {
   return (
@@ -25,6 +27,7 @@ function App() {
               <Route path="/auth" element={<AuthLayout />} />
               <Route path="/jerseys" element={<Jerseys />} />
               <Route path="/jerseys/:id" element={<JerseyDetails />} />
+              <Route path="/about" element={<About />} />
               <Route
                 path="/collection"
                 element={
@@ -67,6 +70,8 @@ function App() {
               />
             </Routes>
           </main>
+
+          <Footer />
         </div>
       </Router>
     </AuthProvider>

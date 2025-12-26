@@ -233,23 +233,23 @@ export default function AdminPanel() {
 
         if (updateError) throw updateError
 
-        // Copy to main jerseys table
+        // Copy to public_jerseys table
         const jerseyData = {
           team_name: selectedSubmission.team_name,
-          season_year: selectedSubmission.season,
+          season: selectedSubmission.season,
           jersey_type: selectedSubmission.jersey_type,
           manufacturer: selectedSubmission.brand,
-          sponsor: selectedSubmission.main_sponsor,
+          league: selectedSubmission.league,
+          front_image_url: selectedSubmission.front_image_url,
+          back_image_url: selectedSubmission.back_image_url,
           primary_color: selectedSubmission.primary_color,
           secondary_color: selectedSubmission.secondary_color,
           description: selectedSubmission.description,
-          image_url: selectedSubmission.front_image_url,
-          created_by: selectedSubmission.submitted_by,
-          approved: true
+          created_by: selectedSubmission.submitted_by
         }
 
         const { error: insertError } = await supabase
-          .from('jerseys')
+          .from('public_jerseys')
           .insert(jerseyData)
 
         if (insertError) throw insertError
@@ -480,23 +480,23 @@ export default function AdminPanel() {
 
         if (updateError) throw updateError
 
-        // Then copy to main jerseys table with edited data
+        // Then copy to public_jerseys table with edited data
         const jerseyData = {
           team_name: editedData.team_name,
-          season_year: editedData.season,
+          season: editedData.season,
           jersey_type: editedData.jersey_type,
           manufacturer: editedData.brand,
-          sponsor: editedData.main_sponsor,
+          league: editedData.league,
+          front_image_url: submission.front_image_url,
+          back_image_url: submission.back_image_url,
           primary_color: editedData.primary_color,
           secondary_color: editedData.secondary_color,
           description: editedData.description,
-          image_url: submission.front_image_url,
-          created_by: submission.submitted_by,
-          approved: true
+          created_by: submission.submitted_by
         }
 
         const { error: insertError } = await supabase
-          .from('jerseys')
+          .from('public_jerseys')
           .insert(jerseyData)
 
         if (insertError) throw insertError

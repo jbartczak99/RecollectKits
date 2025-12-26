@@ -6,6 +6,7 @@ export default function SignupForm({ onToggle }) {
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
+  const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -13,18 +14,25 @@ export default function SignupForm({ onToggle }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
     setMessage('')
 
+    // Validate terms agreement
+    if (!agreeToTerms) {
+      setError('You must agree to the Terms of Service and Privacy Policy to create an account')
+      return
+    }
+
+    setLoading(true)
+
     const { error } = await signUp({ email, password, username, fullName })
-    
+
     if (error) {
       setError(error.message)
     } else {
       setMessage('Check your email for the confirmation link!')
     }
-    
+
     setLoading(false)
   }
 
@@ -84,6 +92,44 @@ export default function SignupForm({ onToggle }) {
         />
         <p className="mt-1 text-xs text-gray-500">Password must be at least 6 characters</p>
       </div>
+
+      {/* Terms Agreement Checkbox */}
+      <div className="pt-2">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            name="agreeToTerms"
+            checked={agreeToTerms}
+            onChange={(e) => setAgreeToTerms(e.target.checked)}
+            required
+            aria-required="true"
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+            style={{ minWidth: '16px', minHeight: '16px' }}
+          />
+          <span className="text-sm text-gray-700">
+            I agree to the{' '}
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-green-600 hover:text-green-700 underline font-medium"
+            >
+              Terms of Service
+            </a>
+            {' '}and{' '}
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-green-600 hover:text-green-700 underline font-medium"
+            >
+              Privacy Policy
+            </a>
+            <span className="text-red-500 ml-1">*</span>
+          </span>
+        </label>
+      </div>
+
       {error && <p className="text-red-600 text-sm">{error}</p>}
       {message && <p className="text-green-600 text-sm">{message}</p>}
       <button

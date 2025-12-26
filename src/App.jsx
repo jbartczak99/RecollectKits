@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext.jsx'
+import ScrollToTop from './components/ScrollToTop'
 import Navigation from './components/layout/Navigation'
 import Footer from './components/layout/Footer'
 import ProtectedRoute from './components/auth/ProtectedRoute'
@@ -13,59 +14,72 @@ import JerseyDetails from './components/jerseys/JerseyDetails'
 import AdminPanel from './components/admin/AdminPanel'
 import MySubmissions from './pages/MySubmissions'
 import About from './pages/About'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen">
+        <ScrollToTop />
+        <div className="min-h-screen flex flex-col">
           <Navigation />
 
-          <main className="container py-8">
+          <main className="flex-1" style={{ backgroundColor: '#f5f5f5' }}>
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<div className="container py-8"><Home /></div>} />
               <Route path="/auth" element={<AuthLayout />} />
-              <Route path="/jerseys" element={<Jerseys />} />
-              <Route path="/jerseys/:id" element={<JerseyDetails />} />
-              <Route path="/about" element={<About />} />
+              <Route path="/jerseys" element={<div className="container py-8"><Jerseys /></div>} />
+              <Route path="/jerseys/:id" element={<div className="container py-8"><JerseyDetails /></div>} />
+              <Route path="/about" element={<div className="container py-8"><About /></div>} />
+              <Route path="/privacy" element={<div className="container py-8"><Privacy /></div>} />
+              <Route path="/terms" element={<div className="container py-8"><Terms /></div>} />
               <Route
                 path="/collection"
                 element={
-                  <ApprovalGate>
-                    <ProtectedRoute>
-                      <Collection />
-                    </ProtectedRoute>
-                  </ApprovalGate>
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <Collection />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
                 }
               />
               <Route
                 path="/collection/:collectionId"
                 element={
-                  <ApprovalGate>
-                    <ProtectedRoute>
-                      <CollectionDetail />
-                    </ProtectedRoute>
-                  </ApprovalGate>
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <CollectionDetail />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
                 }
               />
               <Route
                 path="/admin"
                 element={
-                  <ApprovalGate>
-                    <ProtectedRoute>
-                      <AdminPanel />
-                    </ProtectedRoute>
-                  </ApprovalGate>
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <AdminPanel />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
                 }
               />
               <Route
                 path="/my-submissions"
                 element={
-                  <ApprovalGate>
-                    <ProtectedRoute>
-                      <MySubmissions />
-                    </ProtectedRoute>
-                  </ApprovalGate>
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <MySubmissions />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
                 }
               />
             </Routes>

@@ -6,7 +6,6 @@ import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { EyeIcon } from '@heroicons/react/24/outline'
 import { FireIcon } from '@heroicons/react/24/outline'
 import { PlusIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { FireIcon as FireIconSolid } from '@heroicons/react/24/solid'
@@ -32,14 +31,6 @@ export default function Jerseys() {
   const [selectedManufacturers, setSelectedManufacturers] = useState([])
   const [selectedTypes, setSelectedTypes] = useState([])
   const [selectedSeason, setSelectedSeason] = useState('')
-
-  // Collapsible sections
-  const [openSections, setOpenSections] = useState({
-    league: false,
-    manufacturer: false,
-    type: false,
-    season: false
-  })
 
   const { jerseys: allJerseys, loading, error, addPublicJersey } = usePublicJerseys(searchTerm, filters)
   const { addToCollection, isInCollection } = useUserCollections()
@@ -123,10 +114,6 @@ export default function Jerseys() {
     )
   }
 
-  const toggleSection = (section) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
-  }
-
   const clearAllFilters = () => {
     setSelectedLeagues([])
     setSelectedManufacturers([])
@@ -151,45 +138,44 @@ export default function Jerseys() {
 
       </div>
 
-      <div className="space-y-4">
-        {/* Search Bar - Centered and Wide */}
-        <JerseySearch
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder="Search by team name..."
-        />
-
-        {/* Button and Results Counter Row */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex justify-center sm:justify-start">
-            {user && (
-              <button
-                onClick={() => setShowForm(true)}
-                style={{
-                  width: '140px',
-                  height: '36px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  borderRadius: '6px',
-                  border: 'none',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#2563eb'}
-                onMouseOut={(e) => e.target.style.backgroundColor = '#3b82f6'}
-              >
-                Add New Kit
-              </button>
-            )}
-          </div>
-
-          <div className="text-sm text-gray-500 text-center sm:text-right">
-            {loading ? 'Loading...' : `${jerseys.length} kits found`}
-          </div>
+      {/* Search Bar with Counter */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <JerseySearch
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search by team name..."
+          />
+        </div>
+        <div className="text-sm text-gray-500 whitespace-nowrap">
+          {loading ? 'Loading...' : `${jerseys.length} ${jerseys.length === 1 ? 'kit' : 'kits'} found`}
         </div>
       </div>
+
+      {/* Add New Kit Button */}
+      {user && (
+        <div>
+          <button
+            onClick={() => setShowForm(true)}
+            style={{
+              width: '140px',
+              height: '36px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              borderRadius: '6px',
+              border: 'none',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#2563eb'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#3b82f6'}
+          >
+            Add New Kit
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 rounded-lg shadow-sm">
@@ -202,196 +188,91 @@ export default function Jerseys() {
         </div>
       )}
 
-      {/* Main Content with Sidebar */}
-      <div className="flex gap-6">
-        {/* Filters Sidebar */}
-        <aside className="hidden lg:block w-64 flex-shrink-0">
-          <div className="bg-white rounded-lg shadow-sm sticky top-4">
-            {/* Filters Header */}
-            <div className="px-4 py-4 border-b border-gray-200">
-              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Filters</h3>
-              {activeFilterCount > 0 && (
-                <button
-                  onClick={clearAllFilters}
-                  className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Clear all ({activeFilterCount})
-                </button>
-              )}
-            </div>
+      {/* Filters Bar */}
+      <div className="bg-white rounded-lg shadow-sm p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-semibold text-gray-700">Filters:</span>
 
-            {/* Filter Sections */}
-            <div className="divide-y divide-gray-200">
-              {/* League Filter */}
-              <div>
-                <button
-                  onClick={() => toggleSection('league')}
-                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-gray-900">League</span>
-                    {selectedLeagues.length > 0 && (
-                      <span className="px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs font-medium">
-                        {selectedLeagues.length}
-                      </span>
-                    )}
-                  </div>
-                  {openSections.league ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  )}
-                </button>
-                {openSections.league && (
-                  <div className="px-4 pb-4 space-y-2 max-h-60 overflow-y-auto">
-                    {filterOptions.leagues.map(league => (
-                      <label key={league} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-2 rounded transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={selectedLeagues.includes(league)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedLeagues([...selectedLeagues, league])
-                            } else {
-                              setSelectedLeagues(selectedLeagues.filter(l => l !== league))
-                            }
-                          }}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
-                        />
-                        <span className="text-sm text-gray-700 flex-1">{league}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+          {/* League Filter */}
+          <select
+            value={selectedLeagues[0] || ''}
+            onChange={(e) => {
+              if (e.target.value) {
+                setSelectedLeagues([e.target.value])
+              } else {
+                setSelectedLeagues([])
+              }
+            }}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[140px]"
+          >
+            <option value="">All Leagues</option>
+            {filterOptions.leagues.map(league => (
+              <option key={league} value={league}>{league}</option>
+            ))}
+          </select>
 
-              {/* Manufacturer Filter */}
-              <div>
-                <button
-                  onClick={() => toggleSection('manufacturer')}
-                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-gray-900">Manufacturer</span>
-                    {selectedManufacturers.length > 0 && (
-                      <span className="px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs font-medium">
-                        {selectedManufacturers.length}
-                      </span>
-                    )}
-                  </div>
-                  {openSections.manufacturer ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  )}
-                </button>
-                {openSections.manufacturer && (
-                  <div className="px-4 pb-4 space-y-2 max-h-60 overflow-y-auto">
-                    {filterOptions.manufacturers.map(manufacturer => (
-                      <label key={manufacturer} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-2 rounded transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={selectedManufacturers.includes(manufacturer)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedManufacturers([...selectedManufacturers, manufacturer])
-                            } else {
-                              setSelectedManufacturers(selectedManufacturers.filter(m => m !== manufacturer))
-                            }
-                          }}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
-                        />
-                        <span className="text-sm text-gray-700 flex-1">{manufacturer}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+          {/* Manufacturer Filter */}
+          <select
+            value={selectedManufacturers[0] || ''}
+            onChange={(e) => {
+              if (e.target.value) {
+                setSelectedManufacturers([e.target.value])
+              } else {
+                setSelectedManufacturers([])
+              }
+            }}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[140px]"
+          >
+            <option value="">All Manufacturers</option>
+            {filterOptions.manufacturers.map(manufacturer => (
+              <option key={manufacturer} value={manufacturer}>{manufacturer}</option>
+            ))}
+          </select>
 
-              {/* Jersey Type Filter */}
-              <div>
-                <button
-                  onClick={() => toggleSection('type')}
-                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">Type</span>
-                    {selectedTypes.length > 0 && (
-                      <span className="px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs font-medium">
-                        {selectedTypes.length}
-                      </span>
-                    )}
-                  </div>
-                  {openSections.type ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  )}
-                </button>
-                {openSections.type && (
-                  <div className="px-4 pb-4 space-y-2">
-                    {JERSEY_TYPES.map(type => (
-                      <label key={type} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-2 rounded transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={selectedTypes.includes(type)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedTypes([...selectedTypes, type])
-                            } else {
-                              setSelectedTypes(selectedTypes.filter(t => t !== type))
-                            }
-                          }}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
-                        />
-                        <span className="text-sm text-gray-700 flex-1 capitalize">{type}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+          {/* Type Filter */}
+          <select
+            value={selectedTypes[0] || ''}
+            onChange={(e) => {
+              if (e.target.value) {
+                setSelectedTypes([e.target.value])
+              } else {
+                setSelectedTypes([])
+              }
+            }}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+          >
+            <option value="">All Types</option>
+            {JERSEY_TYPES.map(type => (
+              <option key={type} value={type} className="capitalize">{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+            ))}
+          </select>
 
-              {/* Season Filter */}
-              <div>
-                <button
-                  onClick={() => toggleSection('season')}
-                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-sm font-semibold text-gray-900">Season</span>
-                    {selectedSeason && (
-                      <span className="px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs font-medium">
-                        1
-                      </span>
-                    )}
-                  </div>
-                  {openSections.season ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-600 flex-shrink-0" />
-                  )}
-                </button>
-                {openSections.season && (
-                  <div className="px-4 pb-4">
-                    <select
-                      value={selectedSeason}
-                      onChange={(e) => setSelectedSeason(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="">All Seasons</option>
-                      {filterOptions.seasons.map(season => (
-                        <option key={season} value={season}>{season}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </aside>
+          {/* Season Filter */}
+          <select
+            value={selectedSeason}
+            onChange={(e) => setSelectedSeason(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white min-w-[120px]"
+          >
+            <option value="">All Seasons</option>
+            {filterOptions.seasons.map(season => (
+              <option key={season} value={season}>{season}</option>
+            ))}
+          </select>
 
-        {/* Jersey Grid */}
-        <div className="flex-1 min-w-0">
+          {/* Clear Filters Button */}
+          {activeFilterCount > 0 && (
+            <button
+              onClick={clearAllFilters}
+              className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md font-medium transition-colors"
+            >
+              Clear all ({activeFilterCount})
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Jersey Grid */}
+      <div>
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {[...Array(8)].map((_, i) => (
@@ -621,7 +502,6 @@ export default function Jerseys() {
               })}
             </div>
           )}
-        </div>
       </div>
 
       {/* Select Collection Modal */}

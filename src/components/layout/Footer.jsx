@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function Footer() {
   const startYear = 2025
   const currentYear = new Date().getFullYear()
@@ -21,7 +23,20 @@ export default function Footer() {
               <img
                 src="/instagram-logo.png"
                 alt="Instagram"
-                style={{ width: '32px', height: '32px', minWidth: '29px', minHeight: '29px' }}
+                style={{ width: '32px', height: '32px', minWidth: '30px', minHeight: '30px' }}
+              />
+            </a>
+            <a
+              href="https://www.tiktok.com/@recollectkits"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-opacity hover:opacity-80"
+              aria-label="Follow us on TikTok"
+            >
+              <img
+                src="/tiktok-logo.png"
+                alt="TikTok"
+                style={{ width: '38px', height: '38px', minWidth: '30px', minHeight: '30px' }}
               />
             </a>
           </div>
@@ -30,7 +45,16 @@ export default function Footer() {
         {/* Copyright */}
         <div className="mt-6 pt-4 border-t border-gray-200">
           <p className="text-center text-gray-500 text-sm">
-            &copy; {yearDisplay} RecollectKits. All rights reserved.
+            &copy; {yearDisplay} RecollectKits™. All rights reserved.
+          </p>
+          <p className="text-center text-gray-500 text-sm mt-2">
+            <Link to="/privacy" className="hover:text-gray-700 underline">
+              Privacy Policy
+            </Link>
+            <span className="text-gray-400" style={{ margin: '0 12px' }}>|</span>
+            <Link to="/terms" className="hover:text-gray-700 underline">
+              Terms of Service
+            </Link>
           </p>
         </div>
       </div>

@@ -10,77 +10,84 @@ export default function AuthLayout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
       </div>
     )
   }
 
-  // Don't redirect immediately to allow error messages to show
   if (user && !loading) {
     return <Navigate to="/" replace />
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center mb-6">
-          <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-full p-4 shadow-lg">
-            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z" />
-            </svg>
+    <div className="flex items-center justify-center py-12 px-4" style={{ minHeight: 'calc(100vh - 200px)' }}>
+      <div className="w-full" style={{ maxWidth: '420px' }}>
+        {/* Card */}
+        <div
+          style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            padding: '32px'
+          }}
+        >
+          {/* Brand */}
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827', marginBottom: '8px' }}>
+              RecollectKits
+            </h1>
+            <p style={{ fontSize: '14px', color: '#6b7280' }}>
+              {isLogin
+                ? 'Sign in to manage your collection and connect with collectors.'
+                : 'Create an account to start cataloging your kit collection.'
+              }
+            </p>
           </div>
-        </div>
-        <h1 className="text-center text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-          RecollectKits
-        </h1>
-        <p className="mt-3 text-center text-base text-gray-600 font-medium">
-          The ultimate jersey collection platform
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        {isLogin ? (
-          <LoginForm onSuccess={() => {}} />
-        ) : (
-          <div className="space-y-6">
-            {/* Alpha Notice */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-amber-800">
-                    Alpha Testing Stage
-                  </h3>
-                  <div className="mt-2 text-sm text-amber-700">
-                    <p>
-                      We're currently in alpha testing. New accounts require manual approval before access is granted.
-                      After signing up, please allow 24-48 hours for review.
-                    </p>
-                  </div>
-                </div>
+          {/* Alpha Notice for Sign Up */}
+          {!isLogin && (
+            <div style={{
+              marginBottom: '24px',
+              backgroundColor: '#fffbeb',
+              border: '1px solid #fcd34d',
+              borderRadius: '6px',
+              padding: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <svg style={{ width: '20px', height: '20px', color: '#f59e0b', flexShrink: 0 }} fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <p style={{ marginLeft: '8px', fontSize: '12px', color: '#92400e' }}>
+                  <span style={{ fontWeight: '600' }}>Alpha Testing:</span> New accounts require approval. Please allow 24-48 hours for review.
+                </p>
               </div>
             </div>
-            <RegisterForm onSuccess={() => {}} />
-          </div>
-        )}
+          )}
 
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="group text-green-600 hover:text-green-500 text-sm font-medium transition-all duration-200 hover:scale-105"
-          >
-            <span className="border-b border-transparent group-hover:border-green-500 transition-all duration-200">
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"
-              }
-            </span>
-          </button>
+          {/* Form */}
+          {isLogin ? (
+            <LoginForm onSuccess={() => {}} />
+          ) : (
+            <RegisterForm onSuccess={() => {}} />
+          )}
+
+          {/* Toggle Link */}
+          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              style={{
+                fontSize: '14px',
+                color: '#059669',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

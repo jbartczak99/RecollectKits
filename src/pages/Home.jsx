@@ -15,7 +15,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="hero">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Welcome to RecollectKits
+          Welcome to RecollectKits™
         </h1>
         <p className="text-xl text-gray-600 mb-8">
           The ultimate platform for kit collectors. Discover, collect, and connect with fellow enthusiasts.
@@ -60,17 +60,14 @@ export default function Home() {
                 <a href="https://www.instagram.com/recollectkits/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram">
                   <img src="/instagram-logo.png" alt="Instagram" style={{ width: '32px', height: '32px' }} />
                 </a>
+                <a href="https://www.tiktok.com/@recollectkits" target="_blank" rel="noopener noreferrer" aria-label="Follow us on TikTok">
+                  <img src="/tiktok-logo.png" alt="TikTok" style={{ width: '38px', height: '38px' }} />
+                </a>
                 <button className="btn btn-secondary" disabled>
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
                   X (Twitter)
-                </button>
-                <button className="btn btn-secondary" disabled>
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-4.59v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 112.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005.76 20.5a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-4.4a4.85 4.85 0 01-1.8-.5z"/>
-                  </svg>
-                  TikTok
                 </button>
                 <button className="btn btn-secondary" disabled>
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -80,7 +77,7 @@ export default function Home() {
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-3">
-                Social accounts coming soon!
+                X and YouTube coming soon!
               </p>
             </div>
           </div>

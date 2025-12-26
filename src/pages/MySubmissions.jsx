@@ -5,9 +5,6 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   PhotoIcon,
-  CalendarIcon,
-  FunnelIcon,
-  EyeIcon,
   InboxIcon
 } from '@heroicons/react/24/outline'
 import { supabase } from '../lib/supabase'
@@ -19,6 +16,7 @@ export default function MySubmissions() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [imageStates, setImageStates] = useState({}) // Track front/back for each submission
 
   useEffect(() => {
     if (user) {
@@ -52,9 +50,7 @@ export default function MySubmissions() {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     })
   }
 
@@ -233,107 +229,103 @@ export default function MySubmissions() {
             </div>
           </div>
         ) : (
-          // Submissions Grid
-          <div className="space-y-3">
+          // Submissions Grid - Card Format
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredSubmissions.map((submission) => (
               <div
                 key={submission.id}
-                className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all overflow-hidden"
+                className="card border-2 border-gray-200 hover:border-primary-300 transition-all duration-200 overflow-hidden max-w-md mx-auto w-full flex flex-col"
               >
-                <div className="p-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    {/* Image */}
-                    <div className="flex-shrink-0">
-                      {submission.front_image_url ? (
-                        <img
-                          src={submission.front_image_url}
-                          alt={`${submission.team_name} ${submission.season}`}
-                          className="w-24 h-24 object-contain rounded-md border border-gray-200 bg-gray-50"
-                        />
-                      ) : (
-                        <div className="w-24 h-24 bg-gray-100 rounded-md border border-dashed border-gray-300 flex items-center justify-center">
-                          <PhotoIcon className="w-8 h-8 text-gray-400" />
-                        </div>
+                {/* Jersey Image */}
+                {submission.front_image_url || submission.back_image_url ? (
+                  <div className="h-64 overflow-hidden flex items-center justify-center bg-gray-50">
+                    <img
+                      src={(
+                        submission.front_image_url && submission.back_image_url
+                          ? (imageStates[submission.id] ? submission.back_image_url : submission.front_image_url)
+                          : (submission.front_image_url || submission.back_image_url)
+                      )}
+                      alt={`${submission.team_name} ${submission.jersey_type} kit`}
+                      className="max-w-full max-h-full object-contain"
+                      style={{maxWidth: '250px', maxHeight: '280px'}}
+                      onError={(e) => {
+                        e.target.style.display = 'none'
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="h-64 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
+                    <PhotoIcon className="w-16 h-16 text-gray-400" />
+                  </div>
+                )}
+
+                {/* Front | Back toggle */}
+                {submission.front_image_url && submission.back_image_url && (
+                  <div className="px-4 py-2 text-center border-b border-gray-100">
+                    <div className="flex items-center justify-center gap-2 text-sm">
+                      <button
+                        onClick={() => setImageStates(prev => ({...prev, [submission.id]: false}))}
+                        className={`font-medium transition-colors duration-200 hover:bg-gray-100 px-2 py-1 rounded ${
+                          !imageStates[submission.id]
+                            ? 'text-blue-600'
+                            : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                      >
+                        Front
+                      </button>
+                      <span className="text-gray-300">|</span>
+                      <button
+                        onClick={() => setImageStates(prev => ({...prev, [submission.id]: true}))}
+                        className={`font-medium transition-colors duration-200 hover:bg-gray-100 px-2 py-1 rounded ${
+                          imageStates[submission.id]
+                            ? 'text-blue-600'
+                            : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Jersey Details */}
+                <div className="card-body flex-1 flex flex-col">
+                  <div className="mb-3">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {submission.team_name || 'Unknown Team'}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {submission.season || 'Unknown Season'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {submission.jersey_type && (
+                        <span className="badge badge-blue capitalize">
+                          {submission.jersey_type}
+                        </span>
+                      )}
+                      {submission.brand && (
+                        <span className="badge badge-gray">
+                          {submission.brand}
+                        </span>
                       )}
                     </div>
+                  </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-3">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-gray-900 mb-1.5">
-                            {submission.team_name}
-                          </h3>
-                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
-                            <span className="flex items-center gap-1">
-                              <span className="font-medium text-gray-500">Season:</span>
-                              <span className="text-gray-900 font-medium">{submission.season}</span>
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <span className="font-medium text-gray-500">Type:</span>
-                              <span className="text-gray-900 font-medium capitalize">{submission.jersey_type}</span>
-                            </span>
-                            {submission.kit_type && (
-                              <span className="flex items-center gap-1">
-                                <span className="font-medium text-gray-500">Kit:</span>
-                                <span className="text-gray-900 font-medium capitalize">{submission.kit_type}</span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {getStatusBadge(submission.status)}
-                        </div>
-                      </div>
+                  {/* Admin Notes */}
+                  {submission.admin_notes && (
+                    <div className="mb-3 p-2.5 bg-amber-50 rounded border border-amber-200">
+                      <p className="text-xs font-semibold text-amber-900 mb-1">Admin Notes:</p>
+                      <p className="text-xs text-amber-800">{submission.admin_notes}</p>
+                    </div>
+                  )}
 
-                      {/* Additional Details - Compact */}
-                      {(submission.brand || submission.league || submission.main_sponsor) && (
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-xs">
-                          {submission.brand && (
-                            <span className="text-gray-600">
-                              <span className="font-medium text-gray-500">Brand:</span>{' '}
-                              <span className="text-gray-900">{submission.brand}</span>
-                            </span>
-                          )}
-                          {submission.league && (
-                            <span className="text-gray-600">
-                              <span className="font-medium text-gray-500">League:</span>{' '}
-                              <span className="text-gray-900">{submission.league}</span>
-                            </span>
-                          )}
-                          {submission.main_sponsor && (
-                            <span className="text-gray-600">
-                              <span className="font-medium text-gray-500">Sponsor:</span>{' '}
-                              <span className="text-gray-900">{submission.main_sponsor}</span>
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Admin Notes - Compact */}
-                      {submission.admin_notes && (
-                        <div className="mb-3 p-2.5 bg-amber-50 rounded border border-amber-200">
-                          <p className="text-xs font-semibold text-amber-900 mb-1">Admin Notes:</p>
-                          <p className="text-xs text-amber-800">{submission.admin_notes}</p>
-                        </div>
-                      )}
-
-                      {/* Submission Info - Compact */}
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500 border-t border-gray-100 pt-3">
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="w-3.5 h-3.5" />
-                          <span>{formatDate(submission.created_at)}</span>
-                        </div>
-                        {submission.status === 'approved' && (
-                          <Link
-                            to="/kits"
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium"
-                          >
-                            <EyeIcon className="w-3.5 h-3.5" />
-                            View in Database
-                          </Link>
-                        )}
-                      </div>
+                  {/* Status and Date */}
+                  <div className="mt-auto pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      {getStatusBadge(submission.status)}
+                      <span className="text-xs text-gray-500">
+                        {formatDate(submission.created_at)}
+                      </span>
                     </div>
                   </div>
                 </div>

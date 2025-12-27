@@ -298,6 +298,11 @@ export default function MySubmissions() {
                       {submission.season || 'Unknown Season'}
                     </p>
                     <div className="flex flex-wrap gap-2">
+                      {submission.kit_type && (
+                        <span className={`badge ${submission.kit_type === 'international' ? 'badge-purple' : 'badge-green'}`}>
+                          {submission.kit_type === 'international' ? 'International' : 'Club'}
+                        </span>
+                      )}
                       {submission.jersey_type && (
                         <span className="badge badge-blue capitalize">
                           {submission.jersey_type}

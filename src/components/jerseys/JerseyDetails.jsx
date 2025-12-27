@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeftIcon, HeartIcon, StarIcon, FireIcon } from '@heroicons/react/24/outline'
-import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid, FireIcon as FireIconSolid } from '@heroicons/react/24/solid'
+import { ArrowLeftIcon, HeartIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { useUserCollections } from '../../hooks/useJerseys'
+import { useUserCollections, useJerseyLikes } from '../../hooks/useJerseys'
 import { supabase } from '../../lib/supabase'
 
 export default function JerseyDetails() {
@@ -15,6 +15,7 @@ export default function JerseyDetails() {
   const [error, setError] = useState(null)
   const [selectedImage, setSelectedImage] = useState(null)
   const { addToCollection, isInCollection } = useUserCollections()
+  const { hasLiked, getLikeCount, toggleLike } = useJerseyLikes(user?.id)
 
   useEffect(() => {
     const fetchJersey = async () => {
@@ -54,15 +55,27 @@ export default function JerseyDetails() {
       alert('Please sign in to add jerseys to your collection')
       return
     }
-    
+
     const { error } = await addToCollection(jerseyId, type)
     if (error) {
       alert(`Error adding to collection: ${error}`)
     }
   }
 
+  const handleLike = async (jerseyId) => {
+    if (!user) {
+      alert('Please sign in to like kits')
+      return
+    }
+
+    const { error } = await toggleLike(jerseyId)
+    if (error) {
+      alert(`Error: ${error}`)
+    }
+  }
+
   const handleBack = () => {
-    navigate('/jerseys')
+    navigate(-1) // Go back to previous page in browser history
   }
 
   if (loading) {
@@ -353,59 +366,52 @@ export default function JerseyDetails() {
               </div>
 
               {/* Action Buttons */}
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-white rounded-lg shadow-md p-4">
                 {user ? (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Add to Collection</h3>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleAddToCollection(jersey.id, 'like')}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                          isInCollection(jersey.id, 'like')
-                            ? 'bg-blue-100 text-blue-700 border-2 border-blue-200 shadow-sm'
-                            : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 hover:shadow-sm'
-                        }`}
-                      >
-                        {isInCollection(jersey.id, 'like') ? (
-                          <FireIconSolid className="h-5 w-5" />
-                        ) : (
-                          <FireIcon className="h-5 w-5" />
-                        )}
-                        Like
-                      </button>
-                      
-                      <button
-                        onClick={() => handleAddToCollection(jersey.id, 'have')}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                          isInCollection(jersey.id, 'have')
-                            ? 'bg-green-100 text-green-700 border-2 border-green-200 shadow-sm'
-                            : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-green-50 hover:border-green-200 hover:text-green-600 hover:shadow-sm'
-                        }`}
-                      >
-                        {isInCollection(jersey.id, 'have') ? (
-                          <HeartIconSolid className="h-5 w-5" />
-                        ) : (
-                          <HeartIcon className="h-5 w-5" />
-                        )}
-                        Have
-                      </button>
-                      
-                      <button
-                        onClick={() => handleAddToCollection(jersey.id, 'want')}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                          isInCollection(jersey.id, 'want')
-                            ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-200 shadow-sm'
-                            : 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-600 hover:shadow-sm'
-                        }`}
-                      >
-                        {isInCollection(jersey.id, 'want') ? (
-                          <StarIconSolid className="h-5 w-5" />
-                        ) : (
-                          <StarIcon className="h-5 w-5" />
-                        )}
-                        Want
-                      </button>
-                    </div>
+                  <div className="flex gap-2 max-w-xs">
+                    <button
+                      onClick={() => handleLike(jersey.id)}
+                      className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                        hasLiked(jersey.id)
+                          ? 'bg-red-100 text-red-700 border border-red-200'
+                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                      }`}
+                    >
+                      {hasLiked(jersey.id) ? (
+                        <HeartIconSolid style={{width: '20px', height: '20px'}} />
+                      ) : (
+                        <HeartIcon style={{width: '20px', height: '20px'}} />
+                      )}
+                      <span style={{fontSize: '12px'}}>{getLikeCount(jersey.id) > 0 ? getLikeCount(jersey.id) : 'Like'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddToCollection(jersey.id, 'have')}
+                      className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                        isInCollection(jersey.id, 'have')
+                          ? 'bg-green-100 text-green-700 border border-green-200'
+                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-green-50 hover:border-green-200 hover:text-green-600'
+                      }`}
+                    >
+                      <CheckCircleIcon style={{width: '20px', height: '20px'}} />
+                      <span style={{fontSize: '12px'}}>Have</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddToCollection(jersey.id, 'want')}
+                      className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                        isInCollection(jersey.id, 'want')
+                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-600'
+                      }`}
+                    >
+                      {isInCollection(jersey.id, 'want') ? (
+                        <StarIconSolid style={{width: '20px', height: '20px'}} />
+                      ) : (
+                        <StarIcon style={{width: '20px', height: '20px'}} />
+                      )}
+                      <span style={{fontSize: '12px'}}>Want</span>
+                    </button>
                   </div>
                 ) : (
                   <div className="text-center">

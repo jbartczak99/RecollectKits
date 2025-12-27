@@ -10,7 +10,7 @@ import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { FireIcon as FireIconSolid } from '@heroicons/react/24/solid'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { usePublicJerseys, useUserCollections, useUserJerseys } from '../hooks/useJerseys'
+import { usePublicJerseys, useUserCollections, useUserJerseys, useJerseyLikes } from '../hooks/useJerseys'
 import JerseySearch from '../components/jerseys/JerseySearch'
 import KitSubmissionWizard from '../components/jerseys/KitSubmissionWizard'
 import SelectCollectionModal from '../components/collections/SelectCollectionModal'
@@ -35,6 +35,7 @@ export default function Jerseys() {
   const { jerseys: allJerseys, loading, error, addPublicJersey } = usePublicJerseys(searchTerm, filters)
   const { addToCollection, isInCollection } = useUserCollections()
   const { isInMainCollection, refetch: refetchUserJerseys } = useUserJerseys()
+  const { hasLiked, getLikeCount, toggleLike } = useJerseyLikes(user?.id)
 
   // Extract unique filter options from jerseys
   const filterOptions = useMemo(() => {
@@ -85,6 +86,18 @@ export default function Jerseys() {
     const { error } = await addToCollection(jerseyId, type)
     if (error) {
       alert(`Error adding to collection: ${error}`)
+    }
+  }
+
+  const handleLike = async (jerseyId) => {
+    if (!user) {
+      alert('Please sign in to like kits')
+      return
+    }
+
+    const { error } = await toggleLike(jerseyId)
+    if (error) {
+      alert(`Error: ${error}`)
     }
   }
 
@@ -397,6 +410,11 @@ export default function Jerseys() {
                           {jersey.season || 'Unknown Season'}
                         </p>
                         <div className="flex flex-wrap gap-2 mb-3">
+                          {jersey.kit_type && (
+                            <span className={`badge ${jersey.kit_type === 'international' ? 'badge-purple' : 'badge-green'}`}>
+                              {jersey.kit_type === 'international' ? 'International' : 'Club'}
+                            </span>
+                          )}
                           {jersey.jersey_type && (
                             <span className="badge badge-blue">
                               {jersey.jersey_type}
@@ -415,19 +433,19 @@ export default function Jerseys() {
                         <div className="mt-auto">
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleAddToCollection(jersey.id, 'like')}
+                              onClick={() => handleLike(jersey.id)}
                               className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                isInCollection(jersey.id, 'like')
-                                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                  : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-blue-50 hover:text-blue-600'
+                                hasLiked(jersey.id)
+                                  ? 'bg-red-100 text-red-700 border border-red-200'
+                                  : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-red-50 hover:text-red-600'
                               }`}
                             >
-                              {isInCollection(jersey.id, 'like') ? (
-                                <FireIconSolid className="h-4 w-4" />
+                              {hasLiked(jersey.id) ? (
+                                <HeartIconSolid className="h-4 w-4" />
                               ) : (
-                                <FireIcon className="h-4 w-4" />
+                                <HeartIcon className="h-4 w-4" />
                               )}
-                              Like
+                              {getLikeCount(jersey.id) > 0 ? getLikeCount(jersey.id) : 'Like'}
                             </button>
 
                             <button
@@ -439,9 +457,9 @@ export default function Jerseys() {
                               }`}
                             >
                               {isInCollection(jersey.id, 'have') ? (
-                                <HeartIconSolid className="h-4 w-4" />
+                                <CheckCircleIcon className="h-4 w-4" />
                               ) : (
-                                <HeartIcon className="h-4 w-4" />
+                                <CheckCircleIcon className="h-4 w-4" />
                               )}
                               Have
                             </button>

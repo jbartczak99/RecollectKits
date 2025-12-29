@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeftIcon, HeartIcon, StarIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { useAuth } from '../../contexts/AuthContext.jsx'
-import { useUserCollections, useJerseyLikes } from '../../hooks/useJerseys'
+import { useUserJerseys, useJerseyLikes, useWishlist } from '../../hooks/useJerseys'
 import { supabase } from '../../lib/supabase'
 
 export default function JerseyDetails() {
@@ -14,8 +14,9 @@ export default function JerseyDetails() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedImage, setSelectedImage] = useState(null)
-  const { addToCollection, isInCollection } = useUserCollections()
+  const { isInMainCollection, addToMainCollection } = useUserJerseys()
   const { hasLiked, getLikeCount, toggleLike } = useJerseyLikes(user?.id)
+  const { isInWishlist, toggleWishlist } = useWishlist(user?.id)
 
   useEffect(() => {
     const fetchJersey = async () => {
@@ -50,13 +51,13 @@ export default function JerseyDetails() {
     }
   }, [id])
 
-  const handleAddToCollection = async (jerseyId, type) => {
+  const handleHave = async (jerseyId) => {
     if (!user) {
       alert('Please sign in to add jerseys to your collection')
       return
     }
 
-    const { error } = await addToCollection(jerseyId, type)
+    const { error } = await addToMainCollection(jerseyId)
     if (error) {
       alert(`Error adding to collection: ${error}`)
     }
@@ -69,6 +70,18 @@ export default function JerseyDetails() {
     }
 
     const { error } = await toggleLike(jerseyId)
+    if (error) {
+      alert(`Error: ${error}`)
+    }
+  }
+
+  const handleWant = async (jerseyId) => {
+    if (!user) {
+      alert('Please sign in to add kits to your wishlist')
+      return
+    }
+
+    const { error } = await toggleWishlist(jerseyId)
     if (error) {
       alert(`Error: ${error}`)
     }
@@ -386,9 +399,9 @@ export default function JerseyDetails() {
                     </button>
 
                     <button
-                      onClick={() => handleAddToCollection(jersey.id, 'have')}
+                      onClick={() => handleHave(jersey.id)}
                       className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                        isInCollection(jersey.id, 'have')
+                        isInMainCollection(jersey.id)
                           ? 'bg-green-100 text-green-700 border border-green-200'
                           : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-green-50 hover:border-green-200 hover:text-green-600'
                       }`}
@@ -398,14 +411,14 @@ export default function JerseyDetails() {
                     </button>
 
                     <button
-                      onClick={() => handleAddToCollection(jersey.id, 'want')}
+                      onClick={() => handleWant(jersey.id)}
                       className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                        isInCollection(jersey.id, 'want')
+                        isInWishlist(jersey.id)
                           ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
                           : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-600'
                       }`}
                     >
-                      {isInCollection(jersey.id, 'want') ? (
+                      {isInWishlist(jersey.id) ? (
                         <StarIconSolid style={{width: '20px', height: '20px'}} />
                       ) : (
                         <StarIcon style={{width: '20px', height: '20px'}} />

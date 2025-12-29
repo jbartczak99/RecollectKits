@@ -146,14 +146,32 @@ export default function CreateCollectionModal({ isOpen, onClose, onSuccess }) {
               aria-checked={formData.is_public}
               onClick={() => setFormData({ ...formData, is_public: !formData.is_public })}
               disabled={loading}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
-                formData.is_public ? 'bg-green-600' : 'bg-gray-300'
-              }`}
+              style={{
+                position: 'relative',
+                display: 'inline-flex',
+                height: '24px',
+                width: '44px',
+                alignItems: 'center',
+                borderRadius: '12px',
+                backgroundColor: formData.is_public ? '#16a34a' : '#d1d5db',
+                transition: 'background-color 0.2s',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                border: 'none',
+                padding: 0,
+                flexShrink: 0
+              }}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  formData.is_public ? 'translate-x-6' : 'translate-x-1'
-                }`}
+                style={{
+                  display: 'inline-block',
+                  height: '18px',
+                  width: '18px',
+                  borderRadius: '50%',
+                  backgroundColor: 'white',
+                  transition: 'transform 0.2s',
+                  transform: formData.is_public ? 'translateX(23px)' : 'translateX(3px)',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                }}
               />
             </button>
           </div>

@@ -249,11 +249,26 @@ export default function AdminPanel() {
           created_by: selectedSubmission.submitted_by
         }
 
-        const { error: insertError } = await supabase
+        const { data: newJersey, error: insertError } = await supabase
           .from('public_jerseys')
           .insert(jerseyData)
+          .select()
+          .single()
 
         if (insertError) throw insertError
+
+        // Add to submitter's "All Kits" collection with details_completed: false
+        // User will need to fill in size, condition, etc.
+        if (newJersey && selectedSubmission.submitted_by) {
+          await supabase
+            .from('user_jerseys')
+            .insert({
+              user_id: selectedSubmission.submitted_by,
+              public_jersey_id: newJersey.id,
+              details_completed: false,
+              created_at: new Date().toISOString()
+            })
+        }
 
       } else if (modalAction === 'reject') {
         // For reject: delete the submission from the database
@@ -497,11 +512,26 @@ export default function AdminPanel() {
           created_by: submission.submitted_by
         }
 
-        const { error: insertError } = await supabase
+        const { data: newJersey, error: insertError } = await supabase
           .from('public_jerseys')
           .insert(jerseyData)
+          .select()
+          .single()
 
         if (insertError) throw insertError
+
+        // Add to submitter's "All Kits" collection with details_completed: false
+        // User will need to fill in size, condition, etc.
+        if (newJersey && submission.submitted_by) {
+          await supabase
+            .from('user_jerseys')
+            .insert({
+              user_id: submission.submitted_by,
+              public_jersey_id: newJersey.id,
+              details_completed: false,
+              created_at: new Date().toISOString()
+            })
+        }
 
         // Close modal first
         onClose()

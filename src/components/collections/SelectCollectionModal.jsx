@@ -39,7 +39,11 @@ export default function SelectCollectionModal({ isOpen, onClose, jersey, onSucce
 
       if (fetchError) throw fetchError
 
-      setCollections(data || [])
+      // Filter out system collections (Liked Kits, Wishlist) - those are managed by interaction buttons only
+      const userCollections = (data || []).filter(
+        c => c.name !== 'Liked Kits' && c.name !== 'Wishlist'
+      )
+      setCollections(userCollections)
     } catch (err) {
       console.error('Error fetching collections:', err)
       setError(err.message)
@@ -78,7 +82,8 @@ export default function SelectCollectionModal({ isOpen, onClose, jersey, onSucce
         // Jersey already in main collection, just use that ID
         userJerseyId = existing.id
       } else {
-        // Insert into user_jerseys (main collection)
+        // Insert into user_jerseys (main collection) with details_completed: true
+        // since the user is providing details through this modal
         const { data: newUserJersey, error: insertError } = await supabase
           .from('user_jerseys')
           .insert({
@@ -88,6 +93,7 @@ export default function SelectCollectionModal({ isOpen, onClose, jersey, onSucce
             condition: jerseyDetails.condition,
             notes: jerseyDetails.notes || null,
             acquired_from: jerseyDetails.acquired_from || null,
+            details_completed: true,
             created_at: new Date().toISOString()
           })
           .select()

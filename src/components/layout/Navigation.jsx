@@ -12,7 +12,8 @@ import {
   DocumentTextIcon,
   RectangleStackIcon,
   InformationCircleIcon,
-  FolderIcon
+  FolderIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import './Navigation.css'
 
@@ -21,6 +22,56 @@ export default function Navigation() {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
+  const [pendingDetailsCount, setPendingDetailsCount] = useState(0)
+
+  // Fetch pending details count
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      if (!user) {
+        setPendingDetailsCount(0)
+        return
+      }
+
+      try {
+        const { count, error } = await supabase
+          .from('user_jerseys')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('details_completed', false)
+
+        if (!error) {
+          setPendingDetailsCount(count || 0)
+        }
+      } catch (err) {
+        console.error('Error fetching pending count:', err)
+      }
+    }
+
+    fetchPendingCount()
+
+    // Set up real-time subscription for user_jerseys changes
+    if (user) {
+      const channel = supabase
+        .channel('user_jerseys_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_jerseys',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            fetchPendingCount()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [user])
 
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
@@ -72,6 +123,7 @@ export default function Navigation() {
             {navigation.map((item) => {
               if (item.protected && !user) return null
               const Icon = item.icon
+              const showBadge = item.name === 'Collection' && pendingDetailsCount > 0
               return (
                 <Link
                   key={item.name}
@@ -80,6 +132,11 @@ export default function Navigation() {
                 >
                   <Icon className="h-4 w-4 mr-2" />
                   {item.name}
+                  {showBadge && (
+                    <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-amber-500 text-white rounded-full" style={{minWidth: '18px'}}>
+                      {pendingDetailsCount}
+                    </span>
+                  )}
                 </Link>
               )
             })}
@@ -190,6 +247,7 @@ export default function Navigation() {
           {navigation.map((item) => {
             if (item.protected && !user) return null
             const Icon = item.icon
+            const showBadge = item.name === 'Collection' && pendingDetailsCount > 0
             return (
               <Link
                 key={item.name}
@@ -198,7 +256,12 @@ export default function Navigation() {
                 className={`mobile-dropdown-item ${isActive(item.href) ? 'active' : ''}`}
               >
                 <Icon className="h-5 w-5" />
-                {item.name}
+                <span className="flex-1">{item.name}</span>
+                {showBadge && (
+                  <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-amber-500 text-white rounded-full" style={{minWidth: '18px'}}>
+                    {pendingDetailsCount}
+                  </span>
+                )}
               </Link>
             )
           })}

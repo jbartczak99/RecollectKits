@@ -5,12 +5,12 @@ import { StarIcon } from '@heroicons/react/24/outline'
 import { ArrowPathIcon } from '@heroicons/react/24/outline'
 import { EyeIcon } from '@heroicons/react/24/outline'
 import { FireIcon } from '@heroicons/react/24/outline'
-import { PlusIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { PlusIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { FireIcon as FireIconSolid } from '@heroicons/react/24/solid'
 import { useAuth } from '../contexts/AuthContext.jsx'
-import { usePublicJerseys, useUserCollections, useUserJerseys, useJerseyLikes } from '../hooks/useJerseys'
+import { usePublicJerseys, useUserJerseys, useJerseyLikes, useWishlist } from '../hooks/useJerseys'
 import JerseySearch from '../components/jerseys/JerseySearch'
 import KitSubmissionWizard from '../components/jerseys/KitSubmissionWizard'
 import SelectCollectionModal from '../components/collections/SelectCollectionModal'
@@ -33,9 +33,9 @@ export default function Jerseys() {
   const [selectedSeason, setSelectedSeason] = useState('')
 
   const { jerseys: allJerseys, loading, error, addPublicJersey } = usePublicJerseys(searchTerm, filters)
-  const { addToCollection, isInCollection } = useUserCollections()
-  const { isInMainCollection, refetch: refetchUserJerseys } = useUserJerseys()
+  const { isInMainCollection, addToMainCollection, refetch: refetchUserJerseys } = useUserJerseys()
   const { hasLiked, getLikeCount, toggleLike } = useJerseyLikes(user?.id)
+  const { isInWishlist, toggleWishlist } = useWishlist(user?.id)
 
   // Extract unique filter options from jerseys
   const filterOptions = useMemo(() => {
@@ -77,18 +77,6 @@ export default function Jerseys() {
     // The usePublicJerseys hook will automatically update local state
   }
 
-  const handleAddToCollection = async (jerseyId, type) => {
-    if (!user) {
-      alert('Please sign in to add kits to your collection')
-      return
-    }
-
-    const { error } = await addToCollection(jerseyId, type)
-    if (error) {
-      alert(`Error adding to collection: ${error}`)
-    }
-  }
-
   const handleLike = async (jerseyId) => {
     if (!user) {
       alert('Please sign in to like kits')
@@ -96,6 +84,18 @@ export default function Jerseys() {
     }
 
     const { error } = await toggleLike(jerseyId)
+    if (error) {
+      alert(`Error: ${error}`)
+    }
+  }
+
+  const handleWant = async (jerseyId) => {
+    if (!user) {
+      alert('Please sign in to add kits to your wishlist')
+      return
+    }
+
+    const { error } = await toggleWishlist(jerseyId)
     if (error) {
       alert(`Error: ${error}`)
     }
@@ -399,118 +399,148 @@ export default function Jerseys() {
 
                     {/* Jersey Details */}
                     <div className="card-body flex-1 flex flex-col">
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                          {jersey.team_name || 'Unknown Team'}
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-2">
-                          {jersey.player_name && (
-                            <span className="font-medium">{jersey.player_name} • </span>
-                          )}
-                          {jersey.season || 'Unknown Season'}
-                        </p>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {jersey.kit_type && (
-                            <span className={`badge ${jersey.kit_type === 'international' ? 'badge-purple' : 'badge-green'}`}>
-                              {jersey.kit_type === 'international' ? 'International' : 'Club'}
-                            </span>
-                          )}
-                          {jersey.jersey_type && (
-                            <span className="badge badge-blue">
-                              {jersey.jersey_type}
-                            </span>
-                          )}
-                          {jersey.manufacturer && (
-                            <span className="badge badge-gray">
-                              {jersey.manufacturer}
-                            </span>
-                          )}
+                      {/* Header with Team Name and Action Buttons */}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            {jersey.team_name || 'Unknown Team'}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {jersey.player_name && (
+                              <span className="font-medium">{jersey.player_name} • </span>
+                            )}
+                            {jersey.season || 'Unknown Season'}
+                          </p>
                         </div>
-                      </div>
 
-                      {/* Collection Buttons */}
-                      {user && (
-                        <div className="mt-auto">
-                          <div className="flex gap-2">
+                        {/* Compact Action Buttons - Fixed width slots */}
+                        {/* Order: Like, Add to Collection, Want */}
+                        {user && (
+                          <div style={{display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0}}>
+                            {/* Like Button - Always visible */}
                             <button
                               onClick={() => handleLike(jersey.id)}
-                              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                hasLiked(jersey.id)
-                                  ? 'bg-red-100 text-red-700 border border-red-200'
-                                  : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-red-50 hover:text-red-600'
-                              }`}
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '8px',
+                                border: '1px solid',
+                                borderColor: hasLiked(jersey.id) ? '#fecaca' : '#e5e7eb',
+                                backgroundColor: hasLiked(jersey.id) ? '#fee2e2' : '#f3f4f6',
+                                color: hasLiked(jersey.id) ? '#dc2626' : '#6b7280',
+                                cursor: 'pointer'
+                              }}
+                              title={`Like${getLikeCount(jersey.id) > 0 ? ` (${getLikeCount(jersey.id)})` : ''}`}
                             >
                               {hasLiked(jersey.id) ? (
-                                <HeartIconSolid className="h-4 w-4" />
+                                <HeartIconSolid style={{width: '16px', height: '16px'}} />
                               ) : (
-                                <HeartIcon className="h-4 w-4" />
+                                <HeartIcon style={{width: '16px', height: '16px'}} />
                               )}
-                              {getLikeCount(jersey.id) > 0 ? getLikeCount(jersey.id) : 'Like'}
                             </button>
 
-                            <button
-                              onClick={() => handleAddToCollection(jersey.id, 'have')}
-                              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                isInCollection(jersey.id, 'have')
-                                  ? 'bg-green-100 text-green-700 border border-green-200'
-                                  : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-green-50 hover:text-green-600'
-                              }`}
-                            >
-                              {isInCollection(jersey.id, 'have') ? (
-                                <CheckCircleIcon className="h-4 w-4" />
-                              ) : (
-                                <CheckCircleIcon className="h-4 w-4" />
-                              )}
-                              Have
-                            </button>
+                            {/* Add to Collection Button */}
+                            {isInMainCollection(jersey.id) ? (
+                              <div
+                                style={{
+                                  width: '36px',
+                                  height: '36px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: '8px',
+                                  border: '1px solid #bbf7d0',
+                                  backgroundColor: '#dcfce7',
+                                  color: '#16a34a'
+                                }}
+                                title="In Your Collection"
+                              >
+                                <svg style={{width: '16px', height: '16px'}} fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleOpenSelectCollection(jersey)
+                                }}
+                                style={{
+                                  width: '36px',
+                                  height: '36px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: '8px',
+                                  border: 'none',
+                                  backgroundColor: '#16a34a',
+                                  color: 'white',
+                                  cursor: 'pointer'
+                                }}
+                                title="Add to Collection"
+                              >
+                                <PlusIcon style={{width: '16px', height: '16px'}} />
+                              </button>
+                            )}
 
-                            <button
-                              onClick={() => handleAddToCollection(jersey.id, 'want')}
-                              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                isInCollection(jersey.id, 'want')
-                                  ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-                                  : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-yellow-50 hover:text-yellow-600'
-                              }`}
-                            >
-                              {isInCollection(jersey.id, 'want') ? (
-                                <StarIconSolid className="h-4 w-4" />
-                              ) : (
-                                <StarIcon className="h-4 w-4" />
+                            {/* Want Button - Hidden if in collection, but space preserved */}
+                            <div style={{width: '36px', height: '36px'}}>
+                              {!isInMainCollection(jersey.id) && (
+                                <button
+                                  onClick={() => handleWant(jersey.id)}
+                                  style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '8px',
+                                    border: '1px solid',
+                                    borderColor: isInWishlist(jersey.id) ? '#fde68a' : '#e5e7eb',
+                                    backgroundColor: isInWishlist(jersey.id) ? '#fef3c7' : '#f3f4f6',
+                                    color: isInWishlist(jersey.id) ? '#d97706' : '#6b7280',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Want"
+                                >
+                                  {isInWishlist(jersey.id) ? (
+                                    <StarIconSolid style={{width: '16px', height: '16px'}} />
+                                  ) : (
+                                    <StarIcon style={{width: '16px', height: '16px'}} />
+                                  )}
+                                </button>
                               )}
-                              Want
-                            </button>
-                          </div>
-
-                          {/* Add to Collection Button */}
-                          {isInMainCollection(jersey.id) ? (
-                            <div style={{marginTop: '16px'}} className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-green-50 text-green-600 rounded-lg text-sm font-medium border border-green-200">
-                              <svg style={{width: '16px', height: '16px', minWidth: '16px', minHeight: '16px', maxWidth: '16px', maxHeight: '16px'}} fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                              In Your Collection
                             </div>
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleOpenSelectCollection(jersey)
-                              }}
-                              style={{marginTop: '16px'}}
-                              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-all duration-200"
-                            >
-                              <PlusIcon className="h-4 w-4" />
-                              Add to Collection
-                            </button>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        )}
+                      </div>
 
+                      {/* Badges */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {jersey.kit_type && (
+                          <span className={`badge ${jersey.kit_type === 'international' ? 'badge-purple' : 'badge-green'}`}>
+                            {jersey.kit_type === 'international' ? 'International' : 'Club'}
+                          </span>
+                        )}
+                        {jersey.jersey_type && (
+                          <span className="badge badge-blue">
+                            {jersey.jersey_type}
+                          </span>
+                        )}
+                        {jersey.manufacturer && (
+                          <span className="badge badge-gray">
+                            {jersey.manufacturer}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Sign in prompt for non-logged in users */}
                       {!user && (
-                        <div className="text-center">
-                          <p className="text-sm text-gray-500 mb-2">Sign in to add to collection</p>
-                          <button className="w-full px-3 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm cursor-not-allowed">
-                            Add to Collection
-                          </button>
+                        <div className="mt-auto text-center">
+                          <p className="text-xs text-gray-500">Sign in to interact</p>
                         </div>
                       )}
                     </div>

@@ -119,7 +119,8 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async ({ email, password, username, fullName }) => {
     try {
-      setLoading(true)
+      // Note: Don't set global loading here - the form manages its own loading state
+      // Setting global loading causes AuthLayout to unmount the form and lose state
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -140,15 +141,13 @@ export const AuthProvider = ({ children }) => {
       return { data, error }
     } catch (error) {
       return { data: null, error }
-    } finally {
-      setLoading(false)
     }
   }
 
   const signIn = async (email, password) => {
     try {
-      setLoading(true)
-
+      // Note: Don't set global loading here - the form manages its own loading state
+      // Setting global loading causes AuthLayout to unmount the form and lose state
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -295,6 +294,28 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const resetPassword = async (email) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      })
+      return { error }
+    } catch (error) {
+      return { error }
+    }
+  }
+
+  const updatePassword = async (newPassword) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+      return { data, error }
+    } catch (error) {
+      return { data: null, error }
+    }
+  }
+
   const value = {
     user,
     profile,
@@ -306,7 +327,9 @@ export const AuthProvider = ({ children }) => {
     getProfile,
     getPendingAccounts,
     approveAccount,
-    rejectAccount
+    rejectAccount,
+    resetPassword,
+    updatePassword
   }
 
   return (

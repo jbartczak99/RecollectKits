@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 
-export default function LoginForm({ onSuccess }) {
+export default function LoginForm({ onSuccess, onForgotPassword }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -66,7 +66,7 @@ export default function LoginForm({ onSuccess }) {
         />
       </div>
 
-      <div style={{ marginBottom: '16px' }}>
+      <div style={{ marginBottom: '8px' }}>
         <input
           type="password"
           id="password"
@@ -76,6 +76,23 @@ export default function LoginForm({ onSuccess }) {
           style={inputStyle}
           placeholder="Password"
         />
+      </div>
+
+      <div style={{ marginBottom: '16px', textAlign: 'right' }}>
+        <button
+          type="button"
+          onClick={onForgotPassword}
+          style={{
+            fontSize: '13px',
+            color: '#059669',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            textDecoration: 'underline'
+          }}
+        >
+          Forgot Password?
+        </button>
       </div>
 
       <button

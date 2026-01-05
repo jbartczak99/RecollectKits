@@ -23,7 +23,7 @@ export default function Footer() {
               <img
                 src="/instagram-logo.png"
                 alt="Instagram"
-                style={{ width: '32px', height: '32px', minWidth: '30px', minHeight: '30px' }}
+                style={{ width: '30px', height: '30px' }}
               />
             </a>
             <a
@@ -36,7 +36,20 @@ export default function Footer() {
               <img
                 src="/tiktok-logo.png"
                 alt="TikTok"
-                style={{ width: '38px', height: '38px', minWidth: '30px', minHeight: '30px' }}
+                style={{ width: '34px', height: '34px' }}
+              />
+            </a>
+            <a
+              href="https://www.youtube.com/@recollectkits"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-opacity hover:opacity-80"
+              aria-label="Subscribe on YouTube"
+            >
+              <img
+                src="/youtube-icon.png"
+                alt="YouTube"
+                style={{ width: '46px', height: '46px' }}
               />
             </a>
           </div>

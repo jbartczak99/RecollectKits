@@ -16,6 +16,7 @@ import MySubmissions from './pages/MySubmissions'
 import About from './pages/About'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Routes>
               <Route path="/" element={<div className="container py-8"><Home /></div>} />
               <Route path="/auth" element={<AuthLayout />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/jerseys" element={<div className="container py-8"><Jerseys /></div>} />
               <Route path="/jerseys/:id" element={<div className="container py-8"><JerseyDetails /></div>} />
               <Route path="/about" element={<div className="container py-8"><About /></div>} />

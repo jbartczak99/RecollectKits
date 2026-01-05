@@ -3,9 +3,10 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 import { Navigate } from 'react-router-dom'
 import LoginForm from './LoginForm'
 import RegisterForm from './RegisterForm'
+import ForgotPasswordForm from './ForgotPasswordForm'
 
 export default function AuthLayout() {
-  const [isLogin, setIsLogin] = useState(true)
+  const [view, setView] = useState('login') // 'login' | 'register' | 'forgotPassword'
   const { user, loading } = useAuth()
 
   if (loading) {
@@ -38,15 +39,14 @@ export default function AuthLayout() {
               RecollectKits
             </h1>
             <p style={{ fontSize: '14px', color: '#6b7280' }}>
-              {isLogin
-                ? 'Sign in to manage your collection and connect with collectors.'
-                : 'Create an account to start cataloging your kit collection.'
-              }
+              {view === 'login' && 'Sign in to manage your collection and connect with collectors.'}
+              {view === 'register' && 'Create an account to start cataloging your kit collection.'}
+              {view === 'forgotPassword' && 'Reset your password to regain access to your account.'}
             </p>
           </div>
 
           {/* Alpha Notice for Sign Up */}
-          {!isLogin && (
+          {view === 'register' && (
             <div style={{
               marginBottom: '24px',
               backgroundColor: '#fffbeb',
@@ -66,28 +66,37 @@ export default function AuthLayout() {
           )}
 
           {/* Form */}
-          {isLogin ? (
-            <LoginForm onSuccess={() => {}} />
-          ) : (
+          {view === 'login' && (
+            <LoginForm
+              onSuccess={() => {}}
+              onForgotPassword={() => setView('forgotPassword')}
+            />
+          )}
+          {view === 'register' && (
             <RegisterForm onSuccess={() => {}} />
+          )}
+          {view === 'forgotPassword' && (
+            <ForgotPasswordForm onBack={() => setView('login')} />
           )}
 
           {/* Toggle Link */}
-          <div style={{ marginTop: '24px', textAlign: 'center' }}>
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              style={{
-                fontSize: '14px',
-                color: '#059669',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                textDecoration: 'underline'
-              }}
-            >
-              {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
-            </button>
-          </div>
+          {view !== 'forgotPassword' && (
+            <div style={{ marginTop: '24px', textAlign: 'center' }}>
+              <button
+                onClick={() => setView(view === 'login' ? 'register' : 'login')}
+                style={{
+                  fontSize: '14px',
+                  color: '#059669',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                {view === 'login' ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

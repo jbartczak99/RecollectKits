@@ -1,7 +1,14 @@
 import { useAuth } from '../../contexts/AuthContext.jsx'
 
 export default function ApprovalGate({ children }) {
-  const { user, profile, loading } = useAuth()
+  const { user, profile, loading, signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    if (window.confirm('Are you sure you want to sign out?')) {
+      await signOut()
+      window.location.href = '/auth'
+    }
+  }
 
   if (loading) {
     return (
@@ -84,11 +91,7 @@ export default function ApprovalGate({ children }) {
                 </button>
 
                 <button
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to sign out?')) {
-                      window.location.href = '/auth'
-                    }
-                  }}
+                  onClick={handleSignOut}
                   className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   Sign Out
@@ -141,11 +144,7 @@ export default function ApprovalGate({ children }) {
                 </div>
 
                 <button
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to sign out?')) {
-                      window.location.href = '/auth'
-                    }
-                  }}
+                  onClick={handleSignOut}
                   className="w-full bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   Sign Out

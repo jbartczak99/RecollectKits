@@ -13,7 +13,9 @@ import {
   RectangleStackIcon,
   InformationCircleIcon,
   FolderIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  UserCircleIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline'
 import './Navigation.css'
 
@@ -78,6 +80,7 @@ export default function Navigation() {
     { name: 'Kits', href: '/jerseys', icon: RectangleStackIcon },
     { name: 'About', href: '/about', icon: InformationCircleIcon },
     { name: 'Collection', href: '/collection', icon: FolderIcon, protected: true },
+    { name: 'Profile', href: profile?.username ? `/@${profile.username}` : '/collection', icon: UserCircleIcon, protected: true },
   ]
 
   // Get admin status from profile
@@ -180,6 +183,24 @@ export default function Navigation() {
 
                   {/* Menu Items */}
                   <div>
+                    {profile?.is_public && (
+                      <Link
+                        to={`/@${profile.username}`}
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="user-dropdown-item"
+                      >
+                        <UserCircleIcon className="user-dropdown-icon" />
+                        <span>View Public Profile</span>
+                      </Link>
+                    )}
+                    <Link
+                      to="/collection?settings=profile"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="user-dropdown-item"
+                    >
+                      <Cog6ToothIcon className="user-dropdown-icon" />
+                      <span>Profile Settings</span>
+                    </Link>
                     <Link
                       to="/my-submissions"
                       onClick={() => setUserDropdownOpen(false)}
@@ -269,6 +290,24 @@ export default function Navigation() {
           {user && (
             <>
               <div className="mobile-dropdown-divider" />
+              {profile?.is_public && (
+                <Link
+                  to={`/@${profile.username}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="mobile-dropdown-item"
+                >
+                  <UserCircleIcon className="h-5 w-5" />
+                  View Public Profile
+                </Link>
+              )}
+              <Link
+                to="/collection?settings=profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mobile-dropdown-item"
+              >
+                <Cog6ToothIcon className="h-5 w-5" />
+                Profile Settings
+              </Link>
               <Link
                 to="/my-submissions"
                 onClick={() => setMobileMenuOpen(false)}

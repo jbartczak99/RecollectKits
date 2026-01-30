@@ -13,6 +13,7 @@ import CollectionDetail from './pages/CollectionDetail'
 import JerseyDetails from './components/jerseys/JerseyDetails'
 import AdminPanel from './components/admin/AdminPanel'
 import MySubmissions from './pages/MySubmissions'
+import PublicProfile from './pages/PublicProfile'
 import About from './pages/About'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
@@ -84,6 +85,7 @@ function App() {
                   </div>
                 }
               />
+              <Route path="/:username" element={<div className="container py-8"><PublicProfile /></div>} />
             </Routes>
           </main>
 

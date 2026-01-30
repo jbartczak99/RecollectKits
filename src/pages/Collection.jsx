@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { PlusIcon, LockClosedIcon, GlobeAltIcon, StarIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { PlusIcon, LockClosedIcon, GlobeAltIcon, StarIcon, ExclamationTriangleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase'
 import CreateCollectionModal from '../components/collections/CreateCollectionModal'
+import ProfileSettingsModal from '../components/profile/ProfileSettingsModal'
 
 export default function Collection() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [collections, setCollections] = useState([])
+  const [showProfileSettings, setShowProfileSettings] = useState(false)
   const [allKitsCount, setAllKitsCount] = useState(0)
   const [allKitsThumbnails, setAllKitsThumbnails] = useState([])
   const [pendingDetailsCount, setPendingDetailsCount] = useState(0)
@@ -28,6 +31,15 @@ export default function Collection() {
       setLoading(false)
     }
   }, [user])
+
+  // Handle ?settings=profile query param
+  useEffect(() => {
+    if (searchParams.get('settings') === 'profile') {
+      setShowProfileSettings(true)
+      // Clear the query param
+      setSearchParams({})
+    }
+  }, [searchParams, setSearchParams])
 
   // Fetch profile settings for All Kits visibility
   const fetchProfileSettings = async () => {
@@ -227,11 +239,20 @@ export default function Collection() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">My Collections</h1>
-        <p className="text-gray-600 mt-1">
-          Organize your jerseys into custom collections
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">My Collections</h1>
+          <p className="text-gray-600 mt-1">
+            Organize your jerseys into custom collections
+          </p>
+        </div>
+        <button
+          onClick={() => setShowProfileSettings(true)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: '8px', backgroundColor: 'white', color: '#374151', fontSize: '13px', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+        >
+          <Cog6ToothIcon style={{ width: '15px', height: '15px' }} />
+          Profile Settings
+        </button>
       </div>
 
       {error && (
@@ -608,6 +629,12 @@ export default function Collection() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleCreateSuccess}
+      />
+
+      {/* Profile Settings Modal */}
+      <ProfileSettingsModal
+        isOpen={showProfileSettings}
+        onClose={() => setShowProfileSettings(false)}
       />
     </div>
   )

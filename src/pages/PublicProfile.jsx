@@ -11,6 +11,8 @@ import {
 import { usePublicProfile } from '../hooks/usePublicProfile'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import ProfileSettingsModal from '../components/profile/ProfileSettingsModal'
+import FriendRequestButton from '../components/friends/FriendRequestButton'
+import FriendsSidebar from '../components/friends/FriendsSidebar'
 
 const iconSize = { width: '20px', height: '20px', flexShrink: 0 }
 const iconSmall = { width: '16px', height: '16px', flexShrink: 0 }
@@ -53,21 +55,39 @@ export default function PublicProfile() {
   // --- Loading ---
   if (loading) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '32px', display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <div style={{ width: '96px', height: '96px', borderRadius: '50%', backgroundColor: '#e5e7eb' }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ height: '28px', backgroundColor: '#e5e7eb', borderRadius: '6px', width: '200px', marginBottom: '8px' }} />
-            <div style={{ height: '16px', backgroundColor: '#e5e7eb', borderRadius: '6px', width: '280px' }} />
+      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '32px', display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <div style={{ width: '96px', height: '96px', borderRadius: '50%', backgroundColor: '#e5e7eb' }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ height: '28px', backgroundColor: '#e5e7eb', borderRadius: '6px', width: '200px', marginBottom: '8px' }} />
+              <div style={{ height: '16px', backgroundColor: '#e5e7eb', borderRadius: '6px', width: '280px' }} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px', textAlign: 'center' }}>
+                <div style={{ height: '32px', backgroundColor: '#e5e7eb', borderRadius: '6px', width: '40px', margin: '0 auto 8px' }} />
+                <div style={{ height: '14px', backgroundColor: '#e5e7eb', borderRadius: '6px', width: '50px', margin: '0 auto' }} />
+              </div>
+            ))}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-          {[0,1,2].map(i => (
-            <div key={i} style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px', textAlign: 'center' }}>
-              <div style={{ height: '32px', backgroundColor: '#e5e7eb', borderRadius: '6px', width: '40px', margin: '0 auto 8px' }} />
-              <div style={{ height: '14px', backgroundColor: '#e5e7eb', borderRadius: '6px', width: '50px', margin: '0 auto' }} />
+        <div style={{ width: '280px', flexShrink: 0 }} className="profile-sidebar">
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#e5e7eb', borderRadius: '4px' }} />
+              <div style={{ width: '80px', height: '18px', backgroundColor: '#e5e7eb', borderRadius: '4px' }} />
             </div>
-          ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              {[1, 2, 3].map(i => (
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#e5e7eb', margin: '0 auto 6px' }} />
+                  <div style={{ width: '50px', height: '12px', backgroundColor: '#e5e7eb', borderRadius: '4px', margin: '0 auto' }} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -91,7 +111,9 @@ export default function PublicProfile() {
 
   // --- Profile Page ---
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+      {/* Main Content */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
       {/* Profile Header */}
       <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '24px' }}>
@@ -139,6 +161,12 @@ export default function PublicProfile() {
 
             {/* Buttons */}
             <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' }}>
+              {!isOwnProfile && user && (
+                <FriendRequestButton
+                  currentUserId={user.id}
+                  targetUserId={profile.id}
+                />
+              )}
               <button
                 onClick={handleShare}
                 style={{
@@ -434,6 +462,22 @@ export default function PublicProfile() {
           </p>
         </div>
       )}
+
+      </div>
+
+      {/* Right Sidebar - Friends */}
+      <div style={{
+        width: '280px',
+        flexShrink: 0,
+        position: 'sticky',
+        top: '24px'
+      }} className="profile-sidebar">
+        <FriendsSidebar
+          profileUserId={profile.id}
+          currentUserId={user?.id}
+          isOwnProfile={isOwnProfile}
+        />
+      </div>
 
       {/* Profile Settings Modal */}
       <ProfileSettingsModal

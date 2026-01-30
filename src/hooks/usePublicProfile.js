@@ -5,7 +5,7 @@ export function usePublicProfile(username) {
   const [profile, setProfile] = useState(null)
   const [collections, setCollections] = useState([])
   const [top3Jerseys, setTop3Jerseys] = useState([])
-  const [stats, setStats] = useState({ total_jerseys: 0, public_collections: 0, liked_jerseys: 0 })
+  const [stats, setStats] = useState({ total_jerseys: 0, public_collections: 0, liked_jerseys: 0, friend_count: 0 })
   const [allKits, setAllKits] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -71,22 +71,25 @@ export function usePublicProfile(username) {
 
   const fetchStats = async (userId, allKitsPublic) => {
     try {
-      const [jerseysCount, collectionsCount, likesCount] = await Promise.all([
+      const [jerseysCount, collectionsCount, likesCount, friendsCount] = await Promise.all([
         allKitsPublic
           ? supabase.from('user_jerseys').select('id', { count: 'exact', head: true }).eq('user_id', userId)
           : Promise.resolve({ count: 0 }),
         supabase.from('collections').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('is_public', true),
-        supabase.from('jersey_likes').select('id', { count: 'exact', head: true }).eq('user_id', userId)
+        supabase.from('jersey_likes').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+        // Count accepted friendships where user is either requester or addressee
+        supabase.from('user_friends').select('id', { count: 'exact', head: true }).eq('status', 'accepted').or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
       ])
 
       return {
         total_jerseys: jerseysCount.count || 0,
         public_collections: collectionsCount.count || 0,
-        liked_jerseys: likesCount.count || 0
+        liked_jerseys: likesCount.count || 0,
+        friend_count: friendsCount.count || 0
       }
     } catch (err) {
       console.error('Error fetching stats:', err)
-      return { total_jerseys: 0, public_collections: 0, liked_jerseys: 0 }
+      return { total_jerseys: 0, public_collections: 0, liked_jerseys: 0, friend_count: 0 }
     }
   }
 

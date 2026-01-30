@@ -75,6 +75,7 @@ export default function Navigation() {
     }
   }, [user])
 
+  
   const navigation = [
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Kits', href: '/jerseys', icon: RectangleStackIcon },

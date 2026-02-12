@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
+import countries from '../../data/countries.js'
 
 export default function RegisterForm({ onSuccess }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
+  const [country, setCountry] = useState('')
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -41,7 +43,7 @@ export default function RegisterForm({ onSuccess }) {
     setLoading(true)
 
     try {
-      const result = await signUp({ email, password, username, fullName })
+      const result = await signUp({ email, password, username, fullName, country })
 
       if (result.error) {
         setError(result.error.message)
@@ -154,6 +156,21 @@ export default function RegisterForm({ onSuccess }) {
           style={inputStyle}
           placeholder="Password (min 6 characters)"
         />
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <select
+          id="country"
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          required
+          style={{ ...inputStyle, color: country ? '#111827' : '#9ca3af', appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%236b7280\' d=\'M6 8L1 3h10z\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+        >
+          <option value="" disabled>Country</option>
+          {countries.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
       </div>
 
       {/* Terms Agreement Checkbox */}

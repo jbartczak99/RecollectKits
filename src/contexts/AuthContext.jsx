@@ -92,6 +92,7 @@ export const AuthProvider = ({ children }) => {
         username: user.user_metadata?.username || user.email.split('@')[0],
         full_name: user.user_metadata?.full_name || '',
         avatar_url: user.user_metadata?.avatar_url || null,
+        country: user.user_metadata?.country || null,
         approval_status: 'pending',
         requested_at: new Date().toISOString()
       }
@@ -117,7 +118,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const signUp = async ({ email, password, username, fullName }) => {
+  const signUp = async ({ email, password, username, fullName, country }) => {
     try {
       // Note: Don't set global loading here - the form manages its own loading state
       // Setting global loading causes AuthLayout to unmount the form and lose state
@@ -128,6 +129,7 @@ export const AuthProvider = ({ children }) => {
           data: {
             username,
             full_name: fullName,
+            country,
           }
         }
       })

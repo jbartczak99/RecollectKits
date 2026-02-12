@@ -5,7 +5,8 @@
       "Bash(find:*)",
       "Bash(npm uninstall:*)",
       "Bash(npm install:*)",
-      "Read(//c/Users/Jerrad/Downloads/**)"
+      "Read(//c/Users/Jerrad/Downloads/**)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }

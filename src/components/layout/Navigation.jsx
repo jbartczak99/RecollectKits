@@ -15,7 +15,9 @@ import {
   FolderIcon,
   ExclamationTriangleIcon,
   UserCircleIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  UsersIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline'
 import './Navigation.css'
 
@@ -80,6 +82,8 @@ export default function Navigation() {
     { name: 'Home', href: '/', icon: HomeIcon },
     { name: 'Kits', href: '/jerseys', icon: RectangleStackIcon },
     { name: 'About', href: '/about', icon: InformationCircleIcon },
+    { name: 'Partners', href: '/partners', icon: UsersIcon },
+    { name: 'Pricing', href: '/pricing', icon: CurrencyDollarIcon },
     { name: 'Collection', href: '/collection', icon: FolderIcon, protected: true },
     { name: 'Profile', href: profile?.username ? `/@${profile.username}` : '/collection', icon: UserCircleIcon, protected: true },
   ]

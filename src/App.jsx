@@ -15,6 +15,8 @@ import AdminPanel from './components/admin/AdminPanel'
 import MySubmissions from './pages/MySubmissions'
 import PublicProfile from './pages/PublicProfile'
 import About from './pages/About'
+import Partners from './pages/Partners'
+import Pricing from './pages/Pricing'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import ResetPassword from './pages/ResetPassword'
@@ -35,6 +37,8 @@ function App() {
               <Route path="/jerseys" element={<div className="container py-8"><Jerseys /></div>} />
               <Route path="/jerseys/:id" element={<div className="container py-8"><JerseyDetails /></div>} />
               <Route path="/about" element={<div className="container py-8"><About /></div>} />
+              <Route path="/partners" element={<div className="container py-8"><Partners /></div>} />
+              <Route path="/pricing" element={<div className="container py-8"><Pricing /></div>} />
               <Route path="/privacy" element={<div className="container py-8"><Privacy /></div>} />
               <Route path="/terms" element={<div className="container py-8"><Terms /></div>} />
               <Route

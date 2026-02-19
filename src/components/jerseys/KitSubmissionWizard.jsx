@@ -7,7 +7,8 @@ import {
   CheckCircleIcon,
   InformationCircleIcon,
   BuildingOfficeIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  TableCellsIcon
 } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext.jsx'
@@ -64,6 +65,65 @@ const ClubKitBasicInfoForm = ({ formData, handleFormChange, nextStep, prevStep, 
           </div>
         </div>
 
+        {/* Competition */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Competition *
+          </label>
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: '15px' }}>
+              <input
+                type="radio"
+                name="competition_gender"
+                value="mens"
+                checked={formData.competition_gender === 'mens'}
+                onChange={handleFormChange}
+                style={{ display: 'none' }}
+              />
+              <span
+                style={{
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  border: formData.competition_gender === 'mens' ? '2px solid #7C3AED' : '2px solid #D1D5DB',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'border-color 0.2s'
+                }}
+              >
+                {formData.competition_gender === 'mens' && (
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
+                )}
+              </span>
+              <span style={{ color: formData.competition_gender === 'mens' ? '#1F2937' : '#6B7280', fontWeight: formData.competition_gender === 'mens' ? 600 : 400 }}>
+                Men's
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: '15px' }}>
+              <input
+                type="radio"
+                name="competition_gender"
+                value="womens"
+                checked={formData.competition_gender === 'womens'}
+                onChange={handleFormChange}
+                style={{ display: 'none' }}
+              />
+              <span
+                style={{
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  border: formData.competition_gender === 'womens' ? '2px solid #7C3AED' : '2px solid #D1D5DB',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'border-color 0.2s'
+                }}
+              >
+                {formData.competition_gender === 'womens' && (
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
+                )}
+              </span>
+              <span style={{ color: formData.competition_gender === 'womens' ? '#1F2937' : '#6B7280', fontWeight: formData.competition_gender === 'womens' ? 600 : 400 }}>
+                Women's
+              </span>
+            </label>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* League */}
           <div>
@@ -78,13 +138,33 @@ const ClubKitBasicInfoForm = ({ formData, handleFormChange, nextStep, prevStep, 
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Select a league</option>
-              <option value="Premier League">Premier League</option>
-              <option value="La Liga">La Liga</option>
-              <option value="Serie A">Serie A</option>
-              <option value="Bundesliga">Bundesliga</option>
-              <option value="MLS">MLS</option>
-              <option value="Championship">Championship</option>
-              <option value="Other">Other</option>
+              {formData.competition_gender === 'womens' ? (
+                <>
+                  <option value="NWSL">NWSL</option>
+                  <option value="USL Super League">USL Super League</option>
+                  <option value="WSL">WSL</option>
+                  <option value="Liga F">Liga F</option>
+                  <option value="Serie A Femminile">Serie A Femminile</option>
+                  <option value="Frauen-Bundesliga">Frauen-Bundesliga</option>
+                  <option value="D1 Arkema">D1 Arkema</option>
+                  <option value="A-League Women">A-League Women</option>
+                  <option value="Other">Other</option>
+                </>
+              ) : (
+                <>
+                  <option value="Premier League">Premier League</option>
+                  <option value="La Liga">La Liga</option>
+                  <option value="Serie A">Serie A</option>
+                  <option value="Bundesliga">Bundesliga</option>
+                  <option value="Ligue 1">Ligue 1</option>
+                  <option value="MLS">MLS</option>
+                  <option value="Eredivisie">Eredivisie</option>
+                  <option value="Liga Portugal">Liga Portugal</option>
+                  <option value="Championship">Championship</option>
+                  <option value="Saudi Pro League">Saudi Pro League</option>
+                  <option value="Other">Other</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -405,6 +485,65 @@ const InternationalKitBasicInfoForm = ({ formData, handleFormChange, nextStep, p
           </div>
         </div>
 
+        {/* Competition */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Competition *
+          </label>
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: '15px' }}>
+              <input
+                type="radio"
+                name="competition_gender"
+                value="mens"
+                checked={formData.competition_gender === 'mens'}
+                onChange={handleFormChange}
+                style={{ display: 'none' }}
+              />
+              <span
+                style={{
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  border: formData.competition_gender === 'mens' ? '2px solid #7C3AED' : '2px solid #D1D5DB',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'border-color 0.2s'
+                }}
+              >
+                {formData.competition_gender === 'mens' && (
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
+                )}
+              </span>
+              <span style={{ color: formData.competition_gender === 'mens' ? '#1F2937' : '#6B7280', fontWeight: formData.competition_gender === 'mens' ? 600 : 400 }}>
+                Men's
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer" style={{ fontSize: '15px' }}>
+              <input
+                type="radio"
+                name="competition_gender"
+                value="womens"
+                checked={formData.competition_gender === 'womens'}
+                onChange={handleFormChange}
+                style={{ display: 'none' }}
+              />
+              <span
+                style={{
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  border: formData.competition_gender === 'womens' ? '2px solid #7C3AED' : '2px solid #D1D5DB',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'border-color 0.2s'
+                }}
+              >
+                {formData.competition_gender === 'womens' && (
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
+                )}
+              </span>
+              <span style={{ color: formData.competition_gender === 'womens' ? '#1F2937' : '#6B7280', fontWeight: formData.competition_gender === 'womens' ? 600 : 400 }}>
+                Women's
+              </span>
+            </label>
+          </div>
+        </div>
+
         {/* Kit Type */}
         <div>
           <label htmlFor="kit_type" className="block text-sm font-medium text-gray-700 mb-2">
@@ -679,6 +818,7 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
         league: kitType === 'club'
           ? (formData.league === 'Other' ? formData.league_other : formData.league)
           : formData.tournament,
+        competition_gender: formData.competition_gender || 'mens',
 
         // Player info
         player_name: formData.player_name || null,
@@ -804,6 +944,10 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
               <div>
                 <span className="block text-sm font-medium text-gray-600">Kit Type</span>
                 <span className="text-gray-900 capitalize">{formData.kit_type || 'Not specified'}</span>
+              </div>
+              <div>
+                <span className="block text-sm font-medium text-gray-600">Competition</span>
+                <span className="text-gray-900">{formData.competition_gender === 'womens' ? "Women's" : "Men's"}</span>
               </div>
               {formData.player_name && (
                 <div>
@@ -1263,6 +1407,7 @@ export default function KitSubmissionWizard({ onCancel }) {
     kit_type: 'home', // home, away, third, special
     league: '',
     league_other: '',
+    competition_gender: 'mens',
     // Basic Info - International
     country_name: '',
     competition: '',
@@ -1306,94 +1451,160 @@ export default function KitSubmissionWizard({ onCancel }) {
 
   const handleFormChange = useCallback((e) => {
     const { name, value } = e.target
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }))
+    setFormData(prevData => {
+      const updated = { ...prevData, [name]: value }
+      // Reset league when competition_gender changes (leagues differ by gender)
+      if (name === 'competition_gender' && prevData.league && prevData.league !== 'Other') {
+        updated.league = ''
+        updated.league_other = ''
+      }
+      // Auto-suggest women's competition when league_other or tournament contains women-related keywords
+      if (name === 'league_other' || name === 'tournament') {
+        const checkValue = (value || '').toLowerCase()
+        if (/nwsl|wsl|women|w-league|liga\s*f|féminine|frauen|she\s*believes/i.test(checkValue)) {
+          updated.competition_gender = 'womens'
+        }
+      }
+      return updated
+    })
   }, [])
 
   // Welcome Screen Component
   const WelcomeScreen = () => (
-    <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md">
+    <div className="max-w-3xl mx-auto">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-8 rounded-t-lg">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Submit a New Kit</h1>
+          <h1 className="text-4xl font-bold mb-4">Submit New Kits</h1>
           <p className="text-xl opacity-90">
-            Help grow the RecollectKits database by adding your kit to our collection.
+            Help grow the RecollectKits database by adding kits to our collection.
           </p>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            What You'll Need
-          </h2>
+      {/* Two-card selection */}
+      <div className="bg-white rounded-b-lg shadow-md p-8">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-2 text-center">
+          How would you like to add kits?
+        </h2>
+        <p className="text-gray-500 text-center mb-8">Choose the method that works best for you</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <ClipboardDocumentListIcon className="h-10 w-10 text-green-600 mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Basic Information</h3>
-              <p className="text-sm text-gray-600">
-                Team name, season, kit type, and manufacturer details
-              </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
+          {/* Card 1 - Single Kit */}
+          <div
+            className="rounded-xl cursor-pointer"
+            onClick={nextStep}
+            style={{
+              border: '2px solid #E5E7EB',
+              padding: '32px 24px',
+              textAlign: 'center',
+              transition: 'all 0.2s ease-out',
+              background: 'white'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#16a34a'
+              e.currentTarget.style.boxShadow = '0 8px 25px -5px rgba(22, 163, 74, 0.15)'
+              e.currentTarget.style.transform = 'translateY(-4px)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#E5E7EB'
+              e.currentTarget.style.boxShadow = 'none'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
+          >
+            <div
+              className="mx-auto mb-5 flex items-center justify-center rounded-full"
+              style={{ width: '64px', height: '64px', backgroundColor: 'rgba(22, 163, 74, 0.1)' }}
+            >
+              <ClipboardDocumentListIcon style={{ width: '32px', height: '32px', color: '#16a34a' }} />
             </div>
+            <h3
+              style={{
+                fontSize: '20px',
+                fontWeight: 700,
+                color: '#1F2937',
+                marginBottom: '8px'
+              }}
+            >
+              Add Single Kit
+            </h3>
+            <p style={{ fontSize: '15px', color: '#6B7280', lineHeight: 1.6, marginBottom: '24px' }}>
+              Step-by-step wizard for adding one jersey
+            </p>
+            <button
+              onClick={(e) => { e.stopPropagation(); nextStep() }}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white"
+              style={{ backgroundColor: '#16a34a', fontSize: '15px', transition: 'background-color 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
+            >
+              Start
+              <ArrowRightIcon style={{ width: '18px', height: '18px' }} />
+            </button>
+          </div>
 
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <PhotoIcon className="h-10 w-10 mb-4" style={{color: '#6b46c1'}} />
-              <h3 className="font-semibold text-gray-900 mb-2">Kit Images</h3>
-              <p className="text-sm text-gray-600">
-                Front and back photos of your jersey (JPEG, PNG, WebP)
-              </p>
+          {/* Card 2 - Bulk Upload */}
+          <div
+            className="rounded-xl cursor-pointer"
+            onClick={() => navigate('/collection/bulk-upload')}
+            style={{
+              border: '2px solid #E5E7EB',
+              padding: '32px 24px',
+              textAlign: 'center',
+              transition: 'all 0.2s ease-out',
+              background: 'white'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#7C3AED'
+              e.currentTarget.style.boxShadow = '0 8px 25px -5px rgba(124, 58, 237, 0.15)'
+              e.currentTarget.style.transform = 'translateY(-4px)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#E5E7EB'
+              e.currentTarget.style.boxShadow = 'none'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
+          >
+            <div
+              className="mx-auto mb-5 flex items-center justify-center rounded-full"
+              style={{ width: '64px', height: '64px', backgroundColor: 'rgba(124, 58, 237, 0.1)' }}
+            >
+              <TableCellsIcon style={{ width: '32px', height: '32px', color: '#7C3AED' }} />
             </div>
-
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <CheckCircleIcon className="h-10 w-10 text-purple-600 mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Optional Details</h3>
-              <p className="text-sm text-gray-600">
-                Player name, sponsors, colors, and description
-              </p>
-            </div>
+            <h3
+              style={{
+                fontSize: '20px',
+                fontWeight: 700,
+                color: '#1F2937',
+                marginBottom: '8px'
+              }}
+            >
+              Bulk Upload
+            </h3>
+            <p style={{ fontSize: '15px', color: '#6B7280', lineHeight: 1.6, marginBottom: '24px' }}>
+              Add multiple kits at once using a spreadsheet
+            </p>
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate('/collection/bulk-upload') }}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white"
+              style={{ backgroundColor: '#7C3AED', fontSize: '15px', transition: 'background-color 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6D28D9'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#7C3AED'}
+            >
+              Start
+              <ArrowRightIcon style={{ width: '18px', height: '18px' }} />
+            </button>
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <h3 className="font-semibold text-blue-900 mb-3">Submission Process</h3>
-          <ul className="space-y-2 text-blue-800">
-            <li className="flex items-start">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">1</span>
-              <span>Enter basic kit information (team, season, type)</span>
-            </li>
-            <li className="flex items-start">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">2</span>
-              <span>Add detailed information about sponsors and colors</span>
-            </li>
-            <li className="flex items-start">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">3</span>
-              <span>Upload clear photos of the front and/or back of the kit</span>
-            </li>
-            <li className="flex items-start">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">4</span>
-              <span>Review your submission and submit for approval</span>
-            </li>
-            <li className="flex items-start">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">5</span>
-              <span>Admins will review your submission for accuracy and publish to the kit database</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="text-center">
-          <button
-            onClick={nextStep}
-            className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-105"
-          >
-            Get Started
-            <ArrowRightIcon className="h-6 w-6 ml-3" />
-          </button>
-        </div>
+        {/* Mobile stack override */}
+        <style>{`
+          @media (max-width: 639px) {
+            .max-w-3xl [style*="grid-template-columns"] {
+              grid-template-columns: 1fr !important;
+            }
+          }
+        `}</style>
 
         <div className="mt-8 pt-6 border-t border-gray-200">
           <div className="flex justify-between items-center text-sm text-gray-500">

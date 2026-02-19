@@ -14,6 +14,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
   const [error, setError] = useState(null)
 
   const [jerseyDetails, setJerseyDetails] = useState({
+    jersey_fit: 'mens',
     size: '',
     condition: 'new',
     notes: '',
@@ -87,6 +88,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
           collection_id: collection.id,
           user_id: user.id,
           public_jersey_id: selectedJersey.id,
+          jersey_fit: jerseyDetails.jersey_fit || 'mens',
           size: jerseyDetails.size || null,
           condition: jerseyDetails.condition,
           notes: jerseyDetails.notes || null,
@@ -102,6 +104,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
       setSelectedJersey(null)
       setShowDetailsForm(false)
       setJerseyDetails({
+        jersey_fit: 'mens',
         size: '',
         condition: 'new',
         notes: '',
@@ -130,6 +133,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
       setShowDetailsForm(false)
       setError(null)
       setJerseyDetails({
+        jersey_fit: 'mens',
         size: '',
         condition: 'new',
         notes: '',
@@ -257,19 +261,42 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Size */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Size</label>
+              {/* Fit & Size */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Fit & Size</label>
+                <div className="flex gap-3 items-start">
+                  <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid #d1d5db' }}>
+                    {[
+                      { value: 'mens', label: "Men's" },
+                      { value: 'womens', label: "Women's" },
+                      { value: 'youth', label: 'Youth' }
+                    ].map((option, idx) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setJerseyDetails({ ...jerseyDetails, jersey_fit: option.value })}
+                        style={jerseyDetails.jersey_fit === option.value
+                          ? { backgroundColor: '#7C3AED', color: 'white' }
+                          : { backgroundColor: 'white', color: '#374151' }
+                        }
+                        className={`px-3 py-2 text-sm font-medium transition-colors hover:opacity-90${idx > 0 ? ' border-l border-gray-300' : ''}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                   <input
                     type="text"
                     value={jerseyDetails.size}
                     onChange={(e) => setJerseyDetails({ ...jerseyDetails, size: e.target.value })}
                     placeholder="e.g., M, L, XL"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                    style={{ minWidth: 0 }}
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Condition */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Purchased</label>
@@ -284,7 +311,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
                 </div>
 
                 {/* Acquired From */}
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Acquired From</label>
                   <input
                     type="text"

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useMemo, useCallback } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { HeartIcon } from '@heroicons/react/24/outline'
 import { StarIcon } from '@heroicons/react/24/outline'
 import { ArrowPathIcon } from '@heroicons/react/24/outline'
@@ -26,11 +26,31 @@ export default function Jerseys() {
   const [showSelectCollectionModal, setShowSelectCollectionModal] = useState(false)
   const [selectedJerseyForCollection, setSelectedJerseyForCollection] = useState(null)
 
+  // URL search params for shareable filter links
+  const [searchParams, setSearchParams] = useSearchParams()
+
   // Filter states
   const [selectedLeagues, setSelectedLeagues] = useState([])
   const [selectedManufacturers, setSelectedManufacturers] = useState([])
   const [selectedTypes, setSelectedTypes] = useState([])
   const [selectedSeason, setSelectedSeason] = useState('')
+  const [selectedGender, setSelectedGender] = useState(() => {
+    const param = searchParams.get('gender')
+    return param === 'mens' || param === 'womens' ? param : ''
+  })
+
+  const handleGenderChange = useCallback((value) => {
+    setSelectedGender(value)
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (value) {
+        next.set('gender', value)
+      } else {
+        next.delete('gender')
+      }
+      return next
+    }, { replace: true })
+  }, [setSearchParams])
 
   const { jerseys: allJerseys, loading, error, addPublicJersey } = usePublicJerseys(searchTerm, filters)
   const { isInMainCollection, addToMainCollection, refetch: refetchUserJerseys } = useUserJerseys()
@@ -69,8 +89,13 @@ export default function Jerseys() {
       filtered = filtered.filter(j => j.season === selectedSeason)
     }
 
+    // Competition gender filter
+    if (selectedGender) {
+      filtered = filtered.filter(j => j.competition_gender === selectedGender)
+    }
+
     return filtered
-  }, [allJerseys, selectedLeagues, selectedManufacturers, selectedTypes, selectedSeason])
+  }, [allJerseys, selectedLeagues, selectedManufacturers, selectedTypes, selectedSeason, selectedGender])
 
   const handleFormSuccess = () => {
     setShowForm(false)
@@ -132,9 +157,10 @@ export default function Jerseys() {
     setSelectedManufacturers([])
     setSelectedTypes([])
     setSelectedSeason('')
+    handleGenderChange('')
   }
 
-  const activeFilterCount = selectedLeagues.length + selectedManufacturers.length + selectedTypes.length + (selectedSeason ? 1 : 0)
+  const activeFilterCount = selectedLeagues.length + selectedManufacturers.length + selectedTypes.length + (selectedSeason ? 1 : 0) + (selectedGender ? 1 : 0)
 
   return (
     <div className="space-y-6">
@@ -200,6 +226,27 @@ export default function Jerseys() {
           </div>
         </div>
       )}
+
+      {/* Competition Gender Pills */}
+      <div className="flex items-center gap-2">
+        {[
+          { value: '', label: 'All' },
+          { value: 'mens', label: "Men's" },
+          { value: 'womens', label: "Women's" }
+        ].map((option) => (
+          <button
+            key={option.value}
+            onClick={() => handleGenderChange(option.value)}
+            style={selectedGender === option.value
+              ? { backgroundColor: '#7C3AED', color: 'white', border: '1px solid #7C3AED' }
+              : { backgroundColor: 'white', color: '#374151', border: '1px solid #d1d5db' }
+            }
+            className="px-4 py-2 text-sm font-medium rounded-full transition-all hover:opacity-90"
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
 
       {/* Filters Bar */}
       <div className="bg-white rounded-lg shadow-sm p-4">

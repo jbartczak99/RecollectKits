@@ -20,6 +20,7 @@ import Pricing from './pages/Pricing'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import ResetPassword from './pages/ResetPassword'
+import BulkUpload from './pages/BulkUpload'
 
 function App() {
   return (
@@ -84,6 +85,18 @@ function App() {
                     <ApprovalGate>
                       <ProtectedRoute>
                         <MySubmissions />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
+                }
+              />
+              <Route
+                path="/collection/bulk-upload"
+                element={
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <BulkUpload />
                       </ProtectedRoute>
                     </ApprovalGate>
                   </div>

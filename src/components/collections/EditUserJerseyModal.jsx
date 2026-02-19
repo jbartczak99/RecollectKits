@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 
 export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuccess }) {
   const [formData, setFormData] = useState({
+    jersey_fit: 'mens',
     size: '',
     condition: 'new',
     notes: '',
@@ -16,6 +17,7 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
   useEffect(() => {
     if (userJersey) {
       setFormData({
+        jersey_fit: userJersey.jersey_fit || 'mens',
         size: userJersey.size || '',
         condition: userJersey.condition || 'new',
         notes: userJersey.notes || '',
@@ -33,6 +35,7 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
       const { data, error: updateError } = await supabase
         .from('user_jerseys')
         .update({
+          jersey_fit: formData.jersey_fit || 'mens',
           size: formData.size || null,
           condition: formData.condition,
           notes: formData.notes || null,
@@ -94,20 +97,44 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Size */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Size</label>
+          {/* Fit & Size */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fit & Size</label>
+            <div className="flex gap-3 items-start">
+              <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid #d1d5db' }}>
+                {[
+                  { value: 'mens', label: "Men's" },
+                  { value: 'womens', label: "Women's" },
+                  { value: 'youth', label: 'Youth' }
+                ].map((option, idx) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, jersey_fit: option.value })}
+                    disabled={loading}
+                    style={formData.jersey_fit === option.value
+                      ? { backgroundColor: '#7C3AED', color: 'white' }
+                      : { backgroundColor: 'white', color: '#374151' }
+                    }
+                    className={`px-3 py-2 text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50${idx > 0 ? ' border-l border-gray-300' : ''}`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
               <input
                 type="text"
                 value={formData.size}
                 onChange={(e) => setFormData({ ...formData, size: e.target.value })}
                 placeholder="e.g., M, L, XL"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                style={{ minWidth: 0 }}
                 disabled={loading}
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Condition */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Purchased</label>
@@ -123,7 +150,7 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
             </div>
 
             {/* Acquired From */}
-            <div className="sm:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Acquired From</label>
               <input
                 type="text"

@@ -571,7 +571,12 @@ export default function CollectionDetail() {
           {jerseys.map((userJersey) => {
             const jersey = userJersey.public_jersey
             const needsDetails = userJersey.details_completed === false
-            const hasUserDetails = userJersey.size || userJersey.condition || userJersey.acquired_from || userJersey.notes
+            const hasUserDetails = userJersey.jersey_fit || userJersey.size || userJersey.condition || userJersey.acquired_from || userJersey.notes
+            const fitLabels = { mens: "Men's", womens: "Women's", youth: 'Youth' }
+            const fitDisplay = userJersey.jersey_fit ? fitLabels[userJersey.jersey_fit] || null : null
+            const fitSizeDisplay = fitDisplay && userJersey.size
+              ? `${fitDisplay} ${userJersey.size}`
+              : fitDisplay || userJersey.size || null
             // Check for system collections inline to ensure current state is used
             const isSystemCollection = collection?.name === 'Liked Kits' || collection?.name === 'Wishlist'
 
@@ -696,9 +701,9 @@ export default function CollectionDetail() {
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                       <h4 className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-2">My Kit Details</h4>
                       <div className="grid grid-cols-2 gap-1 text-sm">
-                        {userJersey.size && (
+                        {fitSizeDisplay && (
                           <div>
-                            <span className="text-gray-600">Size:</span> <span className="font-medium text-gray-800">{userJersey.size}</span>
+                            <span className="text-gray-600">Fit/Size:</span> <span className="font-medium text-gray-800">{fitSizeDisplay}</span>
                           </div>
                         )}
                         {userJersey.condition && (

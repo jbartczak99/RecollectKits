@@ -11,10 +11,13 @@ import {
   ExclamationTriangleIcon,
   ClockIcon,
   PencilSquareIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext.jsx'
+import WikidataPlayerPreview from './WikidataPlayerPreview'
+import { searchPlayer, fetchPlayerDetails, mapToPlayerRecord } from '../../utils/wikidata'
 import './AdminPanel.css'
 
 export default function AdminPanel() {
@@ -185,6 +188,55 @@ export default function AdminPanel() {
     setShowDetailsModal(true)
   }
 
+  // Helper: find or create a player record via Wikidata
+  async function findOrCreatePlayer(playerName) {
+    try {
+      // Search Wikidata
+      const { data: results } = await searchPlayer(playerName)
+      if (!results || results.length === 0) return null
+
+      const topResult = results[0]
+
+      // Check if player already exists by wikidata_id
+      const { data: existing } = await supabase
+        .from('players')
+        .select('id')
+        .eq('wikidata_id', topResult.wikidataId)
+        .maybeSingle()
+
+      if (existing) return existing.id
+
+      // Fetch full details
+      const { data: details } = await fetchPlayerDetails(topResult.wikidataId)
+      if (!details) return null
+
+      const { player, careers } = mapToPlayerRecord(details)
+
+      // Insert player
+      const { data: newPlayer, error: playerError } = await supabase
+        .from('players')
+        .insert(player)
+        .select('id')
+        .single()
+
+      if (playerError) {
+        console.error('Error creating player:', playerError)
+        return null
+      }
+
+      // Insert careers
+      if (careers.length > 0) {
+        const careerRows = careers.map(c => ({ ...c, player_id: newPlayer.id }))
+        await supabase.from('player_careers').insert(careerRows)
+      }
+
+      return newPlayer.id
+    } catch (err) {
+      console.error('Error in findOrCreatePlayer:', err)
+      return null
+    }
+  }
+
   const handleAccountAction = async (account, action, notes = '') => {
     setProcessingAction(true)
     try {
@@ -246,7 +298,20 @@ export default function AdminPanel() {
           primary_color: selectedSubmission.primary_color,
           secondary_color: selectedSubmission.secondary_color,
           description: selectedSubmission.description,
-          created_by: selectedSubmission.submitted_by
+          created_by: selectedSubmission.submitted_by,
+          player_name: selectedSubmission.player_name || null,
+          player_number: selectedSubmission.jersey_number || null,
+          competition_gender: selectedSubmission.competition_gender || null,
+          main_sponsor: selectedSubmission.main_sponsor || null,
+          additional_sponsors: selectedSubmission.additional_sponsors || null,
+        }
+
+        // Auto-link player if submission has a player name
+        if (selectedSubmission.player_name && selectedSubmission.player_name.trim()) {
+          const playerId = await findOrCreatePlayer(selectedSubmission.player_name)
+          if (playerId) {
+            jerseyData.player_id = playerId
+          }
         }
 
         const { data: newJersey, error: insertError } = await supabase
@@ -509,7 +574,21 @@ export default function AdminPanel() {
           primary_color: editedData.primary_color,
           secondary_color: editedData.secondary_color,
           description: editedData.description,
-          created_by: submission.submitted_by
+          created_by: submission.submitted_by,
+          player_name: editedData.player_name || null,
+          player_number: editedData.jersey_number || null,
+          competition_gender: submission.competition_gender || null,
+          main_sponsor: editedData.main_sponsor || null,
+          additional_sponsors: editedData.additional_sponsors || null,
+        }
+
+        // Auto-link player if submission has a player name
+        const playerName = editedData.player_name || submission.player_name
+        if (playerName && playerName.trim()) {
+          const playerId = await findOrCreatePlayer(playerName)
+          if (playerId) {
+            jerseyData.player_id = playerId
+          }
         }
 
         const { data: newJersey, error: insertError } = await supabase
@@ -824,6 +903,18 @@ export default function AdminPanel() {
               </div>
             </div>
 
+            {/* Wikidata Player Preview */}
+            {submission.player_name && submission.player_name.trim() && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">
+                  Player Profile (Wikidata)
+                </h3>
+                <WikidataPlayerPreview
+                  playerName={isEditMode ? editedData.player_name : submission.player_name}
+                />
+              </div>
+            )}
+
             {/* Description */}
             <div className="mt-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">Description</h3>
@@ -1021,6 +1112,266 @@ export default function AdminPanel() {
     )
   }
 
+  // Bulk Player Linker component
+  function BulkPlayerLinker() {
+    const [unlinkedJerseys, setUnlinkedJerseys] = useState([])
+    const [loadingUnlinked, setLoadingUnlinked] = useState(false)
+    const [jerseyStates, setJerseyStates] = useState({})
+    // jerseyStates[jerseyId] = { status, searchResults, selectedDetails, error }
+
+    const fetchUnlinked = async () => {
+      setLoadingUnlinked(true)
+      let { data, error: queryError } = await supabase
+        .from('public_jerseys')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (queryError) {
+        console.error('Error fetching jerseys for player linking:', queryError)
+      }
+
+      if (data) {
+        const unlinked = data.filter(j =>
+          j.player_name && j.player_name.trim() !== '' && !j.player_id
+        )
+        setUnlinkedJerseys(unlinked)
+      }
+      setLoadingUnlinked(false)
+    }
+
+    useEffect(() => { fetchUnlinked() }, [])
+
+    const updateJerseyState = (jerseyId, updates) => {
+      setJerseyStates(prev => ({
+        ...prev,
+        [jerseyId]: { ...(prev[jerseyId] || {}), ...updates }
+      }))
+    }
+
+    const handleSearch = async (jersey) => {
+      updateJerseyState(jersey.id, { status: 'searching', error: null })
+
+      const { data, error: searchError } = await searchPlayer(jersey.player_name)
+      if (searchError) {
+        updateJerseyState(jersey.id, { status: 'error', error: searchError })
+        return
+      }
+      if (!data || data.length === 0) {
+        updateJerseyState(jersey.id, { status: 'no-results' })
+        return
+      }
+
+      updateJerseyState(jersey.id, { status: 'picking', searchResults: data })
+    }
+
+    const handlePickPlayer = async (jersey, result) => {
+      updateJerseyState(jersey.id, { status: 'loading-details' })
+
+      const { data: details, error: fetchError } = await fetchPlayerDetails(result.wikidataId)
+      if (fetchError) {
+        updateJerseyState(jersey.id, { status: 'error', error: fetchError })
+        return
+      }
+
+      updateJerseyState(jersey.id, { status: 'confirming', selectedDetails: details })
+    }
+
+    const handleConfirmLink = async (jersey) => {
+      const state = jerseyStates[jersey.id]
+      if (!state?.selectedDetails) return
+
+      updateJerseyState(jersey.id, { status: 'linking' })
+
+      try {
+        const { player, careers } = mapToPlayerRecord(state.selectedDetails)
+
+        // Check if player already exists
+        const { data: existing } = await supabase
+          .from('players')
+          .select('id')
+          .eq('wikidata_id', player.wikidata_id)
+          .maybeSingle()
+
+        let playerId
+        if (existing) {
+          playerId = existing.id
+        } else {
+          const { data: newPlayer, error: playerError } = await supabase
+            .from('players')
+            .insert(player)
+            .select('id')
+            .single()
+
+          if (playerError) throw playerError
+          playerId = newPlayer.id
+
+          if (careers.length > 0) {
+            await supabase.from('player_careers').insert(
+              careers.map(c => ({ ...c, player_id: playerId }))
+            )
+          }
+        }
+
+        // Link this jersey and others with same player_name
+        await supabase
+          .from('public_jerseys')
+          .update({ player_id: playerId })
+          .eq('player_name', jersey.player_name)
+          .is('player_id', null)
+
+        updateJerseyState(jersey.id, { status: 'done' })
+      } catch (err) {
+        updateJerseyState(jersey.id, { status: 'error', error: err.message })
+      }
+    }
+
+    const handleSkip = (jerseyId) => {
+      updateJerseyState(jerseyId, { status: 'skipped' })
+    }
+
+    const renderJerseyRow = (jersey) => {
+      const state = jerseyStates[jersey.id] || {}
+      const { status } = state
+
+      return (
+        <div key={jersey.id} className="py-4 px-3 border-b border-gray-100 last:border-0">
+          {/* Jersey info header */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900">
+                {jersey.player_name}
+                {jersey.player_number && <span className="text-gray-400" style={{ marginLeft: '4px' }}>#{jersey.player_number}</span>}
+              </p>
+              <p className="text-xs text-gray-500">
+                {jersey.team_name} &middot; {jersey.season} &middot; {jersey.jersey_type}
+              </p>
+            </div>
+
+            {/* Action area */}
+            <div className="flex-shrink-0">
+              {!status && (
+                <button
+                  onClick={() => handleSearch(jersey)}
+                  className="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                >
+                  Search Wikidata
+                </button>
+              )}
+              {status === 'searching' && <span className="text-xs text-blue-600 animate-pulse">Searching...</span>}
+              {status === 'loading-details' && <span className="text-xs text-blue-600 animate-pulse">Loading details...</span>}
+              {status === 'linking' && <span className="text-xs text-blue-600 animate-pulse">Linking...</span>}
+              {status === 'done' && <span className="text-xs text-green-600 font-medium">Linked</span>}
+              {status === 'skipped' && <span className="text-xs text-gray-400 font-medium">Skipped</span>}
+              {status === 'no-results' && (
+                <span className="text-xs text-amber-600 font-medium">No Wikidata match</span>
+              )}
+              {status === 'error' && (
+                <div className="text-right">
+                  <span className="text-xs text-red-600 font-medium">Error</span>
+                  <button onClick={() => handleSearch(jersey)} className="text-xs text-blue-600 ml-2">Retry</button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Search results - pick a player */}
+          {status === 'picking' && state.searchResults && (
+            <div className="mt-2 bg-gray-50 rounded-lg p-3">
+              <p className="text-xs font-medium text-gray-700 mb-2">Select the correct player:</p>
+              <div className="space-y-1.5">
+                {state.searchResults.map((r) => (
+                  <button
+                    key={r.wikidataId}
+                    onClick={() => handlePickPlayer(jersey, r)}
+                    className="w-full text-left px-3 py-2 bg-white rounded-md border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                  >
+                    <p className="text-sm font-medium text-gray-900">{r.name}</p>
+                    {r.description && <p className="text-xs text-gray-500">{r.description}</p>}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => handleSkip(jersey.id)} className="mt-2 text-xs text-gray-500 hover:text-gray-700">
+                Skip this jersey
+              </button>
+            </div>
+          )}
+
+          {/* Confirm player details */}
+          {status === 'confirming' && state.selectedDetails && (
+            <div className="mt-2 bg-green-50 rounded-lg p-3 border border-green-200">
+              <div className="text-sm mb-2">
+                <p className="font-semibold text-green-800">{state.selectedDetails.name}</p>
+                <div className="text-xs text-green-700 space-y-0.5 mt-1">
+                  {state.selectedDetails.position && <p>Position: {state.selectedDetails.position}</p>}
+                  {state.selectedDetails.nationality && <p>Nationality: {state.selectedDetails.nationality}</p>}
+                  {state.selectedDetails.dateOfBirth && <p>Born: {state.selectedDetails.dateOfBirth}</p>}
+                  {state.selectedDetails.careers.filter(c => !c.isInternational).length > 0 && (
+                    <p>Club: {state.selectedDetails.careers.filter(c => !c.isInternational).map(c => c.teamName).join(' → ')}</p>
+                  )}
+                  {state.selectedDetails.careers.filter(c => c.isInternational).length > 0 && (
+                    <p>International: {state.selectedDetails.careers.filter(c => c.isInternational).map(c => c.teamName).join(', ')}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleConfirmLink(jersey)}
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                >
+                  Confirm & Link
+                </button>
+                <button
+                  onClick={() => updateJerseyState(jersey.id, { status: 'picking', selectedDetails: null })}
+                  className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Pick Different
+                </button>
+                <button onClick={() => handleSkip(jersey.id)} className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700">
+                  Skip
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Bulk Player Linking</h2>
+              <p className="text-sm text-gray-500">
+                Search Wikidata for each player, review the match, then confirm to link.
+              </p>
+            </div>
+            <button
+              onClick={fetchUnlinked}
+              disabled={loadingUnlinked}
+              className="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {loadingUnlinked ? (
+            <div className="text-center py-8 text-gray-500">Loading unlinked jerseys...</div>
+          ) : unlinkedJerseys.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircleIcon className="w-12 h-12 text-green-400 mx-auto mb-3" />
+              <p className="text-gray-600 font-medium">All player jerseys are linked!</p>
+            </div>
+          ) : (
+            <div className="max-h-[600px] overflow-y-auto">
+              {unlinkedJerseys.map(renderJerseyRow)}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="admin-panel">
       {/* Header */}
@@ -1041,7 +1392,7 @@ export default function AdminPanel() {
                 </div>
               </div>
               <p className="text-gray-600 mb-4 text-lg">
-                {activeTab === 'submissions' ? 'Review and manage kit submissions' : 'Review and manage user accounts'}
+                {activeTab === 'submissions' ? 'Review and manage kit submissions' : activeTab === 'accounts' ? 'Review and manage user accounts' : 'Link unlinked player jerseys via Wikidata'}
               </p>
             </div>
 
@@ -1097,9 +1448,27 @@ export default function AdminPanel() {
                 </div>
               </button>
 
+              {/* Player Links Column */}
+              <button
+                onClick={() => setActiveTab('players')}
+                className={`rounded-xl border-2 transition-all hover:shadow-lg ${
+                  activeTab === 'players'
+                    ? 'border-green-500 bg-green-50 shadow-md'
+                    : 'border-gray-200 bg-white hover:border-green-300'
+                }`}
+              >
+                <div className="p-5 text-center min-w-[130px]">
+                  <h3 className="font-semibold text-sm mb-4 mt-2">Player Links</h3>
+                  <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 mb-2">
+                    <GlobeAltIcon className="w-4 h-4" />
+                    <span>Bulk link</span>
+                  </div>
+                </div>
+              </button>
+
               {/* Refresh Button */}
               <button
-                onClick={activeTab === 'submissions' ? fetchSubmissions : fetchPendingAccounts}
+                onClick={activeTab === 'submissions' ? fetchSubmissions : activeTab === 'accounts' ? fetchPendingAccounts : () => {}}
                 className="px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors shadow-md hover:shadow-lg self-start"
               >
                 <div className="flex items-center gap-2">
@@ -1217,7 +1586,7 @@ export default function AdminPanel() {
               ))}
             </div>
           )
-        ) : (
+        ) : activeTab === 'accounts' ? (
           // Account Reviews Tab
           accountsLoading ? (
             <div className="text-center py-12">
@@ -1340,7 +1709,9 @@ export default function AdminPanel() {
               ))}
             </div>
           )
-        )}
+        ) : activeTab === 'players' ? (
+          <BulkPlayerLinker />
+        ) : null}
       </div>
 
       {/* Action Modal */}

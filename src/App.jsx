@@ -20,6 +20,7 @@ import Pricing from './pages/Pricing'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
 import ResetPassword from './pages/ResetPassword'
+import PlayerProfile from './pages/PlayerProfile'
 import BulkUpload from './pages/BulkUpload'
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/jerseys" element={<div className="container py-8"><Jerseys /></div>} />
               <Route path="/jerseys/:id" element={<div className="container py-8"><JerseyDetails /></div>} />
+              <Route path="/players/:id" element={<div className="container py-8"><PlayerProfile /></div>} />
               <Route path="/about" element={<div className="container py-8"><About /></div>} />
               <Route path="/partners" element={<div className="container py-8"><Partners /></div>} />
               <Route path="/pricing" element={<div className="container py-8"><Pricing /></div>} />

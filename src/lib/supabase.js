@@ -26,10 +26,37 @@ try {
   // If anything goes wrong parsing, just continue - the client will handle it
 }
 
+// Custom fetch that aborts after 10 seconds so requests never hang forever.
+// If something (browser extension, network issue) blocks Supabase requests,
+// the app will show an error state instead of a blank page.
+const fetchWithTimeout = (url, options = {}) => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+  // Merge with any existing signal
+  const existingSignal = options.signal
+  if (existingSignal) {
+    existingSignal.addEventListener('abort', () => controller.abort())
+  }
+
+  return fetch(url, { ...options, signal: controller.signal })
+    .catch((err) => {
+      if (err.name === 'AbortError') {
+        console.error('Supabase request timed out:', url)
+        throw new Error('Request timed out - check if a browser extension is blocking connections to Supabase')
+      }
+      throw err
+    })
+    .finally(() => clearTimeout(timeoutId))
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+  },
+  global: {
+    fetch: fetchWithTimeout
   }
 })

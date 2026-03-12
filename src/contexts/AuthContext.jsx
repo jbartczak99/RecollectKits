@@ -19,26 +19,45 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Get initial session and verify it's still valid
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
 
-      if (session) {
-        // Verify the session is actually valid by checking with the server
-        const { data: { user: verifiedUser }, error } = await supabase.auth.getUser()
+        if (session) {
+          // Verify the session is actually valid by checking with the server
+          const { data: { user: verifiedUser }, error } = await supabase.auth.getUser()
 
-        if (error || !verifiedUser) {
-          // Session is stale/expired and couldn't be refreshed - clear it
-          console.warn('Stale session detected, signing out to clear cached auth')
-          await supabase.auth.signOut()
+          if (error || !verifiedUser) {
+            // Session is stale/expired and couldn't be refreshed - force local cleanup
+            console.warn('Stale session detected, forcing local sign out')
+            try {
+              await supabase.auth.signOut({ scope: 'local' })
+            } catch {
+              // If even local signOut fails, manually clear storage
+              console.warn('Local signOut failed, clearing storage manually')
+              const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0]}-auth-token`
+              localStorage.removeItem(storageKey)
+            }
+            setUser(null)
+            setProfile(null)
+            setLoading(false)
+            return
+          }
+
+          setUser(verifiedUser)
+          await getProfile(verifiedUser.id)
+        } else {
           setUser(null)
-          setProfile(null)
-          setLoading(false)
-          return
         }
-
-        setUser(session.user)
-        await getProfile(session.user.id)
-      } else {
+      } catch (err) {
+        // If anything fails during init, clear everything and start fresh
+        console.error('Auth initialization error, clearing session:', err)
+        try {
+          await supabase.auth.signOut({ scope: 'local' })
+        } catch {
+          // last resort
+        }
         setUser(null)
+        setProfile(null)
       }
 
       setLoading(false)

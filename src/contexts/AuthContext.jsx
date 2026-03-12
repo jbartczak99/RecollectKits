@@ -32,8 +32,6 @@ export const AuthProvider = ({ children }) => {
             try {
               await supabase.auth.signOut({ scope: 'local' })
             } catch {
-              // If even local signOut fails, manually clear storage
-              console.warn('Local signOut failed, clearing storage manually')
               const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0]}-auth-token`
               localStorage.removeItem(storageKey)
             }
@@ -49,7 +47,6 @@ export const AuthProvider = ({ children }) => {
           setUser(null)
         }
       } catch (err) {
-        // If anything fails during init, clear everything and start fresh
         console.error('Auth initialization error, clearing session:', err)
         try {
           await supabase.auth.signOut({ scope: 'local' })
@@ -63,7 +60,21 @@ export const AuthProvider = ({ children }) => {
       setLoading(false)
     }
 
-    getInitialSession()
+    // Race auth init against a timeout so the app never hangs on a blank page.
+    // If Supabase is unreachable (blocked by extension, network issue, etc.),
+    // we still render the page after 5 seconds.
+    const timeout = setTimeout(() => {
+      setLoading((current) => {
+        if (current) {
+          console.warn('Auth initialization timed out after 5s, proceeding without auth')
+          setUser(null)
+          setProfile(null)
+        }
+        return false
+      })
+    }, 5000)
+
+    getInitialSession().finally(() => clearTimeout(timeout))
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

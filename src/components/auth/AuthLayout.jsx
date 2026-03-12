@@ -11,8 +11,12 @@ export default function AuthLayout() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
+        <div style={{
+          width: '40px', height: '40px', borderRadius: '50%',
+          border: '3px solid #e5e7eb', borderTopColor: '#16a34a',
+          animation: 'spin 0.8s linear infinite'
+        }} />
       </div>
     )
   }

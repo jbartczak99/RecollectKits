@@ -17,13 +17,30 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session and verify it's still valid
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      if (session?.user) {
+
+      if (session) {
+        // Verify the session is actually valid by checking with the server
+        const { data: { user: verifiedUser }, error } = await supabase.auth.getUser()
+
+        if (error || !verifiedUser) {
+          // Session is stale/expired and couldn't be refreshed - clear it
+          console.warn('Stale session detected, signing out to clear cached auth')
+          await supabase.auth.signOut()
+          setUser(null)
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+
+        setUser(session.user)
         await getProfile(session.user.id)
+      } else {
+        setUser(null)
       }
+
       setLoading(false)
     }
 

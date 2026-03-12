@@ -12,17 +12,18 @@ import {
   ClockIcon,
   PencilSquareIcon,
   ShieldCheckIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import WikidataPlayerPreview from './WikidataPlayerPreview'
+import PartnerApplications from './PartnerApplications'
 import { searchPlayer, fetchPlayerDetails, mapToPlayerRecord } from '../../utils/wikidata'
 import './AdminPanel.css'
 
 export default function AdminPanel() {
   const { user, getPendingAccounts, approveAccount, rejectAccount } = useAuth()
-  const [activeTab, setActiveTab] = useState('submissions')
   const [submissions, setSubmissions] = useState([])
   const [pendingAccounts, setPendingAccounts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -36,6 +37,10 @@ export default function AdminPanel() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [selectedSubmissionDetails, setSelectedSubmissionDetails] = useState(null)
+  const [partnerAppCount, setPartnerAppCount] = useState(0)
+  const [dashStats, setDashStats] = useState({ kits: 0, users: 0, countries: 0, kitsWeek: 0, usersWeek: 0 })
+  const [recentActivity, setRecentActivity] = useState([])
+  const [expandedQueue, setExpandedQueue] = useState(null) // 'submissions' | 'accounts' | 'partners' | 'players'
 
   // Check if user is admin by querying profiles table
   useEffect(() => {
@@ -108,14 +113,63 @@ export default function AdminPanel() {
     }
   }
 
+  const fetchPartnerAppCount = async () => {
+    const { count } = await supabase
+      .from('partner_applications')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+    setPartnerAppCount(count || 0)
+  }
+
+  const fetchDashStats = async () => {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const [kits, kitsWeek, users, usersWeek, countriesResult] = await Promise.all([
+      supabase.from('public_jerseys').select('id', { count: 'exact', head: true }),
+      supabase.from('public_jerseys').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo),
+      supabase.from('profiles').select('country').not('country', 'is', null)
+    ])
+    const unique = new Set((countriesResult.data || []).map(p => p.country).filter(Boolean))
+    setDashStats({
+      kits: kits.count || 0,
+      users: users.count || 0,
+      countries: unique.size,
+      kitsWeek: kitsWeek.count || 0,
+      usersWeek: usersWeek.count || 0
+    })
+  }
+
+  const fetchRecentActivity = async () => {
+    const weekAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const [signups, kitSubmissions, partnerApps] = await Promise.all([
+      supabase.from('profiles').select('username, created_at').gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5),
+      supabase.from('jersey_submissions').select('team_name, season, created_at, profiles:submitted_by(username)').gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5),
+      supabase.from('partner_applications').select('name, partner_type, created_at').gte('created_at', weekAgo).order('created_at', { ascending: false }).limit(5)
+    ])
+    const items = []
+    for (const u of (signups.data || [])) {
+      items.push({ time: u.created_at, text: `${u.username} signed up`, type: 'signup' })
+    }
+    for (const s of (kitSubmissions.data || [])) {
+      items.push({ time: s.created_at, text: `${s.profiles?.username || 'Unknown'} submitted ${s.team_name} ${s.season}`, type: 'submission' })
+    }
+    for (const p of (partnerApps.data || [])) {
+      items.push({ time: p.created_at, text: `${p.name} applied as ${p.partner_type}`, type: 'partner' })
+    }
+    items.sort((a, b) => new Date(b.time) - new Date(a.time))
+    setRecentActivity(items.slice(0, 10))
+  }
+
   useEffect(() => {
     if (isAdmin) {
       fetchSubmissions()
-      if (activeTab === 'accounts') {
-        fetchPendingAccounts()
-      }
+      fetchPartnerAppCount()
+      fetchPendingAccounts()
+      fetchDashStats()
+      fetchRecentActivity()
     }
-  }, [isAdmin, activeTab])
+  }, [isAdmin])
 
   // Fetch pending accounts
   const fetchPendingAccounts = async () => {
@@ -1372,346 +1426,350 @@ export default function AdminPanel() {
     )
   }
 
+  const totalPending = submissions.length + pendingAccounts.length + partnerAppCount
+
+  const refreshAll = () => {
+    fetchSubmissions()
+    fetchPendingAccounts()
+    fetchPartnerAppCount()
+    fetchDashStats()
+    fetchRecentActivity()
+  }
+
+  const timeAgo = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins} min ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs} hr ago`
+    return `${Math.floor(hrs / 24)}d ago`
+  }
+
+  // Render submission row for the expandable queue
+  const renderSubmissionRow = (submission) => (
+    <div key={submission.id} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
+      <div className="flex-shrink-0">
+        <ImageToggle submission={submission} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <button onClick={() => handleShowDetails(submission)} className="font-medium text-gray-900 text-sm hover:text-blue-600 text-left">
+          {submission.team_name}
+        </button>
+        <p className="text-xs text-gray-500">{submission.season} &middot; {submission.jersey_type} &middot; by {submission.profiles?.username || 'Unknown'}</p>
+      </div>
+      <div className="flex gap-1.5 flex-shrink-0">
+        <button onClick={() => handleAction(submission, 'approve')} className="action-button action-button-approve" style={{ minWidth: 'auto', padding: '6px 12px', fontSize: '13px' }}>
+          <CheckCircleIcon className="w-3.5 h-3.5" /> Approve
+        </button>
+        <button onClick={() => handleAction(submission, 'reject')} className="action-button action-button-reject" style={{ minWidth: 'auto', padding: '6px 12px', fontSize: '13px' }}>
+          <XCircleIcon className="w-3.5 h-3.5" /> Reject
+        </button>
+      </div>
+    </div>
+  )
+
+  const renderAccountRow = (account) => (
+    <div key={account.id} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
+      <div className="flex-shrink-0">
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+          {(account.full_name || account.username || 'U').charAt(0).toUpperCase()}
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-gray-900 text-sm">{account.full_name || account.username}</p>
+        <p className="text-xs text-gray-500">{account.email} &middot; @{account.username}</p>
+      </div>
+      {account.approval_status === 'pending' && (
+        <div className="flex gap-1.5 flex-shrink-0">
+          <button
+            onClick={() => { const n = prompt('Optional notes:'); if (n !== null) handleAccountAction(account, 'approve', n) }}
+            disabled={processingAction}
+            className="action-button action-button-approve" style={{ minWidth: 'auto', padding: '6px 12px', fontSize: '13px' }}
+          >
+            <CheckCircleIcon className="w-3.5 h-3.5" /> Approve
+          </button>
+          <button
+            onClick={() => { const n = prompt('Reason (required):'); if (n && n.trim()) handleAccountAction(account, 'reject', n); else if (n !== null) alert('Reason required.') }}
+            disabled={processingAction}
+            className="action-button action-button-reject" style={{ minWidth: 'auto', padding: '6px 12px', fontSize: '13px' }}
+          >
+            <XCircleIcon className="w-3.5 h-3.5" /> Reject
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
+  const pendingQueues = [
+    { key: 'submissions', label: 'Kit submissions', count: submissions.length },
+    { key: 'accounts', label: 'Account reviews', count: pendingAccounts.length },
+    { key: 'partners', label: 'Partner applications', count: partnerAppCount },
+    { key: 'players', label: 'Player link requests', count: 0 }
+  ]
+
+  const quickActions = [
+    { label: 'Add kit to database', href: '/jerseys' },
+    { label: 'Bulk import players', action: () => setExpandedQueue(expandedQueue === 'players' ? null : 'players') },
+    { label: 'Add team / season', href: '/jerseys' },
+    { label: 'Feature a collection', action: () => alert('Coming soon') }
+  ]
+
   return (
-    <div className="admin-panel">
-      {/* Header */}
-      <div className="admin-header mb-6 bg-blue-50">
-        <div className="admin-container py-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                  <ShieldCheckIcon className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>System Active</span>
-                  </div>
-                </div>
+    <div className="admin-panel" style={{ backgroundColor: '#FAF9F6' }}>
+      <div className="admin-container" style={{ paddingTop: '32px', paddingBottom: '48px' }}>
+        {/* ===== Header ===== */}
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1F2937', lineHeight: 1.2 }}>Admin panel</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+              <span style={{ fontSize: '14px', color: '#6B7280' }}>System active</span>
+            </div>
+          </div>
+          <button
+            onClick={refreshAll}
+            style={{
+              padding: '8px 20px',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              backgroundColor: 'white',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer'
+            }}
+          >
+            Refresh
+          </button>
+        </div>
+
+        {/* ===== Stats Row ===== */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: '1px',
+            backgroundColor: '#e5e7eb',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            marginBottom: '24px'
+          }}
+        >
+          {[
+            { label: 'Kits', value: dashStats.kits, growth: dashStats.kitsWeek, color: '#1F2937' },
+            { label: 'Users', value: dashStats.users, growth: dashStats.usersWeek, color: '#1F2937' },
+            { label: 'Countries', value: dashStats.countries, growth: null, color: '#1F2937' },
+            { label: 'Pending', value: totalPending, growth: null, color: totalPending > 0 ? '#b45309' : '#1F2937' },
+            { label: 'Partner apps', value: partnerAppCount, growth: null, color: partnerAppCount > 0 ? '#7C3AED' : '#1F2937' }
+          ].map((s) => (
+            <div key={s.label} style={{ backgroundColor: '#FAF5EF', padding: '20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', color: '#6B7280', fontWeight: 500, marginBottom: '4px' }}>{s.label}</p>
+              <p style={{ fontSize: '32px', fontWeight: 700, color: s.color, lineHeight: 1.2 }}>{s.value.toLocaleString()}</p>
+              {s.growth > 0 && (
+                <p style={{ fontSize: '13px', color: '#16a34a', marginTop: '4px' }}>+{s.growth} this week</p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ===== Pending Actions + Quick Actions (side by side in one card) ===== */}
+        <div
+          style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb',
+            marginBottom: '24px',
+            overflow: 'hidden'
+          }}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            {/* Pending Actions */}
+            <div style={{ padding: '24px', borderRight: '1px solid #e5e7eb' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1F2937', marginBottom: '16px' }}>Pending actions</h2>
+              <div>
+                {pendingQueues.map((q) => (
+                  <button
+                    key={q.key}
+                    onClick={() => setExpandedQueue(expandedQueue === q.key ? null : q.key)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      width: '100%',
+                      padding: '14px 0',
+                      borderBottom: '1px solid #f3f4f6',
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: '1px solid #f3f4f6',
+                      cursor: 'pointer',
+                      textAlign: 'left'
+                    }}
+                  >
+                    <span style={{ fontSize: '15px', color: '#374151' }}>{q.label}</span>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: 'white',
+                        backgroundColor: q.count > 0 ? '#b45309' : '#9ca3af'
+                      }}
+                    >
+                      {q.count}
+                    </span>
+                  </button>
+                ))}
               </div>
-              <p className="text-gray-600 mb-4 text-lg">
-                {activeTab === 'submissions' ? 'Review and manage kit submissions' : activeTab === 'accounts' ? 'Review and manage user accounts' : 'Link unlinked player jerseys via Wikidata'}
-              </p>
             </div>
 
-            {/* Clickable Column Cards */}
-            <div className="flex gap-4">
-              {/* Kit Submissions Column */}
-              <button
-                onClick={() => setActiveTab('submissions')}
-                className={`rounded-xl border-2 transition-all hover:shadow-lg ${
-                  activeTab === 'submissions'
-                    ? 'border-blue-500 bg-blue-50 shadow-md'
-                    : 'border-gray-200 bg-white hover:border-blue-300'
-                }`}
-              >
-                <div className="p-5 text-center min-w-[130px]">
-                  <h3 className="font-semibold text-sm mb-4 mt-2">Kit Submissions</h3>
-                  <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 mb-2">
-                    <ClockIcon className="w-4 h-4" />
-                    <span>{submissions.length} pending</span>
-                  </div>
-                  {submissions.length > 0 && (
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      activeTab === 'submissions' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {submissions.length}
-                    </div>
-                  )}
-                </div>
-              </button>
-
-              {/* Account Reviews Column */}
-              <button
-                onClick={() => setActiveTab('accounts')}
-                className={`rounded-xl border-2 transition-all hover:shadow-lg ${
-                  activeTab === 'accounts'
-                    ? 'border-amber-500 bg-amber-50 shadow-md'
-                    : 'border-gray-200 bg-white hover:border-amber-300'
-                }`}
-              >
-                <div className="p-5 text-center min-w-[130px]">
-                  <h3 className="font-semibold text-sm mb-4 mt-2">Account Reviews</h3>
-                  <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 mb-2">
-                    <ClockIcon className="w-4 h-4" />
-                    <span>{pendingAccounts.length} pending</span>
-                  </div>
-                  {pendingAccounts.length > 0 && (
-                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      activeTab === 'accounts' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {pendingAccounts.length}
-                    </div>
-                  )}
-                </div>
-              </button>
-
-              {/* Player Links Column */}
-              <button
-                onClick={() => setActiveTab('players')}
-                className={`rounded-xl border-2 transition-all hover:shadow-lg ${
-                  activeTab === 'players'
-                    ? 'border-green-500 bg-green-50 shadow-md'
-                    : 'border-gray-200 bg-white hover:border-green-300'
-                }`}
-              >
-                <div className="p-5 text-center min-w-[130px]">
-                  <h3 className="font-semibold text-sm mb-4 mt-2">Player Links</h3>
-                  <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 mb-2">
-                    <GlobeAltIcon className="w-4 h-4" />
-                    <span>Bulk link</span>
-                  </div>
-                </div>
-              </button>
-
-              {/* Refresh Button */}
-              <button
-                onClick={activeTab === 'submissions' ? fetchSubmissions : activeTab === 'accounts' ? fetchPendingAccounts : () => {}}
-                className="px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors shadow-md hover:shadow-lg self-start"
-              >
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  <span className="font-medium">Refresh</span>
-                </div>
-              </button>
+            {/* Quick Actions */}
+            <div style={{ padding: '24px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1F2937', marginBottom: '16px' }}>Quick actions</h2>
+              <div>
+                {quickActions.map((a, i) => {
+                  const Tag = a.href ? 'a' : 'button'
+                  const props = a.href ? { href: a.href } : { onClick: a.action }
+                  return (
+                    <Tag
+                      key={i}
+                      {...props}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        width: '100%',
+                        padding: '14px 16px',
+                        borderBottom: '1px solid #f3f4f6',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: '1px solid #f3f4f6',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        textDecoration: 'none',
+                        fontSize: '15px',
+                        color: '#374151'
+                      }}
+                    >
+                      <span style={{ color: '#7C3AED', fontWeight: 600 }}>+</span>
+                      <span>{a.label}</span>
+                    </Tag>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="admin-container py-8">
-        {activeTab === 'submissions' ? (
-          submissions.length === 0 ? (
-            // Empty state for submissions
-            <div className="text-center py-12">
-              <CheckCircleIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All caught up!</h3>
-              <p className="text-gray-600">No pending submissions to review.</p>
-            </div>
+        {/* ===== Expanded Queue (shows below the card when a pending item is clicked) ===== */}
+        {expandedQueue === 'submissions' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1F2937', marginBottom: '12px' }}>Kit Submissions ({submissions.length})</h3>
+            {submissions.length === 0 ? (
+              <p style={{ fontSize: '14px', color: '#6B7280', textAlign: 'center', padding: '16px 0' }}>All caught up!</p>
+            ) : (
+              submissions.map(renderSubmissionRow)
+            )}
+          </div>
+        )}
+        {expandedQueue === 'accounts' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1F2937', marginBottom: '12px' }}>Account Reviews ({pendingAccounts.length})</h3>
+            {accountsLoading ? (
+              <p style={{ fontSize: '14px', color: '#6B7280', textAlign: 'center', padding: '16px 0' }} className="animate-pulse">Loading...</p>
+            ) : pendingAccounts.length === 0 ? (
+              <p style={{ fontSize: '14px', color: '#6B7280', textAlign: 'center', padding: '16px 0' }}>All accounts reviewed!</p>
+            ) : (
+              pendingAccounts.map(renderAccountRow)
+            )}
+          </div>
+        )}
+        {expandedQueue === 'partners' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '16px' }}>
+            <PartnerApplications />
+          </div>
+        )}
+        {expandedQueue === 'players' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '16px' }}>
+            <BulkPlayerLinker />
+          </div>
+        )}
+
+        {/* ===== Recent Activity ===== */}
+        <div
+          style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb',
+            padding: '24px',
+            marginBottom: '32px'
+          }}
+        >
+          <div className="flex items-center justify-between" style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1F2937' }}>Recent activity</h2>
+            <span style={{ fontSize: '14px', color: '#7C3AED', cursor: 'pointer' }}>View all &rarr;</span>
+          </div>
+          {recentActivity.length === 0 ? (
+            <p style={{ fontSize: '14px', color: '#6B7280', textAlign: 'center', padding: '16px 0' }}>No recent activity</p>
           ) : (
-            // Submissions grid/list
-            <div className="space-y-4">
-              {submissions.map((submission) => (
+            <div>
+              {recentActivity.map((item, i) => (
                 <div
-                  key={submission.id}
-                  className="submission-card"
+                  key={i}
+                  className="flex items-baseline"
+                  style={{
+                    padding: '12px 0',
+                    borderBottom: i < recentActivity.length - 1 ? '1px solid #f3f4f6' : 'none',
+                    gap: '24px'
+                  }}
                 >
-                  <div className="p-4 md:p-6">
-                    <div className="flex flex-col md:flex-row md:items-start gap-4">
-                      {/* Image */}
-                      <div className="flex-shrink-0">
-                        <ImageToggle submission={submission} />
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                          <div className="space-y-3 flex-1">
-                            {/* Team/Title - Clickable */}
-                            <button
-                              onClick={() => handleShowDetails(submission)}
-                              className="text-lg font-semibold text-gray-900 leading-tight hover:text-blue-600 transition-colors text-left cursor-pointer"
-                            >
-                              {submission.team_name}
-                            </button>
-
-                            {/* Details Grid */}
-                            <div className="submission-details-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-2 text-sm">
-                              <div className="submission-details-item text-gray-600">
-                                <span className="font-medium text-gray-700">Season:</span>
-                                <span>{submission.season}</span>
-                              </div>
-                              <div className="submission-details-item text-gray-600">
-                                <span className="font-medium text-gray-700">Type:</span>
-                                <span className="capitalize">{submission.jersey_type}</span>
-                              </div>
-                              <div className="submission-details-item text-gray-600">
-                                <span className="font-medium text-gray-700">League:</span>
-                                <span>{submission.league || 'N/A'}</span>
-                              </div>
-                              <div className="submission-details-item text-gray-600">
-                                <span className="font-medium text-gray-700">Kit Type:</span>
-                                <span className="capitalize">{submission.kit_type}</span>
-                              </div>
-                            </div>
-
-                            {/* Player info if available */}
-                            {submission.player_name && (
-                              <div className="submission-info text-sm text-gray-600">
-                                <UserIcon className="w-4 h-4 text-gray-400" />
-                                <span className="font-medium">{submission.player_name}</span>
-                                {submission.jersey_number && (
-                                  <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                                    #{submission.jersey_number}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Submission info */}
-                            <div className="submission-info text-sm text-gray-500">
-                              <CalendarIcon className="w-4 h-4" />
-                              <span>Submitted {formatDate(submission.created_at)}</span>
-                              <span>•</span>
-                              <span>by {submission.profiles?.username || 'Unknown'}</span>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex flex-row lg:flex-col gap-2 lg:ml-4 flex-shrink-0">
-                            <button
-                              onClick={() => handleAction(submission, 'approve')}
-                              className="action-button action-button-approve"
-                            >
-                              <CheckCircleIcon className="w-4 h-4" />
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleAction(submission, 'reject')}
-                              className="action-button action-button-reject"
-                            >
-                              <XCircleIcon className="w-4 h-4" />
-                              Reject
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <span style={{ fontSize: '13px', color: '#9ca3af', whiteSpace: 'nowrap', minWidth: '80px' }}>{timeAgo(item.time)}</span>
+                  <span style={{ fontSize: '14px', color: '#374151' }}>{item.text}</span>
                 </div>
               ))}
             </div>
-          )
-        ) : activeTab === 'accounts' ? (
-          // Account Reviews Tab
-          accountsLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading pending accounts...</p>
-            </div>
-          ) : pendingAccounts.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckCircleIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All accounts reviewed!</h3>
-              <p className="text-gray-600">No pending account requests to review.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pendingAccounts.map((account) => (
-                <div
-                  key={account.id}
-                  className="submission-card"
-                >
-                  <div className="p-4 md:p-6">
-                    <div className="flex flex-col md:flex-row md:items-start gap-4">
-                      {/* Avatar */}
-                      <div className="flex-shrink-0">
-                        <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                          {(account.full_name || account.username || account.email || 'U').charAt(0).toUpperCase()}
-                        </div>
-                      </div>
+          )}
+        </div>
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                          <div className="space-y-3 flex-1">
-                            {/* Name/Title */}
-                            <h3 className="text-lg font-semibold text-gray-900 leading-tight">
-                              {account.full_name || account.username || 'Unknown'}
-                            </h3>
-
-                            {/* Details Grid */}
-                            <div className="submission-details-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm">
-                              <div className="submission-details-item text-gray-600">
-                                <span className="font-medium text-gray-700">Email:</span>
-                                <span>{account.email}</span>
-                              </div>
-                              <div className="submission-details-item text-gray-600">
-                                <span className="font-medium text-gray-700">Username:</span>
-                                <span>@{account.username}</span>
-                              </div>
-                              <div className="submission-details-item text-gray-600">
-                                <span className="font-medium text-gray-700">Status:</span>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  account.approval_status === 'pending'
-                                    ? 'bg-amber-100 text-amber-800'
-                                    : account.approval_status === 'approved'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {account.approval_status}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Admin Notes if available */}
-                            {account.admin_notes && (
-                              <div className="submission-info text-sm text-gray-600">
-                                <span className="font-medium">Admin Notes:</span>
-                                <span>{account.admin_notes}</span>
-                                {account.approved_by_username && account.approved_at && (
-                                  <span className="text-xs text-gray-500">
-                                    By {account.approved_by_username} on {formatDate(account.approved_at)}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Request info */}
-                            <div className="submission-info text-sm text-gray-500">
-                              <CalendarIcon className="w-4 h-4" />
-                              <span>Requested {formatDate(account.requested_at)}</span>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          {account.approval_status === 'pending' && (
-                            <div className="flex flex-row lg:flex-col gap-2 lg:ml-4 flex-shrink-0">
-                              <button
-                                onClick={() => {
-                                  const notes = prompt('Optional approval notes:')
-                                  if (notes !== null) { // User didn't cancel
-                                    handleAccountAction(account, 'approve', notes)
-                                  }
-                                }}
-                                disabled={processingAction}
-                                className="action-button action-button-approve"
-                              >
-                                <CheckCircleIcon className="w-4 h-4" />
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const notes = prompt('Reason for rejection (required):')
-                                  if (notes && notes.trim()) {
-                                    handleAccountAction(account, 'reject', notes)
-                                  } else if (notes !== null) {
-                                    alert('Please provide a reason for rejection.')
-                                  }
-                                }}
-                                disabled={processingAction}
-                                className="action-button action-button-reject"
-                              >
-                                <XCircleIcon className="w-4 h-4" />
-                                Reject
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        ) : activeTab === 'players' ? (
-          <BulkPlayerLinker />
-        ) : null}
+        {/* ===== Content Management ===== */}
+        <div>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1F2937', marginBottom: '16px' }}>Content management</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            {[
+              { label: 'Teams', sub: 'Manage teams', href: '/admin/teams', icon: '🌐' },
+              { label: 'Kits', sub: 'Browse database', href: '/admin/kits', icon: '👕' },
+              { label: 'Players', sub: 'Roster management', href: '/admin/players', icon: '👤' },
+              { label: 'Users', sub: 'Manage accounts', href: '/admin/users', icon: '👥' }
+            ].map((card) => (
+              <a
+                key={card.label}
+                href={card.href}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '24px 16px',
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  border: '1px solid #e5e7eb',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                  transition: 'box-shadow 0.2s',
+                  cursor: 'pointer'
+                }}
+                className="hover:shadow-md"
+              >
+                <span style={{ fontSize: '28px', marginBottom: '8px' }}>{card.icon}</span>
+                <span style={{ fontSize: '15px', fontWeight: 600, color: '#1F2937' }}>{card.label}</span>
+                <span style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>{card.sub}</span>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Action Modal */}

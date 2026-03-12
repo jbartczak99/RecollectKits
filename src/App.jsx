@@ -12,6 +12,11 @@ import Collection from './pages/Collection'
 import CollectionDetail from './pages/CollectionDetail'
 import JerseyDetails from './components/jerseys/JerseyDetails'
 import AdminPanel from './components/admin/AdminPanel'
+import PartnerApplications from './components/admin/PartnerApplications'
+import AdminTeams from './components/admin/AdminTeams'
+import AdminKits from './components/admin/AdminKits'
+import AdminPlayers from './components/admin/AdminPlayers'
+import AdminUsers from './components/admin/AdminUsers'
 import MySubmissions from './pages/MySubmissions'
 import PublicProfile from './pages/PublicProfile'
 import About from './pages/About'
@@ -75,6 +80,66 @@ function App() {
                     <ApprovalGate>
                       <ProtectedRoute>
                         <AdminPanel />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
+                }
+              />
+              <Route
+                path="/admin/partner-applications"
+                element={
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <PartnerApplications />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
+                }
+              />
+              <Route
+                path="/admin/teams"
+                element={
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <AdminTeams />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
+                }
+              />
+              <Route
+                path="/admin/kits"
+                element={
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <AdminKits />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
+                }
+              />
+              <Route
+                path="/admin/players"
+                element={
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <AdminPlayers />
+                      </ProtectedRoute>
+                    </ApprovalGate>
+                  </div>
+                }
+              />
+              <Route
+                path="/admin/users"
+                element={
+                  <div className="container py-8">
+                    <ApprovalGate>
+                      <ProtectedRoute>
+                        <AdminUsers />
                       </ProtectedRoute>
                     </ApprovalGate>
                   </div>

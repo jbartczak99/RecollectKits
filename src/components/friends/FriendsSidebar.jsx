@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { UsersIcon, UserPlusIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { UsersIcon, UserPlusIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useFriends } from '../../hooks/useFriends'
 import FriendsListModal from './FriendsListModal'
 
@@ -156,6 +156,36 @@ export default function FriendsSidebar({ profileUserId, currentUserId, isOwnProf
           </button>
         )}
 
+        {/* Find Friends Button (own profile only) */}
+        {isOwnProfile && (
+          <button
+            onClick={() => openModal('find')}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '12px 16px',
+              backgroundColor: '#f0fdf4',
+              border: 'none',
+              borderBottom: '1px solid #e5e7eb',
+              cursor: 'pointer',
+              textAlign: 'left'
+            }}
+          >
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%',
+              backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+              <MagnifyingGlassIcon style={{ width: '16px', height: '16px', color: '#16a34a' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontWeight: 600, color: '#166534', margin: 0, fontSize: '13px' }}>Find friends</p>
+            </div>
+            <ChevronRightIcon style={{ width: '16px', height: '16px', color: '#16a34a' }} />
+          </button>
+        )}
+
         {/* Friends Grid */}
         <div style={{ padding: '16px' }}>
           {friends.length === 0 ? (
@@ -172,9 +202,22 @@ export default function FriendsSidebar({ profileUserId, currentUserId, isOwnProf
               }}>
                 <UsersIcon style={{ width: '24px', height: '24px', color: '#9ca3af' }} />
               </div>
-              <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
+              <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 12px' }}>
                 {isOwnProfile ? 'No friends yet' : 'No friends to show'}
               </p>
+              {isOwnProfile && (
+                <button
+                  onClick={() => openModal('find')}
+                  style={{
+                    padding: '8px 16px', backgroundColor: '#16a34a', color: 'white',
+                    borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: '6px'
+                  }}
+                >
+                  <UserPlusIcon style={{ width: '14px', height: '14px' }} />
+                  Find Friends
+                </button>
+              )}
             </div>
           ) : (
             <div style={{
@@ -266,11 +309,11 @@ export default function FriendsSidebar({ profileUserId, currentUserId, isOwnProf
       </div>
 
       {/* Friends Modal */}
-      {isOwnProfile && (
+      {currentUserId && (
         <FriendsListModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
-          userId={profileUserId}
+          userId={isOwnProfile ? profileUserId : currentUserId}
           initialTab={modalInitialTab}
         />
       )}

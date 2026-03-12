@@ -1,21 +1,23 @@
 import { useState, useEffect, useRef } from 'react'
+import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import {
   ShoppingBagIcon,
   VideoCameraIcon,
   ShieldCheckIcon,
-  CheckIcon,
-  EnvelopeIcon,
   SparklesIcon,
   ArrowRightIcon,
   RectangleStackIcon,
   UsersIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  CheckCircleIcon,
+  UserIcon,
+  BuildingStorefrontIcon
 } from '@heroicons/react/24/outline'
 
 // Section Header Component with decorative line
-const SectionHeader = ({ title, subtitle, light = false }) => (
+const SectionHeader = ({ title, subtitle, light = false, badge = null }) => (
   <div className="text-center section-padding-header">
     {/* Decorative line */}
     <div
@@ -27,6 +29,17 @@ const SectionHeader = ({ title, subtitle, light = false }) => (
         borderRadius: '2px'
       }}
     />
+    {badge && (
+      <div
+        className="inline-flex items-center gap-2 rounded-full mb-4"
+        style={{ padding: '6px 16px', backgroundColor: 'rgba(124, 58, 237, 0.08)' }}
+      >
+        <SparklesIcon className="flex-shrink-0" style={{ color: '#7C3AED', width: '14px', height: '14px' }} aria-hidden="true" />
+        <span style={{ fontSize: '13px', fontWeight: 700, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {badge}
+        </span>
+      </div>
+    )}
     <h2
       style={{
         color: light ? '#ffffff' : '#7C3AED',
@@ -195,6 +208,23 @@ const heroStyles = `
     transform: translateY(0);
   }
 
+  /* ===== Spotlight Cards ===== */
+  .spotlight-card {
+    background: linear-gradient(145deg, rgba(124, 58, 237, 0.03) 0%, rgba(255, 255, 255, 1) 100%);
+    border: 2px solid transparent;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-out;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .spotlight-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(124, 58, 237, 0.4);
+    box-shadow: 0 20px 25px -5px rgba(124, 58, 237, 0.15), 0 8px 10px -6px rgba(124, 58, 237, 0.1);
+  }
+
   /* ===== Stats Cards ===== */
   .stat-card {
     background: white;
@@ -239,101 +269,6 @@ const heroStyles = `
     background-color: #F9FAFB;
   }
 
-  /* ===== Partner Tabs ===== */
-  .partner-tab {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem 1.5rem;
-    border-radius: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease-out;
-    border: 2px solid transparent;
-    background: white;
-  }
-  .partner-tab:hover {
-    background: #F5F3FF;
-  }
-  .partner-tab:focus-visible {
-    outline: 3px solid #7C3AED;
-    outline-offset: 2px;
-  }
-  .partner-tab.active {
-    border-color: #7C3AED;
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(124, 58, 237, 0.02) 100%);
-    box-shadow: 0 4px 15px -3px rgba(124, 58, 237, 0.2);
-  }
-  .partner-tab-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease-out;
-  }
-  .partner-tab.active .partner-tab-icon {
-    transform: scale(1.05);
-  }
-
-  /* ===== Content Panel ===== */
-  .partner-content-panel {
-    background: white;
-    border-radius: 1.5rem;
-    padding: 20px;
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(124, 58, 237, 0.1);
-    min-height: 500px;
-  }
-  @media (min-width: 768px) {
-    .partner-content-panel {
-      padding: 32px;
-    }
-  }
-
-  /* Fade animation */
-  .partner-content-enter {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  .partner-content-active {
-    opacity: 1;
-    transform: translateY(0);
-    transition: all 0.4s ease-out;
-  }
-
-  /* ===== Mockup Preview ===== */
-  .mockup-preview {
-    background: linear-gradient(145deg, #F9FAFB 0%, #f1f5f9 100%);
-    border-radius: 1rem;
-    padding: 1.5rem;
-    border: 1px solid #e2e8f0;
-    position: relative;
-    overflow: hidden;
-  }
-  .mockup-preview::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 32px;
-    background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 100%);
-    border-radius: 1rem 1rem 0 0;
-  }
-  .mockup-dots {
-    position: absolute;
-    top: 10px;
-    left: 12px;
-    display: flex;
-    gap: 6px;
-  }
-  .mockup-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-
   /* ===== Background Patterns ===== */
   .pattern-jersey {
     background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 8 L36 12 L36 22 L40 25 L36 28 L36 48 L30 52 L24 48 L24 28 L20 25 L24 22 L24 12 Z' fill='none' stroke='%237C3AED' stroke-width='0.5' opacity='0.08'/%3E%3C/svg%3E");
@@ -363,19 +298,16 @@ const heroStyles = `
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-10px); }
   }
-
-  /* ===== Email Link ===== */
-  .email-link {
-    transition: all 0.3s ease-out;
-  }
-  .email-link:hover {
-    background-color: #F9FAFB;
-  }
-  .email-link:focus-visible {
-    outline: 3px solid white;
-    outline-offset: 3px;
-  }
 `
+
+// Tier-specific success messages
+const TIER_MESSAGES = {
+  collector: "Application submitted! We'll review your collection and be in touch within 48 hours.",
+  creator: "Application submitted! We'll reach out within 48 hours to discuss Founding Partner rates.",
+  shop: "Application submitted! We'll reach out within 48 hours to discuss Founding Partner rates.",
+  club: "Thanks for your interest! We'll reach out within 48 hours to discuss partnership opportunities.",
+  retail: "Thanks for your interest! We'll reach out within 48 hours to discuss partnership opportunities."
+}
 
 export default function Partners() {
   const [visibleSections, setVisibleSections] = useState({})
@@ -408,12 +340,46 @@ export default function Partners() {
     fetchCounts()
   }, [])
 
-  // Scroll to contact section
-  const scrollToContact = () => {
-    const contactSection = document.getElementById('contact')
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' })
+  // Application form
+  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm()
+  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [submittedType, setSubmittedType] = useState(null)
+  const [submitError, setSubmitError] = useState(null)
+  const watchPartnerType = watch('partner_type')
+
+  const TIER_MAP = {
+    collector: 'free',
+    creator: 'creator',
+    shop: 'shop',
+    club: 'club',
+    retail: 'retail'
+  }
+
+  const onSubmitApplication = async (data) => {
+    setSubmitError(null)
+    try {
+      const { error } = await supabase.from('partner_applications').insert({
+        name: data.name,
+        email: data.email,
+        username: data.username || null,
+        partner_type: data.partner_type,
+        description: data.description,
+        links: data.links || null,
+        tier: TIER_MAP[data.partner_type] || data.partner_type
+      })
+      if (error) throw error
+      setSubmittedType(data.partner_type)
+      setFormSubmitted(true)
+      reset()
+    } catch (err) {
+      setSubmitError('Something went wrong. Please try again or email hello@recollectkits.com.')
     }
+  }
+
+  // Scroll to apply form
+  const scrollToApplyForm = () => {
+    const el = document.getElementById('apply-form')
+    if (el) el.scrollIntoView({ behavior: 'smooth' })
   }
 
   // Intersection observer for fade-in animations
@@ -458,7 +424,8 @@ export default function Partners() {
     sectionRefs.current[id] = el
   }
 
-  const partnerTypes = [
+  // ===== SECTION 1: Partnership Opportunities (2 cards, no pricing) =====
+  const partnershipCards = [
     {
       id: 'retail',
       icon: ShoppingBagIcon,
@@ -466,93 +433,74 @@ export default function Partners() {
       subtitle: 'Vintage retailers, online shops, marketplace sellers',
       iconColor: '#7C3AED',
       iconGlow: 'rgba(124, 58, 237, 0.4)',
-      gradientFrom: 'rgba(124, 58, 237, 0.08)',
-      gradientTo: 'rgba(124, 58, 237, 0.02)',
       benefits: [
-        'Brand exposure to serious collectors',
+        'Database contribution for kits you have in stock',
         'Photo credit on new kits added to our database',
-        'Purchase links for kits you have in stock'
+        'Affiliate links and revenue sharing'
       ],
-      details: {
-        title: 'For Retail Partners',
-        description: 'Whether you run a vintage kit shop, sell on marketplaces, or operate an online store, we want to help you reach passionate collectors who are actively searching for the kits you carry.',
-        features: [
-          'List your inventory directly in our database with links to your shop',
-          'Get featured placement when collectors search for kits you carry',
-          'Receive photo credit for any products added to our database',
-          'Build credibility with verified seller badges'
-        ],
-        scenarios: [
-          { title: 'Catalog Integration', desc: 'Your inventory syncs with our kit database, automatically matching your listings with collector wishlists' },
-          { title: 'Affiliate Dashboard', desc: 'Track clicks, conversions, and earnings in real-time with detailed analytics' },
-          { title: 'Featured Placement', desc: 'Premium visibility when collectors browse or search for kits in your inventory' }
-        ],
-        mockupType: 'catalog'
-      }
+      mailto: 'mailto:hello@recollectkits.com?subject=Retail%20Partnership%20Inquiry'
     },
     {
-      id: 'creator',
-      icon: VideoCameraIcon,
-      title: 'Creator Partners',
-      subtitle: 'Content creators, influencers, jersey reviewers',
-      iconColor: '#205A40',
-      iconGlow: 'rgba(32, 90, 64, 0.4)',
-      gradientFrom: 'rgba(32, 90, 64, 0.08)',
-      gradientTo: 'rgba(32, 90, 64, 0.02)',
-      benefits: [
-        'Featured profile placement',
-        'Affiliate opportunities',
-        'Professional tools for content'
-      ],
-      details: {
-        title: 'For Creator Partners',
-        description: 'If you create content about football kits—reviews, unboxings, history deep-dives, or collecting tips—we want to amplify your voice and connect you with an engaged audience of fellow enthusiasts.',
-        features: [
-          'Showcase your collection and content on a featured creator profile',
-          'Get early access to new features before public release',
-          'Participate in revenue sharing for referred sales',
-          'Access professional tools for tracking and showcasing your content',
-          'Collaborate with us on exclusive content and partnerships'
-        ],
-        scenarios: [
-          { title: 'Creator Profile', desc: 'A dedicated page showcasing your collection, content links, and follower engagement' },
-          { title: 'Content Integration', desc: 'Embed your reviews and videos directly on kit pages for maximum exposure' },
-          { title: 'Analytics Suite', desc: 'Track your reach, engagement, and earning potential across the platform' }
-        ],
-        mockupType: 'profile'
-      }
-    },
-    {
-      id: 'team',
+      id: 'club',
       icon: ShieldCheckIcon,
-      title: 'League and Club Partners',
+      title: 'Club & League Partners',
       subtitle: 'Leagues & clubs seeking digital heritage archives',
       iconColor: '#4C1D95',
       iconGlow: 'rgba(76, 29, 149, 0.4)',
-      gradientFrom: 'rgba(76, 29, 149, 0.08)',
-      gradientTo: 'rgba(76, 29, 149, 0.02)',
       benefits: [
         'Digital museum solutions',
         'Historical kit archives',
         'Fan engagement tools'
       ],
-      details: {
-        title: 'For League and Club Partners',
-        description: 'Football clubs of all sizes have rich kit histories worth preserving. We help teams create stunning digital archives that engage fans, preserve heritage, and celebrate the stories behind every shirt.',
-        features: [
-          'Custom digital museum showcasing your complete kit history',
-          'Archive rare and historic kits with detailed provenance',
-          'Engage fans with interactive kit timelines and stories',
-          'White-label solutions for your own website or app',
-          'Integration with merchandise and retail operations'
-        ],
-        scenarios: [
-          { title: 'Digital Museum', desc: 'An interactive timeline of your club\'s kit history, accessible to fans worldwide' },
-          { title: 'Heritage Archive', desc: 'Detailed records of every kit, including rare match-worn and prototype designs' },
-          { title: 'Fan Engagement', desc: 'Let supporters vote on classic kits, share memories, and connect with history' }
-        ],
-        mockupType: 'museum'
-      }
+      mailto: 'mailto:hello@recollectkits.com?subject=Club%20Partnership%20Inquiry'
+    }
+  ]
+
+  // ===== SECTION 2: Get Featured on Homepage (3 cards) =====
+  const spotlightCards = [
+    {
+      id: 'community',
+      icon: UserIcon,
+      title: 'Community Spotlight',
+      subtitle: 'For collectors with unique collections',
+      priceBadge: 'FREE',
+      priceBadgeColor: '#059669',
+      originalPrice: null,
+      benefits: [
+        'Homepage feature (1-2 weeks)',
+        '"Featured Collector" badge on profile',
+        'Social media shoutout'
+      ]
+    },
+    {
+      id: 'creator',
+      icon: VideoCameraIcon,
+      title: 'Creator Spotlight',
+      subtitle: 'Kit influencers, YouTubers, Instagram collectors',
+      priceBadge: '$25/week',
+      priceBadgeColor: '#7C3AED',
+      originalPrice: '$50/week',
+      benefits: [
+        'Homepage feature (1 week)',
+        '"Creator" badge on profile',
+        'Link to your social channels',
+        'Newsletter inclusion (coming soon)'
+      ]
+    },
+    {
+      id: 'shop',
+      icon: BuildingStorefrontIcon,
+      title: 'Shop Spotlight',
+      subtitle: 'Vintage kit shops & marketplace sellers',
+      priceBadge: '$75/week',
+      priceBadgeColor: '#7C3AED',
+      originalPrice: '$150/week',
+      benefits: [
+        'Homepage feature (1 week)',
+        '"Official Shop" badge',
+        'Direct link to your store',
+        'Analytics on views & clicks'
+      ]
     }
   ]
 
@@ -588,11 +536,13 @@ export default function Partners() {
     'Co-marketing opportunities'
   ]
 
-  const contactRequirements = [
-    'Type of partnership you\'re interested in',
-    'Brief description of your business/channel',
-    'How you think we could work together',
-    'Any relevant links (website, Instagram, etc.)'
+  // Form radio options
+  const partnerTypeOptions = [
+    { value: 'collector', label: 'Collector (free community spotlight)' },
+    { value: 'creator', label: 'Content Creator ($25/week spotlight)' },
+    { value: 'shop', label: 'Shop/Retailer ($75/week spotlight)' },
+    { value: 'club', label: 'Club/Organization (digital museum partnership)' },
+    { value: 'retail', label: 'Retail Partner (database/affiliate partnership)' }
   ]
 
   return (
@@ -668,7 +618,7 @@ export default function Partners() {
 
           {/* CTA Button */}
           <button
-            onClick={scrollToContact}
+            onClick={scrollToApplyForm}
             className="hero-cta-btn inline-flex items-center gap-3 px-8 py-4 rounded-xl font-semibold"
             style={{
               backgroundColor: '#7C3AED',
@@ -684,7 +634,7 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ===== Partner Types Section ===== */}
+      {/* ===== SECTION 1: Partnership Opportunities (2 cards) ===== */}
       <section
         id="partner-types"
         ref={setSectionRef('partner-types')}
@@ -695,8 +645,8 @@ export default function Partners() {
           subtitle="We're building partnerships across the football kit ecosystem"
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: '24px' }}>
-          {partnerTypes.map((partner) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto" style={{ gap: '24px' }}>
+          {partnershipCards.map((partner) => {
             const Icon = partner.icon
             return (
               <div
@@ -743,7 +693,7 @@ export default function Partners() {
                   </p>
 
                   {/* Benefits */}
-                  <ul className="space-y-4">
+                  <ul className="space-y-4 mb-8">
                     {partner.benefits.map((benefit, index) => (
                       <li key={index} className="flex items-start gap-3">
                         <span
@@ -759,6 +709,23 @@ export default function Partners() {
                       </li>
                     ))}
                   </ul>
+
+                  {/* Contact Us button */}
+                  <a
+                    href={partner.mailto}
+                    className="hero-cta-btn inline-flex items-center gap-2 rounded-xl font-semibold"
+                    style={{
+                      padding: '12px 28px',
+                      backgroundColor: partner.iconColor,
+                      color: 'white',
+                      fontSize: '16px',
+                      border: 'none',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <span>Contact Us</span>
+                    <ArrowRightIcon className="flex-shrink-0" style={{ width: '16px', height: '16px' }} aria-hidden="true" />
+                  </a>
                 </div>
               </div>
             )
@@ -766,7 +733,142 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ===== Stats Section ===== */}
+      {/* ===== SECTION 2: Get Featured on Homepage ===== */}
+      <section
+        id="featured"
+        ref={setSectionRef('featured')}
+        className={`-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 section-gray-light section-padding transition-all duration-700 ${visibleSections['featured'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
+        <SectionHeader
+          title="Get Featured on Homepage"
+          subtitle="Showcase your collection to thousands of kit collectors"
+          badge="Founding Partner Rates"
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto" style={{ gap: '24px' }}>
+          {spotlightCards.map((card) => {
+            const Icon = card.icon
+            return (
+              <div
+                key={card.id}
+                className="spotlight-card stagger-card"
+              >
+                <div className="p-6 md:p-8 flex-1 flex flex-col">
+                  {/* Icon */}
+                  <div
+                    className="partner-icon-circle mb-5"
+                    style={{
+                      backgroundColor: card.priceBadgeColor,
+                      boxShadow: `0 8px 20px ${card.priceBadgeColor}40`,
+                      width: '64px',
+                      height: '64px'
+                    }}
+                  >
+                    <Icon className="flex-shrink-0" style={{ width: '32px', height: '32px', color: '#ffffff' }} aria-hidden="true" />
+                  </div>
+
+                  {/* Title */}
+                  <h3
+                    className="mb-2"
+                    style={{
+                      color: '#1F2937',
+                      fontFamily: 'Darker Grotesque, sans-serif',
+                      fontSize: '22px',
+                      fontWeight: 800,
+                      lineHeight: 1.2
+                    }}
+                  >
+                    {card.title}
+                  </h3>
+
+                  {/* Pricing */}
+                  <div className="mb-3">
+                    {card.originalPrice && (
+                      <p style={{ color: '#9CA3AF', fontSize: '14px', lineHeight: 1.6 }}>
+                        <span style={{ textDecoration: 'line-through' }}>{card.originalPrice}</span>
+                      </p>
+                    )}
+                    <span
+                      className="inline-block rounded-full font-bold"
+                      style={{
+                        padding: '5px 14px',
+                        backgroundColor: card.priceBadgeColor,
+                        color: '#ffffff',
+                        fontSize: '16px',
+                        letterSpacing: '-0.3px'
+                      }}
+                    >
+                      {card.priceBadge}
+                    </span>
+                    {card.originalPrice && (
+                      <p style={{ color: '#7C3AED', fontSize: '13px', fontStyle: 'italic', marginTop: '4px' }}>
+                        Founding Partner Rate
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Subtitle */}
+                  <p
+                    className="mb-5"
+                    style={{
+                      color: '#4B5563',
+                      fontSize: '15px',
+                      lineHeight: 1.6,
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    {card.subtitle}
+                  </p>
+
+                  {/* Benefits */}
+                  <ul className="space-y-3 mb-6 flex-1">
+                    {card.benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <span
+                          className="flex-shrink-0 mt-0.5 font-bold"
+                          style={{ color: '#205A40', fontSize: '15px' }}
+                          aria-hidden="true"
+                        >
+                          &#10003;
+                        </span>
+                        <span style={{ color: '#1F2937', fontSize: '15px', lineHeight: 1.6 }}>
+                          {benefit}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Apply Now button */}
+                  <button
+                    onClick={scrollToApplyForm}
+                    className="hero-cta-btn w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold"
+                    style={{
+                      padding: '12px 24px',
+                      backgroundColor: '#7C3AED',
+                      color: 'white',
+                      fontSize: '15px',
+                      border: 'none'
+                    }}
+                  >
+                    <span>Apply Now</span>
+                    <ArrowRightIcon className="flex-shrink-0" style={{ width: '16px', height: '16px' }} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Footer note */}
+        <p
+          className="text-center mt-6 max-w-2xl mx-auto"
+          style={{ color: '#6B7280', fontSize: '15px', lineHeight: 1.6 }}
+        >
+          Only 3 featured slots available. Founding Partner rates for our first 10 paid partners.
+        </p>
+      </section>
+
+      {/* ===== SECTION 3: Growing Community ===== */}
       <section
         id="stats"
         ref={setSectionRef('stats')}
@@ -806,7 +908,7 @@ export default function Partners() {
         </div>
       </section>
 
-      {/* ===== Early Partner Benefits ===== */}
+      {/* ===== SECTION 4: Founding Partner Program ===== */}
       <section
         id="early-benefits"
         ref={setSectionRef('early-benefits')}
@@ -877,7 +979,7 @@ export default function Partners() {
               </div>
 
               <button
-                onClick={scrollToContact}
+                onClick={scrollToApplyForm}
                 className="hero-cta-btn mt-8 inline-flex items-center gap-2 rounded-xl font-semibold"
                 style={{
                   padding: '12px 32px',
@@ -887,22 +989,21 @@ export default function Partners() {
                   border: 'none'
                 }}
               >
-                <span>Get in Touch</span>
+                <span>Apply Now</span>
                 <ArrowRightIcon className="flex-shrink-0" style={{ width: '16px', height: '16px' }} aria-hidden="true" />
               </button>
           </div>
         </div>
       </section>
 
-      {/* ===== Contact Section ===== */}
+      {/* ===== SECTION 5: Application Form ===== */}
       <section
-        id="contact"
-        ref={setSectionRef('contact')}
-        className={`-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 section-padding transition-all duration-700 ${visibleSections['contact'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+        id="apply-form"
+        ref={setSectionRef('apply-form')}
+        className={`-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 section-padding transition-all duration-700 ${visibleSections['apply-form'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
         style={{ backgroundColor: '#205A40' }}
       >
         <div className="max-w-2xl mx-auto">
-          {/* Main card */}
           <div
             className="rounded-2xl overflow-hidden"
             style={{
@@ -911,64 +1012,221 @@ export default function Partners() {
               border: '1px solid rgba(255, 255, 255, 0.12)'
             }}
           >
-            {/* Top section - heading + email CTA */}
-            <div className="text-center" style={{ padding: '32px 24px 28px' }}>
-              <h2
-                style={{
-                  fontFamily: 'Darker Grotesque, sans-serif',
-                  fontSize: '32px',
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  letterSpacing: '-0.5px',
-                  color: '#ffffff',
-                  marginBottom: '8px'
-                }}
-              >
-                Interested in Partnering?
-              </h2>
-              <p style={{ fontSize: '16px', lineHeight: 1.6, color: 'rgba(209, 250, 229, 0.8)', marginBottom: '24px' }}>
-                We'd love to hear from you
-              </p>
-              <a
-                href="mailto:hello@recollectkits.com"
-                className="email-link inline-flex items-center gap-3 font-semibold rounded-xl"
-                style={{
-                  color: '#1F2937',
-                  fontSize: '17px',
-                  lineHeight: 1.6,
-                  padding: '14px 28px',
-                  backgroundColor: '#ffffff',
-                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)'
-                }}
-              >
-                <EnvelopeIcon className="flex-shrink-0" style={{ color: '#7C3AED', width: '20px', height: '20px' }} aria-hidden="true" />
-                <span>hello@recollectkits.com</span>
-              </a>
-            </div>
-
-            {/* Divider */}
-            <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)', margin: '0 24px' }} />
-
-            {/* Bottom section - requirements in 2-col grid */}
-            <div style={{ padding: '24px' }}>
-              <p style={{ color: 'rgba(209, 250, 229, 0.7)', fontWeight: 600, fontSize: '13px', lineHeight: 1.6, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px', textAlign: 'center' }}>
-                Please include in your email
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                {contactRequirements.map((req, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-2 rounded-lg"
-                    style={{ padding: '10px 12px', backgroundColor: 'rgba(255, 255, 255, 0.06)' }}
+            <div style={{ padding: '32px 24px' }}>
+              {formSubmitted ? (
+                <div className="text-center py-8">
+                  <CheckCircleIcon style={{ width: '64px', height: '64px', color: '#86efac', margin: '0 auto 16px' }} />
+                  <h2
+                    style={{
+                      fontFamily: 'Darker Grotesque, sans-serif',
+                      fontSize: '32px',
+                      fontWeight: 800,
+                      lineHeight: 1.2,
+                      color: '#ffffff',
+                      marginBottom: '12px'
+                    }}
                   >
-                    <span className="flex-shrink-0" style={{ color: '#86efac', fontSize: '14px', marginTop: '1px' }} aria-hidden="true">&#10003;</span>
-                    <span style={{ fontSize: '14px', lineHeight: 1.5, color: '#ecfdf5' }}>{req}</span>
+                    Application Submitted!
+                  </h2>
+                  <p style={{ fontSize: '16px', lineHeight: 1.6, color: 'rgba(209, 250, 229, 0.9)' }}>
+                    {TIER_MESSAGES[submittedType] || "We'll be in touch within 48 hours."}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="text-center mb-8">
+                    <h2
+                      style={{
+                        fontFamily: 'Darker Grotesque, sans-serif',
+                        fontSize: '32px',
+                        fontWeight: 800,
+                        lineHeight: 1.2,
+                        letterSpacing: '-0.5px',
+                        color: '#ffffff',
+                        marginBottom: '8px'
+                      }}
+                    >
+                      Apply to Partner
+                    </h2>
+                    <p style={{ fontSize: '16px', lineHeight: 1.6, color: 'rgba(209, 250, 229, 0.8)' }}>
+                      Founding Partner spots are limited. Apply now and we'll respond within 48 hours.
+                    </p>
                   </div>
-                ))}
-              </div>
-              <p style={{ color: 'rgba(187, 247, 208, 0.6)', fontSize: '13px', lineHeight: 1.6, textAlign: 'center', marginTop: '16px' }}>
-                We'll respond within 2 business days.
-              </p>
+
+                  <form onSubmit={handleSubmit(onSubmitApplication)} className="space-y-5">
+                    {/* Name */}
+                    <div>
+                      <label htmlFor="name" style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#ecfdf5', marginBottom: '6px' }}>
+                        Your name <span style={{ color: '#f87171' }}>*</span>
+                      </label>
+                      <input
+                        id="name"
+                        type="text"
+                        {...register('name', { required: 'Name is required' })}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          border: errors.name ? '2px solid #f87171' : '1px solid rgba(255, 255, 255, 0.15)',
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          color: '#ffffff',
+                          fontSize: '16px',
+                          outline: 'none'
+                        }}
+                      />
+                      {errors.name && <p style={{ color: '#fca5a5', fontSize: '13px', marginTop: '4px' }}>{errors.name.message}</p>}
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label htmlFor="email" style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#ecfdf5', marginBottom: '6px' }}>
+                        Email address <span style={{ color: '#f87171' }}>*</span>
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        {...register('email', {
+                          required: 'Email is required',
+                          pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' }
+                        })}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          border: errors.email ? '2px solid #f87171' : '1px solid rgba(255, 255, 255, 0.15)',
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          color: '#ffffff',
+                          fontSize: '16px',
+                          outline: 'none'
+                        }}
+                      />
+                      {errors.email && <p style={{ color: '#fca5a5', fontSize: '13px', marginTop: '4px' }}>{errors.email.message}</p>}
+                    </div>
+
+                    {/* Username */}
+                    <div>
+                      <label htmlFor="username" style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#ecfdf5', marginBottom: '6px' }}>
+                        RecollectKits username
+                      </label>
+                      <input
+                        id="username"
+                        type="text"
+                        placeholder="If you already have an account"
+                        {...register('username')}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          color: '#ffffff',
+                          fontSize: '16px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {/* Partner Type */}
+                    <div>
+                      <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#ecfdf5', marginBottom: '10px' }}>
+                        I am a: <span style={{ color: '#f87171' }}>*</span>
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: '10px' }}>
+                        {partnerTypeOptions.map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex items-center gap-3 cursor-pointer rounded-lg"
+                            style={{
+                              padding: '12px 16px',
+                              backgroundColor: watchPartnerType === option.value ? 'rgba(124, 58, 237, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                              border: watchPartnerType === option.value ? '2px solid rgba(124, 58, 237, 0.6)' : '1px solid rgba(255, 255, 255, 0.1)',
+                              borderRadius: '12px',
+                              transition: 'all 0.2s ease-out'
+                            }}
+                          >
+                            <input
+                              type="radio"
+                              value={option.value}
+                              {...register('partner_type', { required: 'Please select a type' })}
+                              style={{ accentColor: '#7C3AED', width: '18px', height: '18px' }}
+                            />
+                            <span style={{ color: '#ecfdf5', fontSize: '15px', lineHeight: 1.4 }}>{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {errors.partner_type && <p style={{ color: '#fca5a5', fontSize: '13px', marginTop: '4px' }}>{errors.partner_type.message}</p>}
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label htmlFor="description" style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#ecfdf5', marginBottom: '6px' }}>
+                        Tell us about your collection or business <span style={{ color: '#f87171' }}>*</span>
+                      </label>
+                      <textarea
+                        id="description"
+                        rows={4}
+                        placeholder="2-3 sentences about what you do"
+                        {...register('description', { required: 'Please tell us about yourself' })}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          border: errors.description ? '2px solid #f87171' : '1px solid rgba(255, 255, 255, 0.15)',
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          color: '#ffffff',
+                          fontSize: '16px',
+                          outline: 'none',
+                          resize: 'vertical'
+                        }}
+                      />
+                      {errors.description && <p style={{ color: '#fca5a5', fontSize: '13px', marginTop: '4px' }}>{errors.description.message}</p>}
+                    </div>
+
+                    {/* Links */}
+                    <div>
+                      <label htmlFor="links" style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#ecfdf5', marginBottom: '6px' }}>
+                        Social/website links
+                      </label>
+                      <input
+                        id="links"
+                        type="text"
+                        placeholder="Instagram, website, shop URL, etc."
+                        {...register('links')}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          color: '#ffffff',
+                          fontSize: '16px',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
+
+                    {submitError && (
+                      <p style={{ color: '#fca5a5', fontSize: '14px', textAlign: 'center' }}>{submitError}</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="hero-cta-btn w-full flex items-center justify-center gap-2 rounded-xl font-semibold"
+                      style={{
+                        padding: '14px 32px',
+                        backgroundColor: isSubmitting ? '#6B7280' : '#7C3AED',
+                        color: 'white',
+                        fontSize: '17px',
+                        border: '2px solid rgba(255, 255, 255, 0.15)',
+                        cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { supabase, supabasePublic } from '../lib/supabase'
 import {
   ShoppingBagIcon,
   VideoCameraIcon,
@@ -322,9 +322,9 @@ export default function Partners() {
 
     const fetchCounts = async () => {
       const [jerseys, profiles, countriesResult] = await Promise.all([
-        supabase.from('public_jerseys').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('country').not('country', 'is', null)
+        supabasePublic.from('public_jerseys').select('id', { count: 'exact', head: true }),
+        supabasePublic.from('profiles').select('id', { count: 'exact', head: true }),
+        supabasePublic.from('profiles').select('country').not('country', 'is', null)
       ])
       if (!jerseys.error && jerseys.count != null) {
         setJerseyCount(roundCount(jerseys.count))

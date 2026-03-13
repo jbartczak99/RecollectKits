@@ -69,3 +69,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     fetch: fetchWithTimeout
   }
 })
+
+// Separate anonymous client for public data queries (kits, stats, etc.).
+// This client NEVER persists or sends auth tokens, so public queries always
+// work regardless of the user's auth state. Prevents stale/invalid tokens
+// from breaking public data loading.
+export const supabasePublic = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+  global: {
+    fetch: fetchWithTimeout
+  }
+})

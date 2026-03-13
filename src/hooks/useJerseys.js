@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, supabasePublic } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext.jsx'
 
 // Hook for fetching all jerseys from public_jerseys table
@@ -14,16 +14,16 @@ export function usePublicJerseys(searchTerm = '', filters = {}) {
       setError(null)
       
       try {
-        let query = supabase
+        let query = supabasePublic
           .from('public_jerseys')
           .select('*')
           .order('created_at', { ascending: false })
-          
+
         // Apply search term
         if (searchTerm) {
           query = query.or(`team_name.ilike.%${searchTerm}%,player_name.ilike.%${searchTerm}%,season.ilike.%${searchTerm}%`)
         }
-        
+
         // Apply additional filters
         if (filters.team) {
           query = query.eq('team_name', filters.team)
@@ -37,7 +37,7 @@ export function usePublicJerseys(searchTerm = '', filters = {}) {
         if (filters.manufacturer) {
           query = query.eq('manufacturer', filters.manufacturer)
         }
-        
+
         const { data, error } = await query
         
         if (error) throw error
@@ -466,7 +466,7 @@ export function useJerseys(searchTerm = '') {
     const fetchJerseys = async () => {
       setLoading(true)
       try {
-        let query = supabase
+        let query = supabasePublic
           .from('jerseys')
           .select('*')
           .eq('approved', true)
@@ -556,7 +556,7 @@ export function useMostLikedJersey() {
         const { start: weekStart, end: weekEnd } = getPreviousWeekRange()
 
         // Get all likes from the previous week (Sunday to Sunday)
-        const { data: likesData, error: likesError } = await supabase
+        const { data: likesData, error: likesError } = await supabasePublic
           .from('jersey_likes')
           .select('jersey_id')
           .gte('created_at', weekStart)
@@ -566,7 +566,7 @@ export function useMostLikedJersey() {
 
         if (!likesData || likesData.length === 0) {
           // No likes from previous week, fall back to all-time most liked
-          const { data: allTimeLikes, error: allTimeError } = await supabase
+          const { data: allTimeLikes, error: allTimeError } = await supabasePublic
             .from('jersey_likes')
             .select('jersey_id')
 
@@ -590,7 +590,7 @@ export function useMostLikedJersey() {
             .sort((a, b) => b[1] - a[1])[0]
 
           if (mostLikedId) {
-            const { data: jerseyData, error: jerseyError } = await supabase
+            const { data: jerseyData, error: jerseyError } = await supabasePublic
               .from('public_jerseys')
               .select('*')
               .eq('id', mostLikedId[0])
@@ -612,7 +612,7 @@ export function useMostLikedJersey() {
             .sort((a, b) => b[1] - a[1])[0]
 
           if (mostLikedId) {
-            const { data: jerseyData, error: jerseyError } = await supabase
+            const { data: jerseyData, error: jerseyError } = await supabasePublic
               .from('public_jerseys')
               .select('*')
               .eq('id', mostLikedId[0])
@@ -791,7 +791,7 @@ export function useJerseyLikes(userId) {
       setLoading(true)
       try {
         // Get all likes to count them
-        const { data: allLikes, error: allError } = await supabase
+        const { data: allLikes, error: allError } = await supabasePublic
           .from('jersey_likes')
           .select('jersey_id')
 
@@ -1033,7 +1033,7 @@ export function useRandomJersey(kitType = null) {
 
       try {
         // Build query with optional kit_type filter
-        let countQuery = supabase
+        let countQuery = supabasePublic
           .from('public_jerseys')
           .select('*', { count: 'exact', head: true })
 
@@ -1059,7 +1059,7 @@ export function useRandomJersey(kitType = null) {
         const weeklyOffset = Math.floor(randomValue * count)
 
         // Build data query with optional kit_type filter
-        let dataQuery = supabase
+        let dataQuery = supabasePublic
           .from('public_jerseys')
           .select('*')
 

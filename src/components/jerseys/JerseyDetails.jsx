@@ -4,7 +4,7 @@ import { ArrowLeftIcon, HeartIcon, StarIcon, CheckCircleIcon, UsersIcon } from '
 import { HeartIcon as HeartIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { useUserJerseys, useJerseyLikes, useWishlist } from '../../hooks/useJerseys'
-import { supabase } from '../../lib/supabase'
+import { supabase, supabasePublic } from '../../lib/supabase'
 import WikidataPlayerLinker from './WikidataPlayerLinker'
 import { useKitSquad } from '../../hooks/useKitSquad'
 import SquadImportPanel from './SquadImportPanel'
@@ -38,7 +38,7 @@ export default function JerseyDetails() {
       setError(null)
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabasePublic
           .from('public_jerseys')
           .select('*')
           .eq('id', id)
@@ -56,7 +56,7 @@ export default function JerseyDetails() {
 
         // Fetch related jerseys (same team, season, type, gender) for "Players who wore this kit"
         if (data) {
-          let query = supabase
+          let query = supabasePublic
             .from('public_jerseys')
             .select('*')
             .eq('team_name', data.team_name)
@@ -75,7 +75,7 @@ export default function JerseyDetails() {
 
           // Fetch other kits by the same player (only if this is a player-specific jersey)
           if (data.player_name && data.player_name.trim()) {
-            const { data: otherKits } = await supabase
+            const { data: otherKits } = await supabasePublic
               .from('public_jerseys')
               .select('*')
               .eq('player_name', data.player_name)

@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, supabasePublic } from '../lib/supabase'
 
-export function usePublicProfile(username) {
+export function usePublicProfile(username, currentUserId = null) {
   const [profile, setProfile] = useState(null)
   const [collections, setCollections] = useState([])
   const [top3Jerseys, setTop3Jerseys] = useState([])
+  const [dreamKits, setDreamKits] = useState([])
+  const [badges, setBadges] = useState([])
   const [stats, setStats] = useState({ total_jerseys: 0, public_collections: 0, liked_jerseys: 0, friend_count: 0 })
   const [allKits, setAllKits] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,23 +22,24 @@ export function usePublicProfile(username) {
     setError(null)
 
     try {
-      // 1. Fetch profile directly from the profiles table
+      // Use select('*') so it works even if new columns don't exist yet
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url, bio, is_public, top_3_jersey_ids, all_kits_public, approval_status, requested_at')
+        .select('*')
         .eq('username', username)
-        .eq('is_public', true)
         .eq('approval_status', 'approved')
         .single()
 
       if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          // No rows returned
-          setError('Profile not found or is private')
-        } else {
-          console.error('Profile fetch error:', profileError)
-          setError('Failed to load profile')
-        }
+        setError(profileError.code === 'PGRST116' ? 'Profile not found or is private' : 'Failed to load profile')
+        setLoading(false)
+        return
+      }
+
+      // Visibility check: owners always see their own profile, others need is_public
+      const isOwner = currentUserId && profileData.id === currentUserId
+      if (!profileData.is_public && !isOwner) {
+        setError('Profile not found or is private')
         setLoading(false)
         return
       }
@@ -44,13 +47,17 @@ export function usePublicProfile(username) {
       setProfile(profileData)
       const userId = profileData.id
 
-      // 2. Fetch everything else in parallel
-      const [statsResult, collectionsResult, top3Result, allKitsResult] = await Promise.all([
+      // Fetch everything else in parallel
+      const [statsResult, collectionsResult, top3Result, dreamKitsResult, badgesResult, allKitsResult] = await Promise.all([
         fetchStats(userId, profileData.all_kits_public),
         fetchPublicCollections(userId),
         profileData.top_3_jersey_ids?.length > 0
           ? fetchTop3(profileData.top_3_jersey_ids)
           : Promise.resolve([]),
+        profileData.dream_kit_ids?.length > 0
+          ? fetchDreamKits(profileData.dream_kit_ids)
+          : Promise.resolve([]),
+        fetchUserBadges(userId),
         profileData.all_kits_public
           ? fetchAllKits(userId)
           : Promise.resolve([])
@@ -59,6 +66,8 @@ export function usePublicProfile(username) {
       setStats(statsResult)
       setCollections(collectionsResult)
       setTop3Jerseys(top3Result)
+      setDreamKits(dreamKitsResult)
+      setBadges(badgesResult)
       setAllKits(allKitsResult)
 
     } catch (err) {
@@ -67,7 +76,7 @@ export function usePublicProfile(username) {
     } finally {
       setLoading(false)
     }
-  }, [username])
+  }, [username, currentUserId])
 
   const fetchStats = async (userId, allKitsPublic) => {
     try {
@@ -77,7 +86,6 @@ export function usePublicProfile(username) {
           : Promise.resolve({ count: 0 }),
         supabase.from('collections').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('is_public', true),
         supabase.from('jersey_likes').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-        // Count accepted friendships where user is either requester or addressee
         supabase.from('user_friends').select('id', { count: 'exact', head: true }).eq('status', 'accepted').or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
       ])
 
@@ -104,10 +112,8 @@ export function usePublicProfile(username) {
 
       if (error) throw error
 
-      // For each collection, get jersey count and thumbnails
       const collectionsWithDetails = await Promise.all(
         (data || []).map(async (collection) => {
-          // Special handling for "Liked Kits" - data is in jersey_likes table
           if (collection.name === 'Liked Kits') {
             const { count } = await supabase
               .from('jersey_likes')
@@ -134,14 +140,9 @@ export function usePublicProfile(username) {
                 .filter(Boolean)
             }
 
-            return {
-              ...collection,
-              jersey_count: count || 0,
-              thumbnail_urls
-            }
+            return { ...collection, jersey_count: count || 0, thumbnail_urls }
           }
 
-          // Special handling for "Wishlist" - data is in user_wishlist table
           if (collection.name === 'Wishlist') {
             const { count } = await supabase
               .from('user_wishlist')
@@ -168,14 +169,9 @@ export function usePublicProfile(username) {
                 .filter(Boolean)
             }
 
-            return {
-              ...collection,
-              jersey_count: count || 0,
-              thumbnail_urls
-            }
+            return { ...collection, jersey_count: count || 0, thumbnail_urls }
           }
 
-          // Regular collections - data is in collection_jerseys table
           const { count } = await supabase
             .from('collection_jerseys')
             .select('id', { count: 'exact', head: true })
@@ -191,11 +187,7 @@ export function usePublicProfile(username) {
             .map(t => t.user_jersey?.public_jersey?.front_image_url)
             .filter(Boolean)
 
-          return {
-            ...collection,
-            jersey_count: count || 0,
-            thumbnail_urls
-          }
+          return { ...collection, jersey_count: count || 0, thumbnail_urls }
         })
       )
 
@@ -208,29 +200,19 @@ export function usePublicProfile(username) {
 
   const fetchTop3 = async (userJerseyIds) => {
     try {
-      // Fetch the user jerseys with their public jersey data
       const { data, error } = await supabase
         .from('user_jerseys')
         .select(`
           id,
           public_jersey:public_jerseys(
-            id,
-            team_name,
-            player_name,
-            season,
-            jersey_type,
-            kit_type,
-            manufacturer,
-            front_image_url,
-            back_image_url
+            id, team_name, player_name, season, jersey_type, kit_type, manufacturer, front_image_url, back_image_url
           )
         `)
         .in('id', userJerseyIds)
 
       if (error) throw error
 
-      // Maintain the order from the top_3_jersey_ids array
-      const ordered = userJerseyIds
+      return userJerseyIds
         .map(id => {
           const match = (data || []).find(d => d.id === id)
           if (!match?.public_jersey) return null
@@ -248,10 +230,55 @@ export function usePublicProfile(username) {
           }
         })
         .filter(Boolean)
-
-      return ordered
     } catch (err) {
       console.error('Error fetching top 3:', err)
+      return []
+    }
+  }
+
+  const fetchDreamKits = async (jerseyIds) => {
+    try {
+      const { data, error } = await supabasePublic
+        .from('public_jerseys')
+        .select('id, team_name, player_name, season, jersey_type, kit_type, manufacturer, front_image_url, back_image_url')
+        .in('id', jerseyIds)
+
+      if (error) throw error
+
+      return jerseyIds
+        .map(id => (data || []).find(j => j.id === id))
+        .filter(Boolean)
+    } catch (err) {
+      console.error('Error fetching dream kits:', err)
+      return []
+    }
+  }
+
+  const fetchUserBadges = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_badges')
+        .select('*, badge:badges(*)')
+        .eq('user_id', userId)
+        .order('awarded_at', { ascending: false })
+
+      if (error) {
+        // Table might not exist yet
+        console.warn('Could not fetch badges:', error.message)
+        return []
+      }
+
+      return (data || []).map(ub => ({
+        id: ub.badge.id,
+        name: ub.badge.name,
+        description: ub.badge.description,
+        icon: ub.badge.icon,
+        color: ub.badge.color,
+        rarity: ub.badge.rarity,
+        awarded_at: ub.awarded_at
+      }))
+    } catch (err) {
+      console.error('Error fetching badges:', err)
       return []
     }
   }
@@ -261,12 +288,7 @@ export function usePublicProfile(username) {
       const { data, error } = await supabase
         .from('user_jerseys')
         .select(`
-          id,
-          size,
-          condition,
-          acquired_from,
-          notes,
-          created_at,
+          id, size, condition, acquired_from, notes, created_at,
           public_jersey:public_jerseys(*)
         `)
         .eq('user_id', userId)
@@ -288,6 +310,8 @@ export function usePublicProfile(username) {
     profile,
     collections,
     top3Jerseys,
+    dreamKits,
+    badges,
     stats,
     allKits,
     loading,
@@ -307,11 +331,9 @@ export function useProfileSettings() {
         .from('profiles')
         .update({ is_public: isPublic })
         .eq('id', userId)
-
       if (error) throw error
       return { error: null }
     } catch (error) {
-      console.error('Error updating profile visibility:', error)
       return { error }
     } finally {
       setSaving(false)
@@ -325,11 +347,9 @@ export function useProfileSettings() {
         .from('profiles')
         .update({ bio })
         .eq('id', userId)
-
       if (error) throw error
       return { error: null }
     } catch (error) {
-      console.error('Error updating bio:', error)
       return { error }
     } finally {
       setSaving(false)
@@ -343,11 +363,9 @@ export function useProfileSettings() {
         .from('profiles')
         .update({ show_full_name: showFullName })
         .eq('id', userId)
-
       if (error) throw error
       return { error: null }
     } catch (error) {
-      console.error('Error updating show_full_name:', error)
       return { error }
     } finally {
       setSaving(false)
@@ -357,29 +375,19 @@ export function useProfileSettings() {
   const updateUsername = async (userId, newUsername, currentChangedAt) => {
     setSaving(true)
     try {
-      // Validate username format
       const trimmed = newUsername.trim().toLowerCase()
-      if (trimmed.length < 3) {
-        throw new Error('Username must be at least 3 characters')
-      }
-      if (trimmed.length > 30) {
-        throw new Error('Username must be 30 characters or less')
-      }
-      if (!/^[a-z0-9_]+$/.test(trimmed)) {
-        throw new Error('Username can only contain letters, numbers, and underscores')
-      }
+      if (trimmed.length < 3) throw new Error('Username must be at least 3 characters')
+      if (trimmed.length > 30) throw new Error('Username must be 30 characters or less')
+      if (!/^[a-z0-9_]+$/.test(trimmed)) throw new Error('Username can only contain letters, numbers, and underscores')
 
-      // Check 30-day cooldown
       if (currentChangedAt) {
-        const lastChanged = new Date(currentChangedAt)
-        const daysSince = (Date.now() - lastChanged.getTime()) / (1000 * 60 * 60 * 24)
+        const daysSince = (Date.now() - new Date(currentChangedAt).getTime()) / (1000 * 60 * 60 * 24)
         if (daysSince < 30) {
           const daysLeft = Math.ceil(30 - daysSince)
           throw new Error(`You can change your username again in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`)
         }
       }
 
-      // Check if username is already taken
       const { data: existing } = await supabase
         .from('profiles')
         .select('id')
@@ -387,23 +395,15 @@ export function useProfileSettings() {
         .neq('id', userId)
         .single()
 
-      if (existing) {
-        throw new Error('This username is already taken')
-      }
+      if (existing) throw new Error('This username is already taken')
 
-      // Update username
       const { error } = await supabase
         .from('profiles')
-        .update({
-          username: trimmed,
-          username_changed_at: new Date().toISOString()
-        })
+        .update({ username: trimmed, username_changed_at: new Date().toISOString() })
         .eq('id', userId)
-
       if (error) throw error
       return { error: null }
     } catch (error) {
-      console.error('Error updating username:', error)
       return { error }
     } finally {
       setSaving(false)
@@ -413,45 +413,32 @@ export function useProfileSettings() {
   const uploadAvatar = async (userId, file) => {
     setSaving(true)
     try {
-      // Validate file
       if (!file) throw new Error('No file selected')
-      if (file.size > 2 * 1024 * 1024) {
-        throw new Error('Image must be less than 2MB')
-      }
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        throw new Error('Only JPG, PNG, and WebP images are allowed')
-      }
+      if (file.size > 2 * 1024 * 1024) throw new Error('Image must be less than 2MB')
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Only JPG, PNG, and WebP images are allowed')
 
-      // Create file path: avatars/{userId}/avatar.{ext}
       const ext = file.name.split('.').pop()
       const filePath = `${userId}/avatar.${ext}`
 
-      // Upload to Supabase Storage (upsert to replace existing)
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true })
-
       if (uploadError) throw uploadError
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath)
 
-      // Add cache-busting timestamp to force refresh
       const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`
 
-      // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: avatarUrl })
         .eq('id', userId)
-
       if (updateError) throw updateError
 
       return { error: null, url: avatarUrl }
     } catch (error) {
-      console.error('Error uploading avatar:', error)
       return { error }
     } finally {
       setSaving(false)
@@ -461,16 +448,13 @@ export function useProfileSettings() {
   const removeAvatar = async (userId) => {
     setSaving(true)
     try {
-      // Clear avatar_url in profile
       const { error } = await supabase
         .from('profiles')
         .update({ avatar_url: null })
         .eq('id', userId)
-
       if (error) throw error
       return { error: null }
     } catch (error) {
-      console.error('Error removing avatar:', error)
       return { error }
     } finally {
       setSaving(false)
@@ -480,19 +464,14 @@ export function useProfileSettings() {
   const updateTop3Jerseys = async (userId, jerseyIds) => {
     setSaving(true)
     try {
-      if (jerseyIds.length > 3) {
-        throw new Error('You can only select up to 3 jerseys')
-      }
-
+      if (jerseyIds.length > 3) throw new Error('You can only select up to 3 jerseys')
       const { error } = await supabase
         .from('profiles')
         .update({ top_3_jersey_ids: jerseyIds })
         .eq('id', userId)
-
       if (error) throw error
       return { error: null }
     } catch (error) {
-      console.error('Error updating top 3 jerseys:', error)
       return { error }
     } finally {
       setSaving(false)
@@ -506,22 +485,47 @@ export function useProfileSettings() {
         .select(`
           id,
           public_jersey:public_jerseys(
-            id,
-            team_name,
-            player_name,
-            season,
-            jersey_type,
-            kit_type,
-            front_image_url
+            id, team_name, player_name, season, jersey_type, kit_type, front_image_url
           )
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-
       if (error) throw error
       return { data: data || [], error: null }
     } catch (error) {
-      console.error('Error fetching user jerseys:', error)
+      return { data: [], error }
+    }
+  }
+
+  const updateDreamKits = async (userId, jerseyIds) => {
+    setSaving(true)
+    try {
+      if (jerseyIds.length > 3) throw new Error('You can only select up to 3 dream kits')
+      const { error } = await supabase
+        .from('profiles')
+        .update({ dream_kit_ids: jerseyIds })
+        .eq('id', userId)
+      if (error) throw error
+      return { error: null }
+    } catch (error) {
+      return { error }
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const searchPublicJerseys = async (searchTerm) => {
+    try {
+      if (!searchTerm || searchTerm.length < 2) return { data: [], error: null }
+      const { data, error } = await supabasePublic
+        .from('public_jerseys')
+        .select('id, team_name, player_name, season, jersey_type, kit_type, front_image_url')
+        .or(`team_name.ilike.%${searchTerm}%,player_name.ilike.%${searchTerm}%,season.ilike.%${searchTerm}%`)
+        .order('team_name', { ascending: true })
+        .limit(30)
+      if (error) throw error
+      return { data: data || [], error: null }
+    } catch (error) {
       return { data: [], error }
     }
   }
@@ -535,6 +539,8 @@ export function useProfileSettings() {
     uploadAvatar,
     removeAvatar,
     updateTop3Jerseys,
-    getUserJerseys
+    getUserJerseys,
+    updateDreamKits,
+    searchPublicJerseys
   }
 }

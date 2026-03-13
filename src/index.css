@@ -729,3 +729,89 @@ body {
     display: block;
   }
 }
+
+/* Creator & Founder Badge Animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes founder-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(251,191,36,0.6)); }
+  50% { filter: drop-shadow(0 0 20px rgba(251,191,36,0.9)); }
+}
+
+@keyframes crownFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-4px) rotate(2deg); }
+}
+
+@keyframes ribbonWave {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(1.02); }
+}
+
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.5; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.creator-founder-badge-container {
+  animation: float 4s ease-in-out infinite;
+}
+
+.creator-founder-badge-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.creator-founder-crown {
+  animation: crownFloat 3s ease-in-out infinite;
+}
+
+.creator-founder-rotating-ring {
+  animation: rotate 20s linear infinite;
+  transform-origin: center;
+}
+
+.creator-founder-star {
+  animation: starTwinkle 2s ease-in-out infinite;
+}
+
+.creator-founder-ribbon {
+  animation: ribbonWave 4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.creator-founder-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.creator-founder-shimmer {
+  animation: shimmer 3s linear infinite;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  background-size: 200% 100%;
+}
+
+.creator-founder-avatar-ring {
+  animation: founder-pulse 3s ease-in-out infinite;
+}

@@ -7,16 +7,20 @@ import {
   CheckIcon,
   ExclamationTriangleIcon,
   CameraIcon,
-  TrashIcon
+  TrashIcon,
+  StarIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 import { useProfileSettings } from '../../hooks/usePublicProfile'
+import { supabasePublic } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 
-export default function ProfileSettingsModal({ isOpen, onClose, onSuccess }) {
+export default function ProfileSettingsModal({ isOpen, onClose, onSuccess, initialTab = 'profile' }) {
   const { user, profile, getProfile } = useAuth()
   const {
     saving, updateProfileVisibility, updateBio, updateShowFullName,
-    updateUsername, uploadAvatar, removeAvatar, updateTop3Jerseys, getUserJerseys
+    updateUsername, uploadAvatar, removeAvatar, updateTop3Jerseys, getUserJerseys,
+    updateDreamKits, searchPublicJerseys
   } = useProfileSettings()
 
   const fileInputRef = useRef(null)
@@ -28,28 +32,85 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSuccess }) {
   const [selectedJerseys, setSelectedJerseys] = useState([])
   const [userJerseys, setUserJerseys] = useState([])
   const [loadingJerseys, setLoadingJerseys] = useState(false)
-  const [activeTab, setActiveTab] = useState('profile')
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [saveMessage, setSaveMessage] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
+  const [selectedDreamKits, setSelectedDreamKits] = useState([])
+  const [dreamKitSearch, setDreamKitSearch] = useState('')
+  const [dreamKitResults, setDreamKitResults] = useState([])
+  const [dreamKitDetails, setDreamKitDetails] = useState([])
+  const [searchingDreamKits, setSearchingDreamKits] = useState(false)
 
   useEffect(() => {
     if (isOpen && profile) {
+      setActiveTab(initialTab)
       setIsPublic(profile.is_public || false)
       setBio(profile.bio || '')
       setShowFullName(profile.show_full_name !== false)
       setNewUsername(profile.username || '')
       setSelectedJerseys(profile.top_3_jersey_ids || [])
+      setSelectedDreamKits(profile.dream_kit_ids || [])
       setAvatarPreview(null)
+      setDreamKitSearch('')
+      setDreamKitResults([])
       loadUserJerseys()
+      loadDreamKitDetails(profile.dream_kit_ids || [])
     }
-  }, [isOpen, profile])
+  }, [isOpen, profile, initialTab])
 
   const loadUserJerseys = async () => {
     if (!user) return
     setLoadingJerseys(true)
-    const { data } = await getUserJerseys(user.id)
-    setUserJerseys(data)
+    try {
+      const { data } = await getUserJerseys(user.id)
+      setUserJerseys(data || [])
+    } catch (err) {
+      console.error('Error loading user jerseys:', err)
+      setUserJerseys([])
+    }
     setLoadingJerseys(false)
+  }
+
+  const loadDreamKitDetails = async (ids) => {
+    if (!ids || ids.length === 0) { setDreamKitDetails([]); return }
+    try {
+      const { data: jerseys, error } = await supabasePublic
+        .from('public_jerseys')
+        .select('id, team_name, player_name, season, jersey_type, kit_type, front_image_url')
+        .in('id', ids)
+      if (error) throw error
+      setDreamKitDetails(ids.map(id => (jerseys || []).find(j => j.id === id)).filter(Boolean))
+    } catch (err) {
+      console.error('Error loading dream kit details:', err)
+      setDreamKitDetails([])
+    }
+  }
+
+  const handleDreamKitSearch = async (term) => {
+    setDreamKitSearch(term)
+    if (term.length < 2) { setDreamKitResults([]); return }
+    setSearchingDreamKits(true)
+    const { data } = await searchPublicJerseys(term)
+    setDreamKitResults(data)
+    setSearchingDreamKits(false)
+  }
+
+  const handleToggleDreamKit = (jersey) => {
+    setSelectedDreamKits(prev => {
+      if (prev.includes(jersey.id)) {
+        setDreamKitDetails(d => d.filter(j => j.id !== jersey.id))
+        return prev.filter(id => id !== jersey.id)
+      }
+      if (prev.length >= 3) { showMsg('error', 'You can only select up to 3 dream kits'); return prev }
+      setDreamKitDetails(d => [...d, jersey])
+      return [...prev, jersey.id]
+    })
+  }
+
+  const handleSaveDreamKits = async () => {
+    const { error } = await updateDreamKits(user.id, selectedDreamKits)
+    if (error) showMsg('error', error.message || 'Failed to update dream kits')
+    else { showMsg('success', 'Dream kits updated!'); await getProfile(user.id); onSuccess?.() }
   }
 
   const showMsg = (type, text) => {
@@ -191,6 +252,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSuccess }) {
           <button onClick={() => setActiveTab('profile')} style={tabStyle('profile')}>Profile</button>
           <button onClick={() => setActiveTab('privacy')} style={tabStyle('privacy')}>Privacy</button>
           <button onClick={() => setActiveTab('top3')} style={tabStyle('top3')}>Top 3 Kits</button>
+          <button onClick={() => setActiveTab('dreamkits')} style={tabStyle('dreamkits')}>Dream Kits</button>
         </div>
 
         {/* Content */}
@@ -421,6 +483,102 @@ export default function ProfileSettingsModal({ isOpen, onClose, onSuccess }) {
                   </button>
                 </>
               )}
+            </div>
+          )}
+          {/* ===== DREAM KITS TAB ===== */}
+          {activeTab === 'dreamkits' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', backgroundColor: '#eff6ff', borderRadius: '8px', color: '#2563eb', fontSize: '13px' }}>
+                <StarIcon style={{ width: '18px', height: '18px', flexShrink: 0 }} />
+                <p style={{ margin: 0 }}>Select up to 3 dream kits from the entire database — the kits you wish you had! ({selectedDreamKits.length}/3 selected)</p>
+              </div>
+
+              {/* Currently selected dream kits */}
+              {dreamKitDetails.length > 0 && (
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 500, color: '#374151', margin: '0 0 8px' }}>Your Dream Kits:</p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {dreamKitDetails.map((jersey, idx) => (
+                      <div key={jersey.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', backgroundColor: '#f0f9ff', border: '1px solid #bfdbfe', borderRadius: '8px' }}>
+                        <span style={{ width: '20px', height: '20px', borderRadius: '50%', backgroundColor: '#2563eb', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold', flexShrink: 0 }}>{idx + 1}</span>
+                        {jersey.front_image_url && (
+                          <img src={jersey.front_image_url} alt="" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
+                        )}
+                        <span style={{ fontSize: '12px', color: '#111827', fontWeight: 500 }}>{jersey.team_name} {jersey.season}</span>
+                        <button
+                          onClick={() => handleToggleDreamKit(jersey)}
+                          style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#dc2626', padding: '2px', display: 'flex' }}
+                        >
+                          <XMarkIcon style={{ width: '14px', height: '14px' }} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Search input */}
+              <div style={{ position: 'relative' }}>
+                <MagnifyingGlassIcon style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#9ca3af' }} />
+                <input
+                  type="text"
+                  placeholder="Search kits by team, player, or season..."
+                  value={dreamKitSearch}
+                  onChange={(e) => handleDreamKitSearch(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px 10px 34px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* Search results */}
+              {searchingDreamKits ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', fontSize: '13px' }}>Searching...</div>
+              ) : dreamKitSearch.length >= 2 && dreamKitResults.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', fontSize: '13px' }}>No kits found for "{dreamKitSearch}"</div>
+              ) : dreamKitResults.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', maxHeight: '340px', overflowY: 'auto' }}>
+                  {dreamKitResults.map((jersey) => {
+                    const isSelected = selectedDreamKits.includes(jersey.id)
+                    const selectionIndex = selectedDreamKits.indexOf(jersey.id)
+                    return (
+                      <button
+                        key={jersey.id}
+                        onClick={() => handleToggleDreamKit(jersey)}
+                        style={{ position: 'relative', borderRadius: '8px', border: isSelected ? '2px solid #2563eb' : '2px solid #e5e7eb', overflow: 'hidden', cursor: 'pointer', background: 'white', padding: 0, textAlign: 'left', outline: isSelected ? '2px solid #bfdbfe' : 'none', outlineOffset: 0, transition: 'all 0.15s' }}
+                      >
+                        {isSelected && (
+                          <div style={{ position: 'absolute', top: '6px', left: '6px', zIndex: 10, width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#2563eb', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>{selectionIndex + 1}</div>
+                        )}
+                        {isSelected && (
+                          <div style={{ position: 'absolute', top: '6px', right: '6px', zIndex: 10, width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#22c55e', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CheckIcon style={{ width: '14px', height: '14px' }} />
+                          </div>
+                        )}
+                        <div style={{ height: '80px', backgroundColor: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {jersey.front_image_url ? (
+                            <img src={jersey.front_image_url} alt={jersey.team_name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', padding: '6px' }} />
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontSize: '11px' }}>No Image</span>
+                          )}
+                        </div>
+                        <div style={{ padding: '6px 8px', backgroundColor: 'white' }}>
+                          <p style={{ fontSize: '12px', fontWeight: 500, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{jersey.team_name}</p>
+                          <p style={{ fontSize: '11px', color: '#6b7280', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{jersey.player_name ? `${jersey.player_name} - ` : ''}{jersey.season}</p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : dreamKitSearch.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 16px', color: '#6b7280' }}>
+                  <StarIcon style={{ width: '32px', height: '32px', margin: '0 auto 8px', opacity: 0.4 }} />
+                  <p style={{ margin: 0, fontSize: '13px' }}>Search the kit database to find your dream kits</p>
+                </div>
+              ) : null}
+
+              {/* Save button */}
+              <button onClick={handleSaveDreamKits} disabled={saving} style={{ width: '100%', padding: '10px 16px', backgroundColor: '#2563eb', color: 'white', borderRadius: '8px', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.5 : 1, fontSize: '14px', fontWeight: 500 }}>
+                {saving ? 'Saving...' : 'Save Dream Kits'}
+              </button>
             </div>
           )}
         </div>

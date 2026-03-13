@@ -50,7 +50,7 @@ export function usePublicProfile(username, currentUserId = null) {
       // Fetch everything else in parallel
       const [statsResult, collectionsResult, top3Result, dreamKitsResult, badgesResult, allKitsResult] = await Promise.all([
         fetchStats(userId, profileData.all_kits_public),
-        fetchPublicCollections(userId),
+        fetchPublicCollections(userId, isOwner),
         profileData.top_3_jersey_ids?.length > 0
           ? fetchTop3(profileData.top_3_jersey_ids)
           : Promise.resolve([]),
@@ -58,7 +58,7 @@ export function usePublicProfile(username, currentUserId = null) {
           ? fetchDreamKits(profileData.dream_kit_ids)
           : Promise.resolve([]),
         fetchUserBadges(userId),
-        profileData.all_kits_public
+        (profileData.all_kits_public || isOwner)
           ? fetchAllKits(userId)
           : Promise.resolve([])
       ])
@@ -101,14 +101,20 @@ export function usePublicProfile(username, currentUserId = null) {
     }
   }
 
-  const fetchPublicCollections = async (userId) => {
+  const fetchPublicCollections = async (userId, isOwner = false) => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('collections')
-        .select('id, name, description, created_at')
+        .select('id, name, description, is_public, created_at')
         .eq('user_id', userId)
-        .eq('is_public', true)
         .order('created_at', { ascending: false })
+
+      // Only filter by is_public for visitors, owners see all their collections
+      if (!isOwner) {
+        query = query.eq('is_public', true)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
 

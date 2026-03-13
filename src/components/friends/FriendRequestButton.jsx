@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useFriendshipStatus } from '../../hooks/useFriends'
 import { supabase } from '../../lib/supabase'
+import { notifyFriendRequest, notifyFriendRequestAccepted } from '../../lib/notifications'
 
 /**
  * Button component for profile pages to handle friend requests
@@ -16,7 +17,7 @@ import { supabase } from '../../lib/supabase'
  * @param {string} props.targetUserId - The profile owner's ID
  * @param {string} props.style - Additional styles
  */
-export default function FriendRequestButton({ currentUserId, targetUserId, style = {} }) {
+export default function FriendRequestButton({ currentUserId, targetUserId, currentUsername, targetUsername, style = {} }) {
   const { status, friendshipId, loading, refetch } = useFriendshipStatus(currentUserId, targetUserId)
   const [actionLoading, setActionLoading] = useState(false)
 
@@ -36,6 +37,10 @@ export default function FriendRequestButton({ currentUserId, targetUserId, style
         })
 
       if (error) throw error
+      // Send notification to the target user
+      if (currentUsername) {
+        notifyFriendRequest(targetUserId, currentUserId, currentUsername)
+      }
       refetch()
     } catch (err) {
       console.error('Error sending friend request:', err)
@@ -72,6 +77,11 @@ export default function FriendRequestButton({ currentUserId, targetUserId, style
         .eq('id', friendshipId)
 
       if (error) throw error
+      // Notify the original sender that their request was accepted
+      // We need to figure out who the original sender was - it's the other user
+      if (currentUsername) {
+        notifyFriendRequestAccepted(targetUserId, currentUserId, currentUsername)
+      }
       refetch()
     } catch (err) {
       console.error('Error accepting friend request:', err)

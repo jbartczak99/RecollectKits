@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { XMarkIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext.jsx'
+import { checkAndNotifyMilestone } from '../../lib/notifications'
 
 export default function AddJerseyToCollectionModal({ isOpen, onClose, collection, onSuccess }) {
   const { user } = useAuth()
@@ -110,6 +111,9 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
         notes: '',
         acquired_from: ''
       })
+
+      // Check for kit milestones
+      checkAndNotifyMilestone(user.id)
 
       // Call success callback
       onSuccess?.(data)

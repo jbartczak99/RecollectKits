@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { notifyWelcome, checkAndAwardFirst100Badge } from '../lib/notifications'
 
 const AuthContext = createContext({})
 
@@ -185,6 +186,9 @@ export const AuthProvider = ({ children }) => {
       if (!error && data.user) {
         console.log('Signup successful, creating profile immediately for:', data.user.email)
         await createProfile(data.user)
+        // Send welcome notification and check for First 100 badge
+        notifyWelcome(data.user.id)
+        checkAndAwardFirst100Badge(data.user.id)
       }
 
       return { data, error }

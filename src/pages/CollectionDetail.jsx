@@ -36,9 +36,10 @@ export default function CollectionDetail() {
   const isMainCollection = collectionId === 'all'
   const isLikedKitsCollection = collection?.name === 'Liked Kits'
   const isWishlistCollection = collection?.name === 'Wishlist'
+  const isOwner = collection?.user_id === user?.id
 
   useEffect(() => {
-    if (collectionId && user) {
+    if (collectionId) {
       fetchCollectionDetails()
     }
   }, [collectionId, user])
@@ -49,6 +50,11 @@ export default function CollectionDetail() {
 
     try {
       if (isMainCollection) {
+        if (!user) {
+          setError('Please sign in to view this collection')
+          setLoading(false)
+          return
+        }
         // Fetch the all_kits_public setting from profiles
         const { data: profileData } = await supabase
           .from('profiles')
@@ -86,14 +92,16 @@ export default function CollectionDetail() {
 
         if (collectionError) throw collectionError
 
-        // Check if user is the owner
-        if (collectionData.user_id !== user?.id) {
+        // Check if user is the owner or collection is public
+        const isOwner = collectionData.user_id === user?.id
+        if (!isOwner && !collectionData.is_public) {
           setError('You do not have permission to view this collection')
           setLoading(false)
           return
         }
 
         setCollection(collectionData)
+        const ownerId = collectionData.user_id
 
         // Special handling for "Liked Kits" - fetch directly from jersey_likes
         if (collectionData.name === 'Liked Kits') {
@@ -101,7 +109,7 @@ export default function CollectionDetail() {
           const { data: likesData, error: likesError } = await supabase
             .from('jersey_likes')
             .select('jersey_id, created_at')
-            .eq('user_id', user.id)
+            .eq('user_id', ownerId)
             .order('created_at', { ascending: false })
 
           if (likesError) throw likesError
@@ -142,7 +150,7 @@ export default function CollectionDetail() {
           const { data: wishlistData, error: wishlistError } = await supabase
             .from('user_wishlist')
             .select('public_jersey_id, created_at')
-            .eq('user_id', user.id)
+            .eq('user_id', ownerId)
             .order('created_at', { ascending: false })
 
           if (wishlistError) throw wishlistError
@@ -470,36 +478,38 @@ export default function CollectionDetail() {
             </div>
           </div>
 
-          {/* Action Buttons - Hide for system collections (Liked Kits, Wishlist) */}
-          <div className="flex gap-2 flex-wrap">
-            {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
-              <button
-                onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <PencilIcon className="h-4 w-4" />
-                Edit
-              </button>
-            )}
-            {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
-              <button
-                onClick={() => setShowAddJerseyModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <PlusIcon className="h-5 w-5" />
-                Add Jerseys
-              </button>
-            )}
-            {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                <TrashIcon className="h-4 w-4" />
-                Delete
-              </button>
-            )}
-          </div>
+          {/* Action Buttons - Only for owner, hide for system collections (Liked Kits, Wishlist) */}
+          {isOwner && (
+            <div className="flex gap-2 flex-wrap">
+              {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  Edit
+                </button>
+              )}
+              {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
+                <button
+                  onClick={() => setShowAddJerseyModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  Add Jerseys
+                </button>
+              )}
+              {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -725,8 +735,8 @@ export default function CollectionDetail() {
                     </div>
                   )}
 
-                  {/* Action Buttons - pushed to bottom */}
-                  <div className="mt-auto">
+                  {/* Action Buttons - pushed to bottom, owner only */}
+                  {isOwner && <div className="mt-auto">
                     {/* For Liked Kits and Wishlist - just show trash icon */}
                     {isSystemCollection ? (
                       <button
@@ -777,7 +787,7 @@ export default function CollectionDetail() {
                         </button>
                       </div>
                     )}
-                  </div>
+                  </div>}
                 </div>
               </div>
             )

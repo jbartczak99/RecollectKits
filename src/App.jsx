@@ -27,6 +27,7 @@ import Terms from './pages/Terms'
 import ResetPassword from './pages/ResetPassword'
 import PlayerProfile from './pages/PlayerProfile'
 import BulkUpload from './pages/BulkUpload'
+import Notifications from './pages/Notifications'
 
 function App() {
   return (
@@ -65,11 +66,7 @@ function App() {
                 path="/collection/:collectionId"
                 element={
                   <div className="container py-8">
-                    <ApprovalGate>
-                      <ProtectedRoute>
-                        <CollectionDetail />
-                      </ProtectedRoute>
-                    </ApprovalGate>
+                    <CollectionDetail />
                   </div>
                 }
               />
@@ -166,6 +163,16 @@ function App() {
                         <BulkUpload />
                       </ProtectedRoute>
                     </ApprovalGate>
+                  </div>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <div className="container py-8">
+                    <ProtectedRoute>
+                      <Notifications />
+                    </ProtectedRoute>
                   </div>
                 }
               />

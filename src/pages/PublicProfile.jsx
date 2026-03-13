@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import {
   ShareIcon,
   CheckIcon,
@@ -14,6 +14,7 @@ import { usePublicProfile } from '../hooks/usePublicProfile'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import ProfileSettingsModal from '../components/profile/ProfileSettingsModal'
 import { CreatorFounderBadge, CreatorFounderPill, CreatorFounderAvatar } from '../components/profile/CreatorFounderBadge'
+import { First100Badge } from '../components/profile/First100Badge'
 import FriendRequestButton from '../components/friends/FriendRequestButton'
 import FriendsSidebar from '../components/friends/FriendsSidebar'
 
@@ -24,7 +25,9 @@ export default function PublicProfile() {
   const { username: rawUsername } = useParams()
   const username = rawUsername?.startsWith('@') ? rawUsername.slice(1) : rawUsername
   const { user, profile: currentUserProfile } = useAuth()
-  const { profile, collections, top3Jerseys, dreamKits, badges, stats, allKits, loading, error } = usePublicProfile(username, user?.id)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const isPreview = searchParams.get('preview') === 'true'
+  const { profile, collections, top3Jerseys, dreamKits, badges, stats, allKits, loading, error } = usePublicProfile(username, isPreview ? null : user?.id)
   const [copied, setCopied] = useState(false)
   const [imageStates, setImageStates] = useState({})
   const [showProfileSettings, setShowProfileSettings] = useState(false)
@@ -36,7 +39,7 @@ export default function PublicProfile() {
     setShowProfileSettings(true)
   }
 
-  const isOwnProfile = user && currentUserProfile?.username === username
+  const isOwnProfile = !isPreview && user && currentUserProfile?.username === username
   const isFounder = username === 'jbartczak'
 
   // Avatar border based on subscription tier
@@ -131,7 +134,50 @@ export default function PublicProfile() {
 
   // --- Profile Page ---
   return (
-    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', flexDirection: 'column' }}>
+
+      {/* Preview Mode Banner */}
+      {isPreview && (
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          padding: '12px 20px',
+          backgroundColor: '#faf5ff',
+          border: '1px solid #e9d5ff',
+          borderRadius: '10px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg style={{ width: '18px', height: '18px', color: '#7c3aed', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <span style={{ fontSize: '14px', fontWeight: 500, color: '#6b21a8' }}>
+              You are previewing your profile as a visitor sees it
+            </span>
+          </div>
+          <button
+            onClick={() => { searchParams.delete('preview'); setSearchParams(searchParams) }}
+            style={{
+              padding: '6px 14px',
+              backgroundColor: '#7c3aed',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
+            Exit Preview
+          </button>
+        </div>
+      )}
+
+    <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', width: '100%' }}>
       {/* Main Content */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
@@ -191,6 +237,8 @@ export default function PublicProfile() {
                 <FriendRequestButton
                   currentUserId={user.id}
                   targetUserId={profile.id}
+                  currentUsername={currentUserProfile?.username}
+                  targetUsername={profile.username}
                 />
               )}
               <button
@@ -234,6 +282,36 @@ export default function PublicProfile() {
           </div>
         </div>
       </div>
+
+      {/* View as visitor link */}
+      {isOwnProfile && profile?.is_public && (
+        <Link
+          to={`/@${profile.username}?preview=true`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '10px 16px',
+            backgroundColor: '#f9fafb',
+            border: '1px solid #e5e7eb',
+            borderRadius: '10px',
+            textDecoration: 'none',
+            color: '#6b7280',
+            fontSize: '13px',
+            fontWeight: 500,
+            transition: 'all 0.15s'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f3e8ff'; e.currentTarget.style.borderColor = '#e9d5ff'; e.currentTarget.style.color = '#7c3aed' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f9fafb'; e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.color = '#6b7280' }}
+        >
+          <svg style={{ width: '16px', height: '16px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          See how others see your profile
+        </Link>
+      )}
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
@@ -284,6 +362,20 @@ export default function PublicProfile() {
 
             {/* DB-driven badges */}
             {badges.length > 0 && badges.map((badge) => {
+              // Special animated badge for "The First 100"
+              const isFirst100 = badge.name === 'The First 100'
+              if (isFirst100) {
+                return (
+                  <button
+                    key={badge.id}
+                    onClick={() => setSelectedBadge({ ...badge, isFirst100Badge: true })}
+                    style={{ textAlign: 'center', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                  >
+                    <First100Badge size={160} />
+                  </button>
+                )
+              }
+
               const rarityColors = {
                 common: { bg: '#f3f4f6', border: '#d1d5db', text: '#374151' },
                 uncommon: { bg: '#dcfce7', border: '#86efac', text: '#166534' },
@@ -616,12 +708,16 @@ export default function PublicProfile() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
             <FolderIcon style={{ width: '22px', height: '22px', color: '#6b7280' }} />
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', margin: 0 }}>Public Collections</h2>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#111827', margin: 0 }}>{isOwnProfile ? 'Collections' : 'Public Collections'}</h2>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
             {collections.map((collection) => (
-              <div key={collection.id} style={{ backgroundColor: 'white', borderRadius: '10px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+              <Link
+                key={collection.id}
+                to={`/collection/${collection.id}`}
+                style={{ backgroundColor: 'white', borderRadius: '10px', border: '1px solid #e5e7eb', overflow: 'hidden', textDecoration: 'none', color: 'inherit', display: 'block' }}
+              >
                 {/* Thumbnails */}
                 <div style={{ height: '100px', backgroundColor: '#f3f4f6', display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '2px', padding: '2px', overflow: 'hidden' }}>
                   {collection.thumbnail_urls?.slice(0, 4).map((url, i) => (
@@ -650,7 +746,7 @@ export default function PublicProfile() {
                     {collection.jersey_count} {collection.jersey_count === 1 ? 'kit' : 'kits'}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -797,6 +893,8 @@ export default function PublicProfile() {
               }}>
                 {selectedBadge.isFounderBadge ? (
                   <CreatorFounderBadge size={180} />
+                ) : selectedBadge.isFirst100Badge ? (
+                  <First100Badge size={180} />
                 ) : (
                   <div style={{
                     width: '96px', height: '96px', borderRadius: '50%',
@@ -859,6 +957,7 @@ export default function PublicProfile() {
         onClose={() => setShowProfileSettings(false)}
         initialTab={settingsTab}
       />
+    </div>
     </div>
   )
 }

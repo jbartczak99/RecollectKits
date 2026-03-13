@@ -19,6 +19,7 @@ import {
   UsersIcon,
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline'
+import NotificationBell from '../notifications/NotificationBell'
 import './Navigation.css'
 
 export default function Navigation() {
@@ -153,6 +154,8 @@ export default function Navigation() {
 
         <div className="navbar-user">
           {user ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <NotificationBell />
             <div className="user-dropdown">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -188,16 +191,6 @@ export default function Navigation() {
 
                   {/* Menu Items */}
                   <div>
-                    {profile?.is_public && (
-                      <Link
-                        to={`/@${profile.username}`}
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="user-dropdown-item"
-                      >
-                        <UserCircleIcon className="user-dropdown-icon" />
-                        <span>View Public Profile</span>
-                      </Link>
-                    )}
                     <Link
                       to="/collection?settings=profile"
                       onClick={() => setUserDropdownOpen(false)}
@@ -236,6 +229,7 @@ export default function Navigation() {
                   </div>
                 </div>
               )}
+            </div>
             </div>
           ) : (
             <Link
@@ -295,16 +289,6 @@ export default function Navigation() {
           {user && (
             <>
               <div className="mobile-dropdown-divider" />
-              {profile?.is_public && (
-                <Link
-                  to={`/@${profile.username}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="mobile-dropdown-item"
-                >
-                  <UserCircleIcon className="h-5 w-5" />
-                  View Public Profile
-                </Link>
-              )}
               <Link
                 to="/collection?settings=profile"
                 onClick={() => setMobileMenuOpen(false)}

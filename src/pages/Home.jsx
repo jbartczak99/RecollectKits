@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useJerseys, useRandomJersey, useMostLikedJersey } from '../hooks/useJerseys'
 import JerseyCard from '../components/jerseys/JerseyCard'
+import WaitlistSignup from '../components/WaitlistSignup'
 
 export default function Home() {
   const { jerseys, loading: jerseysLoading } = useJerseys()
@@ -40,49 +41,9 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Coming Soon Notice */}
+      {/* Waitlist Signup */}
       <section>
-        <div className="card" style={{background: 'linear-gradient(135deg, var(--accent-amber-50), var(--accent-green-50))', border: '2px solid var(--accent-amber-200)'}}>
-          <div className="card-body text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">🚀 Coming Soon!</h2>
-            <p className="text-lg text-gray-700 mb-4">
-              RecollectKits is now in alpha testing! Experience early features and help shape the ultimate platform for kit collectors.
-            </p>
-            <div className="flex flex-wrap justify-center gap-2 mb-4">
-              <span className="badge badge-green">Alpha Testing</span>
-              <span className="badge badge-amber">Early Access</span>
-              <span className="badge badge-purple">Coming 2026</span>
-            </div>
-            <p className="text-sm text-gray-600 mb-6">
-              Stay tuned for features like kit tracking, community bounties, and collector spotting!
-            </p>
-            <div className="border-t border-gray-200 pt-6">
-              <p className="text-base font-medium text-gray-800 mb-4">
-                Follow us for updates and behind-the-scenes development:
-              </p>
-              <div className="flex justify-center items-center gap-4">
-                <a href="https://www.instagram.com/recollectkits/" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram">
-                  <img src="/instagram-logo.png" alt="Instagram" style={{ width: '30px', height: '30px' }} />
-                </a>
-                <a href="https://www.tiktok.com/@recollectkits" target="_blank" rel="noopener noreferrer" aria-label="Follow us on TikTok">
-                  <img src="/tiktok-logo.png" alt="TikTok" style={{ width: '34px', height: '34px' }} />
-                </a>
-                <a href="https://www.youtube.com/@recollectkits" target="_blank" rel="noopener noreferrer" aria-label="Subscribe on YouTube">
-                  <img src="/youtube-icon.png" alt="YouTube" style={{ width: '46px', height: '46px' }} />
-                </a>
-                <button className="btn btn-secondary" disabled>
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                  X (Twitter)
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 mt-3">
-                X coming soon!
-              </p>
-            </div>
-          </div>
-        </div>
+        <WaitlistSignup />
       </section>
 
       {/* Weekly Featured Kits */}

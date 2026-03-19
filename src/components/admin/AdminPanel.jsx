@@ -20,6 +20,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 import WikidataPlayerPreview from './WikidataPlayerPreview'
 import PartnerApplications from './PartnerApplications'
 import { searchPlayer, fetchPlayerDetails, mapToPlayerRecord } from '../../utils/wikidata'
+import AdminEmailTemplates from './AdminEmailTemplates'
 import './AdminPanel.css'
 
 export default function AdminPanel() {
@@ -1769,6 +1770,16 @@ export default function AdminPanel() {
               </a>
             ))}
           </div>
+        </div>
+
+        {/* ===== Email Templates ===== */}
+        <div style={{
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          border: '1px solid #e5e7eb',
+          padding: '24px',
+        }}>
+          <AdminEmailTemplates />
         </div>
       </div>
 

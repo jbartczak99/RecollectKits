@@ -20,6 +20,7 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline'
 import NotificationBell from '../notifications/NotificationBell'
+import Logo from './Logo'
 import './Navigation.css'
 
 export default function Navigation() {
@@ -121,11 +122,7 @@ export default function Navigation() {
       <div className="navbar-container">
         <div className="flex items-center">
           <Link to="/" className="navbar-brand">
-            <img
-              src="/logo.png"
-              alt="RecollectKits"
-              className="navbar-logo"
-            />
+            <Logo layout="horizontal" iconSize={44} fontSize={32} />
           </Link>
           
           <div className="navbar-nav" style={{marginLeft: '2rem'}}>

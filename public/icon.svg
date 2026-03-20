@@ -1,0 +1,83 @@
+<svg width="512" height="512" viewBox="-90 -90 180 180" xmlns="http://www.w3.org/2000/svg">
+  <!-- RecollectKits Supporters' Ring Icon -->
+  <!-- 8 collars, 0° square corners, green at top, purple center dot -->
+  
+  <!-- Corner arcs at 0° (square orientation) -->
+  <line x1="-20" y1="-20" x2="-20" y2="-8" stroke="#205A40" stroke-width="2" stroke-linecap="round"/>
+  <line x1="-20" y1="-20" x2="-8" y2="-20" stroke="#205A40" stroke-width="2" stroke-linecap="round"/>
+  <path d="M-20,-12 A8,8 0 0,0 -12,-20" fill="none" stroke="#205A40" stroke-width="1.5"/>
+  
+  <line x1="20" y1="-20" x2="20" y2="-8" stroke="#205A40" stroke-width="2" stroke-linecap="round"/>
+  <line x1="20" y1="-20" x2="8" y2="-20" stroke="#205A40" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12,-20 A8,8 0 0,0 20,-12" fill="none" stroke="#205A40" stroke-width="1.5"/>
+  
+  <line x1="20" y1="20" x2="20" y2="8" stroke="#205A40" stroke-width="2" stroke-linecap="round"/>
+  <line x1="20" y1="20" x2="8" y2="20" stroke="#205A40" stroke-width="2" stroke-linecap="round"/>
+  <path d="M20,12 A8,8 0 0,0 12,20" fill="none" stroke="#205A40" stroke-width="1.5"/>
+  
+  <line x1="-20" y1="20" x2="-20" y2="8" stroke="#205A40" stroke-width="2" stroke-linecap="round"/>
+  <line x1="-20" y1="20" x2="-8" y2="20" stroke="#205A40" stroke-width="2" stroke-linecap="round"/>
+  <path d="M-12,20 A8,8 0 0,0 -20,12" fill="none" stroke="#205A40" stroke-width="1.5"/>
+  
+  <!-- Center dot — purple — the collector -->
+  <circle cx="0" cy="0" r="5" fill="#7C3AED"/>
+  
+  <!-- 8 collars alternating green/purple, green at top (0°) -->
+  <!-- Each collar: shoulder-neckband path + two V leg lines -->
+  
+  <!-- 0° Green -->
+  <g transform="rotate(0)">
+    <path d="M-21,-64 L-14,-68 C-8,-58 8,-58 14,-68 L21,-64" fill="none" stroke="#205A40" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-14" y1="-68" x2="0" y2="-46" stroke="#205A40" stroke-width="4" stroke-linecap="round"/>
+    <line x1="14" y1="-68" x2="0" y2="-46" stroke="#205A40" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 45° Purple -->
+  <g transform="rotate(45)">
+    <path d="M-21,-64 L-14,-68 C-8,-58 8,-58 14,-68 L21,-64" fill="none" stroke="#7C3AED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-14" y1="-68" x2="0" y2="-46" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+    <line x1="14" y1="-68" x2="0" y2="-46" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 90° Green -->
+  <g transform="rotate(90)">
+    <path d="M-21,-64 L-14,-68 C-8,-58 8,-58 14,-68 L21,-64" fill="none" stroke="#205A40" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-14" y1="-68" x2="0" y2="-46" stroke="#205A40" stroke-width="4" stroke-linecap="round"/>
+    <line x1="14" y1="-68" x2="0" y2="-46" stroke="#205A40" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 135° Purple -->
+  <g transform="rotate(135)">
+    <path d="M-21,-64 L-14,-68 C-8,-58 8,-58 14,-68 L21,-64" fill="none" stroke="#7C3AED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-14" y1="-68" x2="0" y2="-46" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+    <line x1="14" y1="-68" x2="0" y2="-46" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 180° Green -->
+  <g transform="rotate(180)">
+    <path d="M-21,-64 L-14,-68 C-8,-58 8,-58 14,-68 L21,-64" fill="none" stroke="#205A40" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-14" y1="-68" x2="0" y2="-46" stroke="#205A40" stroke-width="4" stroke-linecap="round"/>
+    <line x1="14" y1="-68" x2="0" y2="-46" stroke="#205A40" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 225° Purple -->
+  <g transform="rotate(225)">
+    <path d="M-21,-64 L-14,-68 C-8,-58 8,-58 14,-68 L21,-64" fill="none" stroke="#7C3AED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-14" y1="-68" x2="0" y2="-46" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+    <line x1="14" y1="-68" x2="0" y2="-46" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 270° Green -->
+  <g transform="rotate(270)">
+    <path d="M-21,-64 L-14,-68 C-8,-58 8,-58 14,-68 L21,-64" fill="none" stroke="#205A40" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-14" y1="-68" x2="0" y2="-46" stroke="#205A40" stroke-width="4" stroke-linecap="round"/>
+    <line x1="14" y1="-68" x2="0" y2="-46" stroke="#205A40" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 315° Purple -->
+  <g transform="rotate(315)">
+    <path d="M-21,-64 L-14,-68 C-8,-58 8,-58 14,-68 L21,-64" fill="none" stroke="#7C3AED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="-14" y1="-68" x2="0" y2="-46" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+    <line x1="14" y1="-68" x2="0" y2="-46" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>

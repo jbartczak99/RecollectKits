@@ -60,6 +60,11 @@ export default function WaitlistSignup() {
         body: JSON.stringify(formData),
       });
 
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server error. Please try again later.');
+      }
+
       const data = await res.json();
 
       if (!res.ok) {

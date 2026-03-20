@@ -10,6 +10,7 @@ const INTEREST_LABELS = {
 export const WaitlistConfirmationEmail = ({ firstName, interest }) => (
   <div style={{ fontFamily: 'system-ui, sans-serif', padding: '40px 20px', maxWidth: '600px', margin: '0 auto' }}>
     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+      <img src="https://recollectkits.com/logo-horizontal.png" alt="RecollectKits" style={{ width: '240px', height: 'auto', marginBottom: '24px' }} />
       <h1 style={{ color: '#7C3AED', fontSize: '28px', margin: '0' }}>You're on the list!</h1>
     </div>
 

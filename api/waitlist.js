@@ -20,6 +20,7 @@ function buildConfirmationEmail(firstName, interest) {
 <body style="margin:0;padding:0;background-color:#f9fafb;font-family:system-ui,-apple-system,sans-serif;">
   <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
     <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://recollectkits.com/logo-horizontal.png" alt="RecollectKits" style="width:240px;height:auto;margin-bottom:24px;" />
       <h1 style="color:#7C3AED;font-size:28px;margin:0;">You're on the list!</h1>
     </div>
 

@@ -3,6 +3,7 @@ import * as React from 'react';
 export const WelcomeEmail = ({ username }) => (
   <div style={{ fontFamily: 'system-ui, sans-serif', padding: '40px 20px', maxWidth: '600px', margin: '0 auto' }}>
     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+      <img src="https://recollectkits.com/logo-horizontal.png" alt="RecollectKits" style={{ width: '240px', height: 'auto', marginBottom: '24px' }} />
       <h1 style={{ color: '#7C3AED', fontSize: '28px', margin: '0' }}>Welcome to RecollectKits!</h1>
     </div>
 

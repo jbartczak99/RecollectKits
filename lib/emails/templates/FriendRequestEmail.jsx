@@ -2,6 +2,9 @@ import * as React from 'react';
 
 export const FriendRequestEmail = ({ recipientName, senderUsername, senderAvatarUrl, viewRequestUrl }) => (
   <div style={{ fontFamily: 'system-ui, sans-serif', padding: '40px 20px', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+      <img src="https://recollectkits.com/logo-horizontal.png" alt="RecollectKits" style={{ width: '240px', height: 'auto' }} />
+    </div>
     <h1 style={{ color: '#7C3AED', fontSize: '24px', textAlign: 'center' }}>New Friend Request</h1>
 
     <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#333' }}>

@@ -94,7 +94,7 @@ export default async function handler(req, res) {
     const html = buildConfirmationEmail(firstName, interest);
 
     await resend.emails.send({
-      from: 'RecollectKits <hello@recollectkits.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'RecollectKits <hello@recollectkits.com>',
       to: email,
       subject: 'RecollectKits Waitlist Confirmation',
       html,
@@ -103,11 +103,15 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Waitlist signup error:', error);
+    console.error('Error details:', JSON.stringify(error, null, 2));
 
     if (error.message?.includes('already exists')) {
       return res.status(400).json({ error: "You're already on the list!" });
     }
 
-    return res.status(500).json({ error: 'Failed to sign up. Please try again.' });
+    return res.status(500).json({
+      error: 'Failed to sign up. Please try again.',
+      debug: process.env.NODE_ENV !== 'production' ? error.message : undefined,
+    });
   }
 }

@@ -474,111 +474,132 @@ export default function Home() {
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Featured Collections</h2>
-          <Link
-            to="/collection"
-            className="text-primary-600 font-medium"
-            style={{textDecoration: 'none'}}
-          >
-            View all →
-          </Link>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Mock Featured Collection 1 */}
-          <div className="card">
-            <div className="card-body">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  MJ
-                </div>
-                <div className="ml-3">
-                  <h3 className="font-semibold text-gray-900">Manchester Collection</h3>
-                  <p className="text-sm text-gray-500">by @mikejones</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="aspect-square bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center text-white text-xs font-medium">
-                  Man Utd
-                </div>
-                <div className="aspect-square bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center text-white text-xs font-medium">
-                  Man City
-                </div>
-                <div className="aspect-square bg-gradient-to-br from-gray-400 to-gray-500 rounded-md flex items-center justify-center text-white text-xs font-medium">
-                  +12
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <span className="badge badge-green">15 Kits</span>
-                  <span className="badge badge-purple">Vintage</span>
-                </div>
-                <button className="btn btn-sm btn-secondary">View Collection</button>
-              </div>
+
+        <div style={{ position: 'relative' }}>
+          {/* Coming Soon overlay */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255,255,255,0.3)',
+            borderRadius: '12px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              padding: '16px 32px',
+              borderRadius: '12px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+              textAlign: 'center'
+            }}>
+              <p style={{ fontSize: '18px', fontWeight: 700, color: '#1F2937', marginBottom: '4px' }}>Coming Soon</p>
+              <p style={{ fontSize: '14px', color: '#6B7280' }}>Featured collections will be available at launch</p>
             </div>
           </div>
 
-          {/* Mock Featured Collection 2 */}
-          <div className="card">
-            <div className="card-body">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-accent-amber-500 to-accent-amber-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  SL
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
+            {/* Mock Featured Collection 1 */}
+            <div className="card">
+              <div className="card-body">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    MJ
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="font-semibold text-gray-900">Manchester Collection</h3>
+                    <p className="text-sm text-gray-500">by @mikejones</p>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <h3 className="font-semibold text-gray-900">La Liga Legends</h3>
-                  <p className="text-sm text-gray-500">by @soccerlover</p>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="aspect-square bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center text-white text-xs font-medium">
+                    Man Utd
+                  </div>
+                  <div className="aspect-square bg-gradient-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center text-white text-xs font-medium">
+                    Man City
+                  </div>
+                  <div className="aspect-square bg-gradient-to-br from-gray-400 to-gray-500 rounded-md flex items-center justify-center text-white text-xs font-medium">
+                    +12
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="aspect-square bg-gradient-to-br from-blue-600 to-red-500 rounded-md flex items-center justify-center text-white text-xs font-medium">
-                  Barcelona
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <span className="badge badge-green">15 Kits</span>
+                    <span className="badge badge-purple">Vintage</span>
+                  </div>
+                  <span className="btn btn-sm btn-secondary">View Collection</span>
                 </div>
-                <div className="aspect-square bg-gradient-to-br from-white to-gray-100 border-2 border-gray-300 rounded-md flex items-center justify-center text-gray-800 text-xs font-medium">
-                  Real Madrid
-                </div>
-                <div className="aspect-square bg-gradient-to-br from-gray-400 to-gray-500 rounded-md flex items-center justify-center text-white text-xs font-medium">
-                  +8
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <span className="badge badge-amber">11 Kits</span>
-                  <span className="badge badge-blue">Classic</span>
-                </div>
-                <button className="btn btn-sm btn-secondary">View Collection</button>
               </div>
             </div>
-          </div>
 
-          {/* Mock Featured Collection 3 */}
-          <div className="card">
-            <div className="card-body">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-accent-green-500 to-accent-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  KF
+            {/* Mock Featured Collection 2 */}
+            <div className="card">
+              <div className="card-body">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-accent-amber-500 to-accent-amber-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    SL
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="font-semibold text-gray-900">La Liga Legends</h3>
+                    <p className="text-sm text-gray-500">by @soccerlover</p>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <h3 className="font-semibold text-gray-900">World Cup Heroes</h3>
-                  <p className="text-sm text-gray-500">by @kitfanatic</p>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="aspect-square bg-gradient-to-br from-blue-600 to-red-500 rounded-md flex items-center justify-center text-white text-xs font-medium">
+                    Barcelona
+                  </div>
+                  <div className="aspect-square bg-gradient-to-br from-white to-gray-100 border-2 border-gray-300 rounded-md flex items-center justify-center text-gray-800 text-xs font-medium">
+                    Real Madrid
+                  </div>
+                  <div className="aspect-square bg-gradient-to-br from-gray-400 to-gray-500 rounded-md flex items-center justify-center text-white text-xs font-medium">
+                    +8
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <span className="badge badge-amber">11 Kits</span>
+                    <span className="badge badge-blue">Classic</span>
+                  </div>
+                  <span className="btn btn-sm btn-secondary">View Collection</span>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="aspect-square bg-gradient-to-br from-green-600 to-yellow-400 rounded-md flex items-center justify-center text-white text-xs font-medium">
-                  Brazil
+            </div>
+
+            {/* Mock Featured Collection 3 */}
+            <div className="card">
+              <div className="card-body">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-accent-green-500 to-accent-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    KF
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="font-semibold text-gray-900">World Cup Heroes</h3>
+                    <p className="text-sm text-gray-500">by @kitfanatic</p>
+                  </div>
                 </div>
-                <div className="aspect-square bg-gradient-to-br from-blue-600 to-white rounded-md flex items-center justify-center text-blue-800 text-xs font-medium">
-                  Argentina
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="aspect-square bg-gradient-to-br from-green-600 to-yellow-400 rounded-md flex items-center justify-center text-white text-xs font-medium">
+                    Brazil
+                  </div>
+                  <div className="aspect-square bg-gradient-to-br from-blue-600 to-white rounded-md flex items-center justify-center text-blue-800 text-xs font-medium">
+                    Argentina
+                  </div>
+                  <div className="aspect-square bg-gradient-to-br from-gray-400 to-gray-500 rounded-md flex items-center justify-center text-white text-xs font-medium">
+                    +20
+                  </div>
                 </div>
-                <div className="aspect-square bg-gradient-to-br from-gray-400 to-gray-500 rounded-md flex items-center justify-center text-white text-xs font-medium">
-                  +20
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <span className="badge badge-green">23 Kits</span>
+                    <span className="badge badge-purple">International</span>
+                  </div>
+                  <span className="btn btn-sm btn-secondary">View Collection</span>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  <span className="badge badge-green">23 Kits</span>
-                  <span className="badge badge-purple">International</span>
-                </div>
-                <button className="btn btn-sm btn-secondary">View Collection</button>
               </div>
             </div>
           </div>

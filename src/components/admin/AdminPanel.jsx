@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   EyeIcon,
   CheckCircleIcon,
@@ -217,21 +218,6 @@ export default function AdminPanel() {
   }, [isAdmin])
 
   const handleAction = async (submission, action) => {
-    if (action === 'approve') {
-      // Show confirmation dialog for approve action
-      const confirmed = window.confirm(
-        `Are you sure you want to approve this submission?\n\n` +
-        `Team: ${submission.team_name}\n` +
-        `Season: ${submission.season}\n` +
-        `Type: ${submission.jersey_type}\n\n` +
-        `This will add the kit to the main database and cannot be undone.`
-      )
-
-      if (!confirmed) {
-        return // User cancelled, do nothing
-      }
-    }
-
     setSelectedSubmission(submission)
     setModalAction(action)
     setAdminNotes('')
@@ -327,20 +313,7 @@ export default function AdminPanel() {
     setProcessingAction(true)
     try {
       if (modalAction === 'approve') {
-        // Update submission to approved status
-        const { error: updateError } = await supabase
-          .from('jersey_submissions')
-          .update({
-            status: 'approved',
-            admin_notes: adminNotes || null,
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: user.id
-          })
-          .eq('id', selectedSubmission.id)
-
-        if (updateError) throw updateError
-
-        // Copy to public_jerseys table
+        // Copy to public_jerseys table FIRST (before marking as approved)
         const jerseyData = {
           team_name: selectedSubmission.team_name,
           season: selectedSubmission.season,
@@ -358,7 +331,11 @@ export default function AdminPanel() {
           player_number: selectedSubmission.jersey_number || null,
           competition_gender: selectedSubmission.competition_gender || null,
           main_sponsor: selectedSubmission.main_sponsor || null,
-          additional_sponsors: selectedSubmission.additional_sponsors || null,
+          additional_sponsors: selectedSubmission.additional_sponsors
+            ? (Array.isArray(selectedSubmission.additional_sponsors)
+                ? selectedSubmission.additional_sponsors
+                : selectedSubmission.additional_sponsors.split(',').map(s => s.trim()).filter(Boolean))
+            : null,
         }
 
         // Auto-link player if submission has a player name
@@ -377,8 +354,20 @@ export default function AdminPanel() {
 
         if (insertError) throw insertError
 
+        // Only mark as approved AFTER successful insert to public_jerseys
+        const { error: updateError } = await supabase
+          .from('jersey_submissions')
+          .update({
+            status: 'approved',
+            admin_notes: adminNotes || null,
+            reviewed_at: new Date().toISOString(),
+            reviewed_by: user.id
+          })
+          .eq('id', selectedSubmission.id)
+
+        if (updateError) throw updateError
+
         // Add to submitter's "All Kits" collection with details_completed: false
-        // User will need to fill in size, condition, etc.
         if (newJersey && selectedSubmission.submitted_by) {
           await supabase
             .from('user_jerseys')
@@ -634,7 +623,11 @@ export default function AdminPanel() {
           player_number: editedData.jersey_number || null,
           competition_gender: submission.competition_gender || null,
           main_sponsor: editedData.main_sponsor || null,
-          additional_sponsors: editedData.additional_sponsors || null,
+          additional_sponsors: editedData.additional_sponsors
+            ? (Array.isArray(editedData.additional_sponsors)
+                ? editedData.additional_sponsors
+                : editedData.additional_sponsors.split(',').map(s => s.trim()).filter(Boolean))
+            : null,
         }
 
         // Auto-link player if submission has a player name
@@ -1065,19 +1058,9 @@ export default function AdminPanel() {
                     Edit
                   </button>
                   <button
-                    onClick={async () => {
-                      const confirmed = window.confirm(
-                        `Are you sure you want to approve this submission?\n\n` +
-                        `Team: ${submission.team_name}\n` +
-                        `Season: ${submission.season}\n` +
-                        `Type: ${submission.jersey_type}\n\n` +
-                        `This will add the kit to the main database and cannot be undone.`
-                      )
-
-                      if (confirmed) {
-                        onClose()
-                        handleAction(submission, 'approve')
-                      }
+                    onClick={() => {
+                      onClose()
+                      handleAction(submission, 'approve')
                     }}
                     className="action-button action-button-approve"
                   >
@@ -1085,19 +1068,9 @@ export default function AdminPanel() {
                     Approve
                   </button>
                   <button
-                    onClick={async () => {
-                      const confirmed = window.confirm(
-                        `Are you sure you want to reject this submission?\n\n` +
-                        `Team: ${submission.team_name}\n` +
-                        `Season: ${submission.season}\n` +
-                        `Type: ${submission.jersey_type}\n\n` +
-                        `This will permanently delete the submission.`
-                      )
-
-                      if (confirmed) {
-                        onClose()
-                        handleAction(submission, 'reject')
-                      }
+                    onClick={() => {
+                      onClose()
+                      handleAction(submission, 'reject')
                     }}
                     className="action-button action-button-reject"
                   >
@@ -1783,29 +1756,29 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* Action Modal */}
-      {showModal && selectedSubmission && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center mb-4">
+      {/* Action Modal - rendered via Portal to avoid parent CSS issues */}
+      {showModal && selectedSubmission && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 10000 }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxWidth: '28rem', width: '100%' }}>
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                 {modalAction === 'approve' ? (
-                  <CheckCircleIcon className="w-8 h-8 text-green-600 mr-3" />
+                  <CheckCircleIcon style={{ width: '2rem', height: '2rem', color: '#16a34a', marginRight: '0.75rem' }} />
                 ) : (
-                  <XCircleIcon className="w-8 h-8 text-red-600 mr-3" />
+                  <XCircleIcon style={{ width: '2rem', height: '2rem', color: '#dc2626', marginRight: '0.75rem' }} />
                 )}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827' }}>
                     {modalAction === 'approve' ? 'Approve' : 'Reject'} Submission
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p style={{ fontSize: '0.875rem', color: '#4b5563' }}>
                     {selectedSubmission.team_name} - {selectedSubmission.season}
                   </p>
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label htmlFor="admin-notes" className="block text-sm font-medium text-gray-700 mb-2">
+              <div style={{ marginBottom: '1rem' }}>
+                <label htmlFor="admin-notes" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   Admin Notes (Optional)
                 </label>
                 <textarea
@@ -1813,41 +1786,31 @@ export default function AdminPanel() {
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem', outline: 'none', fontSize: '0.875rem' }}
                   placeholder={modalAction === 'approve' ? 'Optional feedback for the submitter...' : 'Reason for rejection...'}
                 />
               </div>
 
-              <div className="flex justify-end space-x-3">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button
                   onClick={() => setShowModal(false)}
                   disabled={processingAction}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#374151', backgroundColor: '#f3f4f6', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', opacity: processingAction ? 0.5 : 1 }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={processAction}
                   disabled={processingAction}
-                  className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 ${
-                    modalAction === 'approve'
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-red-600 hover:bg-red-700'
-                  }`}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: 'white', backgroundColor: modalAction === 'approve' ? '#16a34a' : '#dc2626', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', opacity: processingAction ? 0.5 : 1 }}
                 >
-                  {processingAction ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
-                    </div>
-                  ) : (
-                    `${modalAction === 'approve' ? 'Approve' : 'Reject'} Submission`
-                  )}
+                  {processingAction ? 'Processing...' : `${modalAction === 'approve' ? 'Approve' : 'Reject'} Submission`}
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Submission Details Modal */}

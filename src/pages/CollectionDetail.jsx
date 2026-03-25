@@ -513,18 +513,7 @@ export default function CollectionDetail() {
         </div>
       </div>
 
-      {/* Action Needed Banner */}
-      {isMainCollection && jerseys.filter(j => j.details_completed === false).length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-          <ExclamationTriangleIcon className="h-6 w-6 text-amber-600 flex-shrink-0" />
-          <div>
-            <h3 className="font-semibold text-amber-900">Action Needed</h3>
-            <p className="text-sm text-amber-800">
-              {jerseys.filter(j => j.details_completed === false).length} kit{jerseys.filter(j => j.details_completed === false).length !== 1 ? 's' : ''} need{jerseys.filter(j => j.details_completed === false).length === 1 ? 's' : ''} details completed. Click "Complete Details" on the highlighted kits below.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Action Needed Banner - removed, orange "Complete Details" button on cards is sufficient */}
 
       {/* Collection Statistics */}
       {jerseys.length > 0 && (
@@ -593,17 +582,10 @@ export default function CollectionDetail() {
             return (
               <div
                 key={userJersey.id}
-                className={`bg-white rounded-xl shadow-md border-2 transition-all duration-200 overflow-hidden flex flex-col ${
-                  needsDetails ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-200 hover:border-green-300'
-                }`}
+                className="bg-white rounded-xl shadow-md transition-all duration-200 overflow-hidden flex flex-col"
+                style={{ border: needsDetails ? '3px solid #f59e0b' : '2px solid #e5e7eb' }}
               >
-                {/* Action Needed Badge */}
-                {needsDetails && (
-                  <div className="bg-amber-100 border-b border-amber-200 px-4 py-2 flex items-center gap-2">
-                    <ExclamationTriangleIcon className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-medium text-amber-800">Action Needed</span>
-                  </div>
-                )}
+                {/* Action Needed - indicated by orange "Complete Details" button only */}
 
                 {/* Jersey Image - Clickable with hover effects */}
                 {jersey?.front_image_url || jersey?.back_image_url ? (

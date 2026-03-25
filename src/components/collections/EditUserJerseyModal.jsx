@@ -32,15 +32,18 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
     setError(null)
 
     try {
+      const updateData = {
+        jersey_fit: formData.jersey_fit || 'mens',
+        size: formData.size || null,
+        condition: formData.condition,
+        notes: formData.notes || null,
+        acquired_from: formData.acquired_from || null,
+        details_completed: true
+      }
+
       const { data, error: updateError } = await supabase
         .from('user_jerseys')
-        .update({
-          jersey_fit: formData.jersey_fit || 'mens',
-          size: formData.size || null,
-          condition: formData.condition,
-          notes: formData.notes || null,
-          acquired_from: formData.acquired_from || null
-        })
+        .update(updateData)
         .eq('id', userJersey.id)
         .select()
         .single()
@@ -55,6 +58,7 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
     } catch (err) {
       console.error('Error updating jersey details:', err)
       setError(err.message || 'Failed to update jersey details')
+      alert(`Error saving details: ${err.message}`)
     } finally {
       setLoading(false)
     }

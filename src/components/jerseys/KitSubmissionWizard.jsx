@@ -777,10 +777,14 @@ const InternationalKitDetailsForm = ({ formData, handleFormChange, nextStep, pre
 
 const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, currentStep, stepsLength, kitType, onSubmitSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
+  const [submitStatus, setSubmitStatus] = useState('') // '', 'uploading', 'saving', 'success'
   const { user } = useAuth()
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
+    setSubmitError(null)
+    setSubmitStatus('uploading')
 
     try {
       if (!user) {
@@ -788,8 +792,11 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
       }
 
       // Upload images to Supabase storage first
+      console.log('Starting image uploads...')
       const frontImageUrl = await uploadImage(formData.front_image, 'front')
+      console.log('Front image uploaded:', frontImageUrl ? 'success' : 'skipped')
       const backImageUrl = await uploadImage(formData.back_image, 'back')
+      console.log('Back image uploaded:', backImageUrl ? 'success' : 'skipped')
 
       // Upload additional images
       const additionalImageUrls = []
@@ -799,6 +806,8 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
           if (url) additionalImageUrls.push(url)
         }
       }
+
+      setSubmitStatus('saving')
 
       // Normalize form data to match updated jersey_submissions table schema
       const submissionData = {
@@ -845,6 +854,8 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
         updated_at: new Date().toISOString()
       }
 
+      console.log('Submitting to jersey_submissions:', submissionData)
+
       // Submit to jersey_submissions table
       const { data, error } = await supabase
         .from('jersey_submissions')
@@ -852,20 +863,25 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase insert error:', error)
+        throw new Error(error.message || error.details || 'Database insert failed')
+      }
 
       console.log('Kit submitted successfully:', data)
-      alert('Kit submitted successfully! It will be reviewed by our team and you\'ll be notified once it\'s approved.')
+      setSubmitStatus('success')
 
-      // Call success callback to close wizard or navigate
-      if (onSubmitSuccess) {
-        onSubmitSuccess(data)
-      }
+      // Call success callback after short delay so user sees success state
+      setTimeout(() => {
+        if (onSubmitSuccess) {
+          onSubmitSuccess(data)
+        }
+      }, 2000)
 
     } catch (error) {
       console.error('Submission error:', error)
-      alert(`Error submitting kit: ${error.message}`)
-    } finally {
+      setSubmitError(error.message || 'An unexpected error occurred. Please try again.')
+      setSubmitStatus('')
       setIsSubmitting(false)
     }
   }
@@ -1085,28 +1101,76 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
             )}
           </div>
 
+          {/* Error Message */}
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <h4 className="font-semibold text-red-900 mb-2">Submission Error</h4>
+              <p className="text-red-700 text-sm">{submitError}</p>
+              <p className="text-red-600 text-xs mt-2">Please check your connection and try again. If the problem persists, contact support.</p>
+            </div>
+          )}
+
+          {/* Status Message */}
+          {submitStatus === 'uploading' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-blue-800 font-medium">Uploading images...</span>
+              </div>
+            </div>
+          )}
+
+          {submitStatus === 'saving' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="text-blue-800 font-medium">Saving kit data...</span>
+              </div>
+            </div>
+          )}
+
+          {submitStatus === 'success' && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+              <div className="flex items-center">
+                <CheckCircleIcon className="h-6 w-6 text-green-600 mr-3" />
+                <div>
+                  <span className="text-green-800 font-medium">Kit submitted successfully!</span>
+                  <p className="text-green-700 text-sm mt-1">Your submission will be reviewed by our team. Redirecting...</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Submission Notice */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h4 className="font-semibold text-blue-900 mb-3">Before You Submit</h4>
-            <ul className="space-y-2 text-blue-800 text-sm">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">•</span>
-                <span>Please review all information for accuracy</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">•</span>
-                <span>Your submission will be reviewed by our team before being published</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">•</span>
-                <span>You will be notified once your kit is approved and added to the database</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">•</span>
-                <span>If there are any issues, we may contact you for clarification</span>
-              </li>
-            </ul>
-          </div>
+          {!submitStatus && !submitError && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h4 className="font-semibold text-blue-900 mb-3">Before You Submit</h4>
+              <ul className="space-y-2 text-blue-800 text-sm">
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-2">•</span>
+                  <span>Please review all information for accuracy</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-2">•</span>
+                  <span>Your submission will be reviewed by our team before being published</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-2">•</span>
+                  <span>You will be notified once your kit is approved and added to the database</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-blue-600 mr-2">•</span>
+                  <span>If there are any issues, we may contact you for clarification</span>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
@@ -1114,7 +1178,8 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
           <div className="flex justify-between items-center">
             <button
               onClick={prevStep}
-              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              disabled={isSubmitting}
+              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ← Back to Images
             </button>
@@ -1125,10 +1190,13 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
 
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || submitStatus === 'success'}
               className="px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Kit'}
+              {submitStatus === 'uploading' ? 'Uploading Images...' :
+               submitStatus === 'saving' ? 'Saving Kit...' :
+               submitStatus === 'success' ? 'Submitted!' :
+               'Submit Kit'}
             </button>
           </div>
         </div>

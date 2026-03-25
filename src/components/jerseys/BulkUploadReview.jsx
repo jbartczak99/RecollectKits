@@ -17,7 +17,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 const FREE_TIER_LIMIT = 15
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 const ACCEPTED_EXTENSIONS = '.jpg, .jpeg, .png, .webp'
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10MB
 
 function validateImage(file) {
   if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
@@ -25,7 +25,7 @@ function validateImage(file) {
   }
   if (file.size > MAX_IMAGE_SIZE) {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1)
-    return `File too large (${sizeMB}MB). Maximum size is 5MB.`
+    return `File too large (${sizeMB}MB). Maximum size is 10MB.`
   }
   return null
 }

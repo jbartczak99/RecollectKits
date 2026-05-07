@@ -251,9 +251,7 @@ export const AuthProvider = ({ children }) => {
 
   const getPendingAccounts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('pending_accounts')
-        .select('*')
+      const { data, error } = await supabase.rpc('get_pending_accounts')
 
       if (error) throw error
       return { data, error: null }

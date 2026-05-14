@@ -12,9 +12,15 @@ import {
 } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext.jsx'
+import countries from '../../data/countries'
+import ClubTypeahead from './ClubTypeahead'
+
+const COUNTRY_SELECT_OPTIONS = Array.from(
+  new Set([...countries, 'England', 'Scotland', 'Wales', 'Northern Ireland'])
+).sort((a, b) => a.localeCompare(b))
 
 // Separate form components to prevent re-creation on renders
-const ClubKitBasicInfoForm = ({ formData, handleFormChange, nextStep, prevStep, currentStep, stepsLength }) => (
+const ClubKitBasicInfoForm = ({ formData, handleFormChange, setClubSelection, nextStep, prevStep, currentStep, stepsLength }) => (
   <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-md">
     {/* Header */}
     <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6 rounded-t-lg">
@@ -33,18 +39,16 @@ const ClubKitBasicInfoForm = ({ formData, handleFormChange, nextStep, prevStep, 
           {/* Club Name */}
           <div>
             <label htmlFor="club_name" className="block text-sm font-medium text-gray-700 mb-2">
-              Club Name *
+              Club *
             </label>
-            <input
-              type="text"
-              id="club_name"
-              name="club_name"
-              value={formData.club_name || ''}
-              onChange={handleFormChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Manchester United"
+            <ClubTypeahead
+              value={formData.club_id}
+              clubName={formData.club_name}
+              onSelect={setClubSelection}
             />
+            <p style={{ fontSize: '12px', color: '#6B7280', marginTop: '6px' }}>
+              Pick from the canonical list, or suggest a new club if yours isn't there yet.
+            </p>
           </div>
 
           {/* Season */}
@@ -455,16 +459,19 @@ const InternationalKitBasicInfoForm = ({ formData, handleFormChange, nextStep, p
             <label htmlFor="country_name" className="block text-sm font-medium text-gray-700 mb-2">
               Country/Territory *
             </label>
-            <input
-              type="text"
+            <select
               id="country_name"
               name="country_name"
               value={formData.country_name || ''}
               onChange={handleFormChange}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="England"
-            />
+            >
+              <option value="">Select a country…</option>
+              {COUNTRY_SELECT_OPTIONS.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
 
           {/* Season/Year */}
@@ -1470,6 +1477,7 @@ export default function KitSubmissionWizard({ onCancel }) {
   }
   const [formData, setFormData] = useState({
     // Basic Info - Club
+    club_id: null, // canonical clubs.id when picked from typeahead, null for suggestions
     club_name: '',
     season: '',
     kit_type: 'home', // home, away, third, special
@@ -1516,6 +1524,14 @@ export default function KitSubmissionWizard({ onCancel }) {
       setCurrentStep(currentStep - 1)
     }
   }, [currentStep])
+
+  const setClubSelection = useCallback(({ id, name }) => {
+    setFormData((prev) => ({
+      ...prev,
+      club_id: id,
+      club_name: name,
+    }))
+  }, [])
 
   const handleFormChange = useCallback((e) => {
     const { name, value } = e.target
@@ -1889,6 +1905,7 @@ export default function KitSubmissionWizard({ onCancel }) {
         <ClubKitBasicInfoForm
           formData={formData}
           handleFormChange={handleFormChange}
+          setClubSelection={setClubSelection}
           nextStep={nextStep}
           prevStep={prevStep}
           currentStep={currentStep}

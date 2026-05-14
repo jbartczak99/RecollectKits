@@ -20,6 +20,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import WikidataPlayerPreview from './WikidataPlayerPreview'
 import PartnerApplications from './PartnerApplications'
+import AdminDashboardInsights from './AdminDashboardInsights'
 import { searchPlayer, fetchPlayerDetails, mapToPlayerRecord } from '../../utils/wikidata'
 import AdminEmailTemplates from './AdminEmailTemplates'
 import './AdminPanel.css'
@@ -40,6 +41,7 @@ export default function AdminPanel() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [selectedSubmissionDetails, setSelectedSubmissionDetails] = useState(null)
   const [partnerAppCount, setPartnerAppCount] = useState(0)
+  const [pendingInsightsCount, setPendingInsightsCount] = useState(0)
   const [dashStats, setDashStats] = useState({ kits: 0, users: 0, countries: 0, kitsWeek: 0, usersWeek: 0 })
   const [recentActivity, setRecentActivity] = useState([])
   const [expandedQueue, setExpandedQueue] = useState(null) // 'submissions' | 'accounts' | 'partners' | 'players'
@@ -123,6 +125,14 @@ export default function AdminPanel() {
     setPartnerAppCount(count || 0)
   }
 
+  const fetchPendingInsightsCount = async () => {
+    const { count } = await supabase
+      .from('dashboard_insight_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+    setPendingInsightsCount(count || 0)
+  }
+
   const fetchDashStats = async () => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     const [kits, kitsWeek, users, usersWeek, countriesResult] = await Promise.all([
@@ -168,6 +178,7 @@ export default function AdminPanel() {
       fetchSubmissions()
       fetchPartnerAppCount()
       fetchPendingAccounts()
+      fetchPendingInsightsCount()
       fetchDashStats()
       fetchRecentActivity()
     }
@@ -1400,12 +1411,14 @@ export default function AdminPanel() {
     )
   }
 
-  const totalPending = submissions.length + pendingAccounts.length + partnerAppCount
+  const totalPending =
+    submissions.length + pendingAccounts.length + partnerAppCount + pendingInsightsCount
 
   const refreshAll = () => {
     fetchSubmissions()
     fetchPendingAccounts()
     fetchPartnerAppCount()
+    fetchPendingInsightsCount()
     fetchDashStats()
     fetchRecentActivity()
   }
@@ -1478,6 +1491,7 @@ export default function AdminPanel() {
     { key: 'submissions', label: 'Kit submissions', count: submissions.length },
     { key: 'accounts', label: 'Account reviews', count: pendingAccounts.length },
     { key: 'partners', label: 'Partner applications', count: partnerAppCount },
+    { key: 'insights', label: 'Dashboard insight requests', count: pendingInsightsCount },
     { key: 'players', label: 'Player link requests', count: 0 }
   ]
 
@@ -1667,6 +1681,11 @@ export default function AdminPanel() {
             <PartnerApplications />
           </div>
         )}
+        {expandedQueue === 'insights' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '20px' }}>
+            <AdminDashboardInsights />
+          </div>
+        )}
         {expandedQueue === 'players' && (
           <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '16px' }}>
             <BulkPlayerLinker />
@@ -1714,7 +1733,7 @@ export default function AdminPanel() {
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1F2937', marginBottom: '16px' }}>Content management</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             {[
-              { label: 'Teams', sub: 'Manage teams', href: '/admin/teams', icon: '🌐' },
+              { label: 'Clubs', sub: 'Canonical club list', href: '/admin/clubs', icon: '🏟️' },
               { label: 'Kits', sub: 'Browse database', href: '/admin/kits', icon: '👕' },
               { label: 'Players', sub: 'Roster management', href: '/admin/players', icon: '👤' },
               { label: 'Users', sub: 'Manage accounts', href: '/admin/users', icon: '👥' }

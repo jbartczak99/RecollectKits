@@ -77,21 +77,31 @@ export const AuthProvider = ({ children }) => {
 
     getInitialSession().finally(() => clearTimeout(timeout))
 
-    // Listen for auth changes
+    // Listen for auth changes.
+    //
+    // IMPORTANT: never `await` inside this callback. Supabase JS holds an
+    // internal auth lock while listeners run, and any database query waiting
+    // on auth state will deadlock until the listener returns. Concurrent
+    // requests (e.g. an admin form submission firing during a tab-focus
+    // SIGNED_IN event) silently stall until the 10s fetch timeout fires.
+    // Defer async work with setTimeout(0) so the callback returns immediately.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event, session?.user?.email)
         setUser(session?.user ?? null)
         if (session?.user) {
-          await getProfile(session.user.id)
-          if (event === 'SIGNED_UP') {
-            console.log('SIGNED_UP event detected, calling createProfile')
-            await createProfile(session.user)
-          }
+          setTimeout(async () => {
+            await getProfile(session.user.id)
+            if (event === 'SIGNED_UP') {
+              console.log('SIGNED_UP event detected, calling createProfile')
+              await createProfile(session.user)
+            }
+            setLoading(false)
+          }, 0)
         } else {
           setProfile(null)
+          setLoading(false)
         }
-        setLoading(false)
       }
     )
 

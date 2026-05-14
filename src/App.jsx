@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import ScrollToTop from './components/ScrollToTop'
 import Navigation from './components/layout/Navigation'
@@ -10,10 +10,11 @@ import Home from './pages/Home'
 import Jerseys from './pages/Jerseys'
 import Collection from './pages/Collection'
 import CollectionDetail from './pages/CollectionDetail'
+import CollectionLayout from './components/collections/CollectionLayout'
 import JerseyDetails from './components/jerseys/JerseyDetails'
 import AdminPanel from './components/admin/AdminPanel'
 import PartnerApplications from './components/admin/PartnerApplications'
-import AdminTeams from './components/admin/AdminTeams'
+import AdminClubs from './components/admin/AdminClubs'
 import AdminKits from './components/admin/AdminKits'
 import AdminPlayers from './components/admin/AdminPlayers'
 import AdminUsers from './components/admin/AdminUsers'
@@ -56,7 +57,9 @@ function App() {
                   <div className="container py-8">
                     <ApprovalGate>
                       <ProtectedRoute>
-                        <Collection />
+                        <CollectionLayout>
+                          <Collection />
+                        </CollectionLayout>
                       </ProtectedRoute>
                     </ApprovalGate>
                   </div>
@@ -66,7 +69,9 @@ function App() {
                 path="/collection/:collectionId"
                 element={
                   <div className="container py-8">
-                    <CollectionDetail />
+                    <CollectionLayout>
+                      <CollectionDetail />
+                    </CollectionLayout>
                   </div>
                 }
               />
@@ -95,17 +100,18 @@ function App() {
                 }
               />
               <Route
-                path="/admin/teams"
+                path="/admin/clubs"
                 element={
                   <div className="container py-8">
                     <ApprovalGate>
                       <ProtectedRoute>
-                        <AdminTeams />
+                        <AdminClubs />
                       </ProtectedRoute>
                     </ApprovalGate>
                   </div>
                 }
               />
+              <Route path="/admin/teams" element={<Navigate to="/admin/clubs" replace />} />
               <Route
                 path="/admin/kits"
                 element={

@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase'
 import EditCollectionModal from '../components/collections/EditCollectionModal'
 import AddJerseyToCollectionModal from '../components/collections/AddJerseyToCollectionModal'
 import EditUserJerseyModal from '../components/collections/EditUserJerseyModal'
+import './CollectionDetail.css'
 
 export default function CollectionDetail() {
   const { collectionId } = useParams()
@@ -379,18 +380,11 @@ export default function CollectionDetail() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="collection-detail">
+        <div className="cd-skeleton__header" />
+        <div className="cd-skeleton">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white rounded-lg shadow-md p-6 animate-pulse">
-              <div className="h-32 bg-gray-200 rounded mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-            </div>
+            <div key={i} className="cd-skeleton__card" />
           ))}
         </div>
       </div>
@@ -399,174 +393,179 @@ export default function CollectionDetail() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="collection-detail">
         <button
+          type="button"
           onClick={() => navigate('/collection')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          className="collection-detail__back"
         >
-          <ArrowLeftIcon className="h-5 w-5" />
+          <ArrowLeftIcon className="collection-detail__back-icon" />
           Back to Collections
         </button>
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {error}
-        </div>
+        <div className="collection-detail__error">{error}</div>
       </div>
     )
   }
 
   if (!collection) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">Collection not found</p>
-      </div>
-    )
+    return <div className="collection-detail__not-found">Collection not found</div>
   }
 
+  const isSystem = isLikedKitsCollection || isWishlistCollection
+  const showCustomActions = isOwner && !isMainCollection && !isSystem
+  const purchaseBreakdown = !isSystem
+    ? ['new', 'used'].map((condition) => ({
+        condition,
+        count: jerseys.filter((j) => j.condition === condition).length,
+      })).filter((b) => b.count > 0)
+    : []
+
   return (
-    <div className="space-y-6">
+    <div className="collection-detail">
+      <button
+        type="button"
+        onClick={() => navigate('/collection?view=collections')}
+        className="collection-detail__back"
+      >
+        <ArrowLeftIcon className="collection-detail__back-icon" />
+        Back to Collections
+      </button>
+
       {/* Header */}
-      <div>
-        <button
-          onClick={() => navigate('/collection')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-        >
-          <ArrowLeftIcon className="h-5 w-5" />
-          Back to Collections
-        </button>
+      <header className="collection-detail__header">
+        <div className={`collection-detail__header-bar${isSystem ? ' collection-detail__header-bar--system' : ''}`} />
+        <div className="collection-detail__header-body">
+          <div className="collection-detail__header-row">
+            <div>
+              <div className="collection-detail__title-row">
+                <h1 className="collection-detail__title">{collection.name}</h1>
+                {isWishlistCollection ? (
+                  <span className="collection-badge collection-badge--private">
+                    <LockClosedIcon className="collection-badge__icon" />
+                    Private
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={isMainCollection ? toggleAllKitsVisibility : toggleCollectionVisibility}
+                    className="collection-detail__visibility"
+                    title={collection.is_public ? 'Click to make private' : 'Click to make public'}
+                  >
+                    {collection.is_public ? (
+                      <span className="collection-badge collection-badge--public">
+                        <GlobeAltIcon className="collection-badge__icon" />
+                        Public
+                      </span>
+                    ) : (
+                      <span className="collection-badge collection-badge--private">
+                        <LockClosedIcon className="collection-badge__icon" />
+                        Private
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">{collection.name}</h1>
-              {/* Visibility Badge - Clickable for All Kits, Liked Kits, and Custom Collections */}
-              {isWishlistCollection ? (
-                // Wishlist is always private - no toggle
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded">
-                  <LockClosedIcon className="h-3 w-3" />
-                  Private
-                </span>
-              ) : (
-                // All Kits, Liked Kits, and Custom collections - clickable toggle
-                <button
-                  onClick={isMainCollection ? toggleAllKitsVisibility : toggleCollectionVisibility}
-                  className="cursor-pointer hover:opacity-80 transition-opacity"
-                  title={collection.is_public ? 'Click to make private' : 'Click to make public'}
-                >
-                  {collection.is_public ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                      <GlobeAltIcon className="h-3 w-3" />
-                      Public
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded">
-                      <LockClosedIcon className="h-3 w-3" />
-                      Private
-                    </span>
-                  )}
-                </button>
+              {collection.description && (
+                <p className="collection-detail__description">{collection.description}</p>
               )}
+
+              <div className="collection-detail__meta">
+                <span>{jerseys.length} {jerseys.length === 1 ? 'kit' : 'kits'}</span>
+                {collection.created_at && (
+                  <>
+                    <span className="collection-detail__meta-dot" />
+                    <span>Created {new Date(collection.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </>
+                )}
+              </div>
             </div>
 
-            {collection.description && (
-              <p className="text-gray-600 mb-2">{collection.description}</p>
-            )}
-
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span>{jerseys.length} {jerseys.length === 1 ? 'jersey' : 'jerseys'}</span>
-              <span>•</span>
-              <span>Created {new Date(collection.created_at).toLocaleDateString()}</span>
-            </div>
-          </div>
-
-          {/* Action Buttons - Only for owner, hide for system collections (Liked Kits, Wishlist) */}
-          {isOwner && (
-            <div className="flex gap-2 flex-wrap">
-              {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <PencilIcon className="h-4 w-4" />
+            {showCustomActions && (
+              <div className="collection-detail__actions">
+                <button type="button" onClick={() => setShowEditModal(true)} className="cd-action cd-action--secondary">
+                  <PencilIcon className="cd-action__icon" />
                   Edit
                 </button>
-              )}
-              {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
-                <button
-                  onClick={() => setShowAddJerseyModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <PlusIcon className="h-5 w-5" />
-                  Add Jerseys
+                <button type="button" onClick={() => setShowAddJerseyModal(true)} className="cd-action cd-action--primary">
+                  <PlusIcon className="cd-action__icon" />
+                  Add Kits
                 </button>
-              )}
-              {!isMainCollection && !isLikedKitsCollection && !isWishlistCollection && (
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  <TrashIcon className="h-4 w-4" />
+                <button type="button" onClick={() => setShowDeleteConfirm(true)} className="cd-action cd-action--danger">
+                  <TrashIcon className="cd-action__icon" />
                   Delete
                 </button>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Action Needed Banner - removed, orange "Complete Details" button on cards is sufficient */}
-
-      {/* Collection Statistics */}
+      {/* Stats */}
       {jerseys.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Total Jerseys */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <p className="text-sm text-gray-500 mb-1">Total Kits</p>
-            <p className="text-2xl font-bold text-gray-900">{jerseys.length}</p>
+        <div className="collection-detail__stats">
+          <div className="cd-stat cd-stat--green">
+            <div className="cd-stat__bar" />
+            <div className="cd-stat__body">
+              <p className="cd-stat__label">Total Kits</p>
+              <p className="cd-stat__value">{jerseys.length}</p>
+            </div>
           </div>
 
-          {/* Purchase Status Breakdown - Hide for Liked Kits and Wishlist */}
-          {!isLikedKitsCollection && !isWishlistCollection && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <p className="text-sm text-gray-500 mb-2">Purchase Status</p>
-              <div className="space-y-1">
-                {['new', 'used'].map(condition => {
-                  const count = jerseys.filter(j => j.condition === condition).length
-                  if (count === 0) return null
-                  return (
-                    <div key={condition} className="flex items-center justify-between text-xs">
-                      <span className="capitalize text-gray-600">{condition}</span>
-                      <span className="font-medium text-gray-900">{count}</span>
+          {!isSystem && purchaseBreakdown.length > 0 && (
+            <div className="cd-stat cd-stat--blue">
+              <div className="cd-stat__bar" />
+              <div className="cd-stat__body">
+                <p className="cd-stat__label">Purchase Status</p>
+                <div className="cd-stat__breakdown">
+                  {purchaseBreakdown.map(({ condition, count }) => (
+                    <div key={condition} className="cd-stat__breakdown-row">
+                      <span className="cd-stat__breakdown-label">{condition}</span>
+                      <span className="cd-stat__breakdown-value">{count}</span>
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Jerseys Grid */}
+      {/* Empty state */}
       {jerseys.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 py-12">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No jerseys yet</h3>
-            <p className="text-gray-500 mb-6">Start building your collection by adding jerseys</p>
-            <button
-              onClick={() => setShowAddJerseyModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <PlusIcon className="h-5 w-5" />
-              Add Your First Jersey
-            </button>
+        <div className="cd-empty">
+          <div className="cd-empty__icon">
+            <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
           </div>
+          <h3 className="cd-empty__title">
+            {isLikedKitsCollection
+              ? 'No liked kits yet'
+              : isWishlistCollection
+                ? 'Your wishlist is empty'
+                : 'No kits yet'}
+          </h3>
+          <p className="cd-empty__text">
+            {isLikedKitsCollection
+              ? 'Like a kit from anywhere on the site to save it here.'
+              : isWishlistCollection
+                ? 'Add kits you want to acquire — we\'ll keep them in one place.'
+                : 'Start building this collection by adding kits.'}
+          </p>
+          {isOwner && !isSystem && (
+            <button
+              type="button"
+              onClick={() => setShowAddJerseyModal(true)}
+              className="cd-action cd-action--primary"
+            >
+              <PlusIcon className="cd-action__icon" />
+              Add your first kit
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="cd-grid">
           {jerseys.map((userJersey) => {
             const jersey = userJersey.public_jersey
             const needsDetails = userJersey.details_completed === false
@@ -576,200 +575,159 @@ export default function CollectionDetail() {
             const fitSizeDisplay = fitDisplay && userJersey.size
               ? `${fitDisplay} ${userJersey.size}`
               : fitDisplay || userJersey.size || null
-            // Check for system collections inline to ensure current state is used
             const isSystemCollection = collection?.name === 'Liked Kits' || collection?.name === 'Wishlist'
+            const hasBothImages = jersey?.front_image_url && jersey?.back_image_url
+            const cardClassName = needsDetails ? 'cd-card cd-card--attention' : 'cd-card'
 
             return (
-              <div
-                key={userJersey.id}
-                className="bg-white rounded-xl shadow-md transition-all duration-200 overflow-hidden flex flex-col"
-                style={{ border: needsDetails ? '3px solid #f59e0b' : '2px solid #e5e7eb' }}
-              >
-                {/* Action Needed - indicated by orange "Complete Details" button only */}
-
-                {/* Jersey Image - Clickable with hover effects */}
+              <div key={userJersey.id} className={cardClassName}>
                 {jersey?.front_image_url || jersey?.back_image_url ? (
-                  <Link
-                    to={`/jerseys/${jersey.id}`}
-                    className="h-64 overflow-hidden flex items-center justify-center bg-gray-50 group cursor-pointer transition-all duration-300 hover:bg-gray-100"
-                  >
+                  <Link to={`/jerseys/${jersey.id}`} className="cd-card__image">
                     <img
                       src={
-                        jersey.front_image_url && jersey.back_image_url
+                        hasBothImages
                           ? (imageStates[userJersey.id] ? jersey.back_image_url : jersey.front_image_url)
                           : (jersey.front_image_url || jersey.back_image_url)
                       }
-                      alt={`${jersey.team_name} ${jersey.jersey_type} kit`}
-                      className="max-w-full max-h-full object-contain transition-all duration-300 group-hover:scale-105"
-                      style={{ maxWidth: '250px', maxHeight: '280px' }}
+                      alt={`${jersey.team_name || ''} ${jersey.jersey_type || ''} kit`}
                     />
                   </Link>
                 ) : (
-                  <Link
-                    to={`/jerseys/${jersey?.id}`}
-                    className="h-64 bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center group cursor-pointer"
-                  >
-                    <div className="text-lg font-medium text-gray-500">No Image Available</div>
+                  <Link to={`/jerseys/${jersey?.id}`} className="cd-card__image cd-card__image--empty">
+                    No image available
                   </Link>
                 )}
 
-                {/* Front | Back toggle */}
-                {jersey?.front_image_url && jersey?.back_image_url && (
-                  <div className="px-4 py-2 text-center border-b border-gray-100">
-                    <div className="flex items-center justify-center gap-2 text-sm">
-                      <button
-                        onClick={() => setImageStates(prev => ({ ...prev, [userJersey.id]: false }))}
-                        className={`font-medium transition-colors duration-200 hover:bg-gray-100 px-2 py-1 rounded ${
-                          !imageStates[userJersey.id] ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
-                        }`}
-                      >
-                        Front
-                      </button>
-                      <span className="text-gray-300">|</span>
-                      <button
-                        onClick={() => setImageStates(prev => ({ ...prev, [userJersey.id]: true }))}
-                        className={`font-medium transition-colors duration-200 hover:bg-gray-100 px-2 py-1 rounded ${
-                          imageStates[userJersey.id] ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
-                        }`}
-                      >
-                        Back
-                      </button>
-                    </div>
+                {hasBothImages && (
+                  <div className="cd-card__toggle">
+                    <button
+                      type="button"
+                      onClick={() => setImageStates((prev) => ({ ...prev, [userJersey.id]: false }))}
+                      className={`cd-card__toggle-btn${!imageStates[userJersey.id] ? ' cd-card__toggle-btn--active' : ''}`}
+                    >
+                      Front
+                    </button>
+                    <span className="cd-card__toggle-divider">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setImageStates((prev) => ({ ...prev, [userJersey.id]: true }))}
+                      className={`cd-card__toggle-btn${imageStates[userJersey.id] ? ' cd-card__toggle-btn--active' : ''}`}
+                    >
+                      Back
+                    </button>
                   </div>
                 )}
 
-                {/* Jersey Details */}
-                <div className="p-4 flex-1 flex flex-col">
-                  {/* Team & Season */}
-                  <div className="mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {jersey?.team_name || 'Unknown Team'}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {jersey?.player_name && (
-                        <span className="font-medium">{jersey.player_name} • </span>
-                      )}
-                      {jersey?.season || 'Unknown Season'}
-                    </p>
-                  </div>
+                <div className="cd-card__body">
+                  <h3 className="cd-card__title">{jersey?.team_name || 'Unknown Team'}</h3>
+                  <p className="cd-card__sub">
+                    {jersey?.player_name && (
+                      <span className="cd-card__sub-player">{jersey.player_name} • </span>
+                    )}
+                    {jersey?.season || 'Unknown Season'}
+                  </p>
 
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="cd-badges">
                     {jersey?.kit_type && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        jersey.kit_type === 'international'
-                          ? 'bg-purple-100 text-purple-700'
-                          : 'bg-green-100 text-green-700'
-                      }`}>
+                      <span className={`cd-pill ${jersey.kit_type === 'international' ? 'cd-pill--purple' : 'cd-pill--green'}`}>
                         {jersey.kit_type === 'international' ? 'International' : 'Club'}
                       </span>
                     )}
-                    {jersey?.jersey_type && (
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 capitalize">
-                        {jersey.jersey_type}
-                      </span>
-                    )}
-                    {jersey?.manufacturer && (
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                        {jersey.manufacturer}
-                      </span>
-                    )}
+                    {jersey?.jersey_type && <span className="cd-pill cd-pill--blue">{jersey.jersey_type}</span>}
+                    {jersey?.manufacturer && <span className="cd-pill cd-pill--gray">{jersey.manufacturer}</span>}
                   </div>
 
-                  {/* Date added for Liked Kits and Wishlist collections */}
                   {isSystemCollection && userJersey.added_to_collection_at && (
-                    <div className="text-xs text-gray-500 mb-3">
-                      {collection?.name === 'Liked Kits' ? 'Liked on ' : 'Added to wishlist on '}
+                    <p className="cd-card__added">
+                      {collection?.name === 'Liked Kits' ? 'Liked on ' : 'Added on '}
                       {new Date(userJersey.added_to_collection_at).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
-                        day: 'numeric'
+                        day: 'numeric',
                       })}
-                    </div>
+                    </p>
                   )}
 
-                  {/* User's Kit Details Section - Hide for Liked Kits and Wishlist since users may not own them */}
                   {hasUserDetails && !isSystemCollection && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                      <h4 className="text-xs font-semibold text-green-800 uppercase tracking-wide mb-2">My Kit Details</h4>
-                      <div className="grid grid-cols-2 gap-1 text-sm">
+                    <div className="cd-card__details">
+                      <h4 className="cd-card__details-title">My Kit Details</h4>
+                      <div className="cd-card__details-grid">
                         {fitSizeDisplay && (
-                          <div>
-                            <span className="text-gray-600">Fit/Size:</span> <span className="font-medium text-gray-800">{fitSizeDisplay}</span>
+                          <div className="cd-card__details-row">
+                            <span className="cd-card__details-label">Fit/Size: </span>
+                            <span className="cd-card__details-value">{fitSizeDisplay}</span>
                           </div>
                         )}
                         {userJersey.condition && (
-                          <div>
-                            <span className="text-gray-600">Purchased:</span> <span className="font-medium text-gray-800 capitalize">{userJersey.condition}</span>
+                          <div className="cd-card__details-row">
+                            <span className="cd-card__details-label">Purchased: </span>
+                            <span className="cd-card__details-value" style={{ textTransform: 'capitalize' }}>{userJersey.condition}</span>
                           </div>
                         )}
                         {userJersey.acquired_from && (
-                          <div className="col-span-2">
-                            <span className="text-gray-600">From:</span> <span className="font-medium text-gray-800">{userJersey.acquired_from}</span>
+                          <div className="cd-card__details-row cd-card__details-row--full">
+                            <span className="cd-card__details-label">From: </span>
+                            <span className="cd-card__details-value">{userJersey.acquired_from}</span>
                           </div>
                         )}
                       </div>
                       {userJersey.notes && (
-                        <div className="mt-2 pt-2 border-t border-green-200">
-                          <p className="text-xs text-gray-600 italic">"{userJersey.notes}"</p>
-                        </div>
+                        <p className="cd-card__details-note">"{userJersey.notes}"</p>
                       )}
                     </div>
                   )}
 
-                  {/* Action Buttons - pushed to bottom, owner only */}
-                  {isOwner && <div className="mt-auto">
-                    {/* For Liked Kits and Wishlist - just show trash icon */}
-                    {isSystemCollection ? (
-                      <button
-                        onClick={() => {
-                          const confirmMsg = collection?.name === 'Liked Kits'
-                            ? 'Are you sure you want to remove this kit from your Liked Kits?'
-                            : 'Are you sure you want to remove this kit from your Wishlist?'
-                          if (confirm(confirmMsg)) {
-                            handleRemoveFromSystemCollection(userJersey)
-                          }
-                        }}
-                        disabled={deletingJerseyId === userJersey.id}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 text-sm font-medium"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                        {deletingJerseyId === userJersey.id ? 'Removing...' : 'Remove Kit'}
-                      </button>
-                    ) : (
-                      /* For regular collections - show full buttons */
-                      <div className="space-y-2">
+                  {isOwner && (
+                    <div className="cd-card__actions">
+                      {isSystemCollection ? (
                         <button
-                          onClick={() => handleEditJersey(userJersey)}
-                          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                            needsDetails
-                              ? 'bg-amber-500 text-white hover:bg-amber-600'
-                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {needsDetails ? (
-                            <>
-                              <ExclamationTriangleIcon className="h-4 w-4" />
-                              Complete Details
-                            </>
-                          ) : (
-                            <>
-                              <PencilIcon className="h-4 w-4" />
-                              Edit Details
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleRemoveJersey(userJersey.id)}
+                          type="button"
+                          onClick={() => {
+                            const confirmMsg = collection?.name === 'Liked Kits'
+                              ? 'Are you sure you want to remove this kit from your Liked Kits?'
+                              : 'Are you sure you want to remove this kit from your Wishlist?'
+                            if (confirm(confirmMsg)) {
+                              handleRemoveFromSystemCollection(userJersey)
+                            }
+                          }}
                           disabled={deletingJerseyId === userJersey.id}
-                          className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 text-sm"
+                          className="cd-card-btn cd-card-btn--danger"
                         >
-                          <TrashIcon className="h-4 w-4" />
-                          {deletingJerseyId === userJersey.id ? 'Removing...' : 'Remove'}
+                          <TrashIcon className="cd-card-btn__icon" />
+                          {deletingJerseyId === userJersey.id ? 'Removing…' : 'Remove kit'}
                         </button>
-                      </div>
-                    )}
-                  </div>}
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleEditJersey(userJersey)}
+                            className={`cd-card-btn ${needsDetails ? 'cd-card-btn--warning' : 'cd-card-btn--secondary'}`}
+                          >
+                            {needsDetails ? (
+                              <>
+                                <ExclamationTriangleIcon className="cd-card-btn__icon" />
+                                Complete details
+                              </>
+                            ) : (
+                              <>
+                                <PencilIcon className="cd-card-btn__icon" />
+                                Edit details
+                              </>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveJersey(userJersey.id)}
+                            disabled={deletingJerseyId === userJersey.id}
+                            className="cd-card-btn cd-card-btn--danger-outline"
+                          >
+                            <TrashIcon className="cd-card-btn__icon" />
+                            {deletingJerseyId === userJersey.id ? 'Removing…' : 'Remove'}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )

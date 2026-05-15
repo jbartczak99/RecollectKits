@@ -82,10 +82,10 @@ export default function AdminUsers() {
     }
     if (newVal && !window.confirm(`Grant admin access to ${profile.username}?`)) return
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ is_admin: newVal })
-      .eq('id', profile.id)
+    const { error } = await supabase.rpc('grant_admin', {
+      target_user_id: profile.id,
+      is_admin_new: newVal,
+    })
 
     if (error) alert('Error: ' + error.message)
     else await fetchUsers()
@@ -284,13 +284,16 @@ export default function AdminUsers() {
                         onClick={() => handleToggleAdmin(profile)}
                         title={profile.is_admin ? 'Remove admin' : 'Make admin'}
                         style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
                           padding: '4px 8px', fontSize: '12px', fontWeight: 500,
                           backgroundColor: profile.is_admin ? '#f3e8ff' : '#f3f4f6',
-                          color: profile.is_admin ? '#7c3aed' : '#6B7280',
-                          borderRadius: '6px', border: 'none', cursor: 'pointer'
+                          color: profile.is_admin ? '#7c3aed' : '#374151',
+                          borderRadius: '6px', border: 'none', cursor: 'pointer',
+                          whiteSpace: 'nowrap'
                         }}
                       >
-                        <ShieldCheckIcon className="w-3.5 h-3.5" />
+                        <ShieldCheckIcon style={{ width: '14px', height: '14px' }} />
+                        {profile.is_admin ? 'Remove admin' : 'Make admin'}
                       </button>
                     </div>
                   </div>

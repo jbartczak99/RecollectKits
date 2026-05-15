@@ -899,8 +899,12 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
     try {
       const fileExt = imageFile.name.split('.').pop()
       const timestamp = new Date().getTime()
-      const fileName = `${user.id}_${timestamp}_${type}.${fileExt}`
-      const filePath = `kit-submissions/${fileName}`
+      // Path: ${user.id}/kit-submissions/... — keeps the first folder
+      // segment equal to auth.uid() so the storage DELETE policy
+      // ((storage.foldername(name))[1] = auth.uid()) lets the uploader
+      // (and only the uploader) remove these files.
+      const fileName = `${timestamp}_${type}.${fileExt}`
+      const filePath = `${user.id}/kit-submissions/${fileName}`
 
       const { data, error } = await supabase.storage
         .from('jersey-images')

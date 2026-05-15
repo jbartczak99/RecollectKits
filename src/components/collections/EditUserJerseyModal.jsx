@@ -1,6 +1,122 @@
 import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
+import { notifyUserJerseysChanged } from '../../hooks/usePendingDetailsCount'
+
+const backdropStyle = {
+  position: 'fixed',
+  top: 0, left: 0, right: 0, bottom: 0,
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 9999,
+  padding: '16px',
+}
+
+const dialogStyle = {
+  backgroundColor: 'white',
+  borderRadius: '12px',
+  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  maxWidth: '640px',
+  width: '100%',
+  maxHeight: '90vh',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+}
+
+const headerStyle = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  padding: '20px 24px',
+  borderBottom: '1px solid #e5e7eb',
+}
+
+const closeBtnStyle = {
+  background: 'transparent',
+  border: 'none',
+  padding: '4px',
+  cursor: 'pointer',
+  color: '#6b7280',
+}
+
+const formStyle = {
+  padding: '20px 24px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px',
+  overflowY: 'auto',
+}
+
+const labelStyle = {
+  display: 'block',
+  fontSize: '13px',
+  fontWeight: 500,
+  color: '#374151',
+  marginBottom: '6px',
+}
+
+const inputStyle = {
+  width: '100%',
+  padding: '8px 12px',
+  border: '1px solid #d1d5db',
+  borderRadius: '8px',
+  fontSize: '14px',
+  fontFamily: 'inherit',
+  outline: 'none',
+  boxSizing: 'border-box',
+}
+
+const fitButtonRowStyle = {
+  display: 'inline-flex',
+  border: '1px solid #d1d5db',
+  borderRadius: '8px',
+  overflow: 'hidden',
+}
+
+const errorStyle = {
+  background: '#fef2f2',
+  border: '1px solid #fecaca',
+  color: '#b91c1c',
+  padding: '10px 12px',
+  borderRadius: '8px',
+  fontSize: '13px',
+}
+
+const footerStyle = {
+  display: 'flex',
+  gap: '12px',
+  padding: '16px 24px',
+  borderTop: '1px solid #e5e7eb',
+}
+
+const cancelBtnStyle = (loading) => ({
+  flex: 1,
+  padding: '10px 16px',
+  border: '1px solid #d1d5db',
+  backgroundColor: 'white',
+  color: '#374151',
+  borderRadius: '8px',
+  cursor: loading ? 'not-allowed' : 'pointer',
+  opacity: loading ? 0.5 : 1,
+  fontSize: '14px',
+  fontWeight: 500,
+})
+
+const saveBtnStyle = (loading) => ({
+  flex: 1,
+  padding: '10px 16px',
+  border: 'none',
+  backgroundColor: '#16a34a',
+  color: 'white',
+  borderRadius: '8px',
+  cursor: loading ? 'not-allowed' : 'pointer',
+  opacity: loading ? 0.5 : 1,
+  fontSize: '14px',
+  fontWeight: 500,
+})
 
 export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -8,12 +124,11 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
     size: '',
     condition: 'new',
     notes: '',
-    acquired_from: ''
+    acquired_from: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Load user jersey data when modal opens
   useEffect(() => {
     if (userJersey) {
       setFormData({
@@ -21,7 +136,7 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
         size: userJersey.size || '',
         condition: userJersey.condition || 'new',
         notes: userJersey.notes || '',
-        acquired_from: userJersey.acquired_from || ''
+        acquired_from: userJersey.acquired_from || '',
       })
     }
   }, [userJersey])
@@ -38,7 +153,7 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
         condition: formData.condition,
         notes: formData.notes || null,
         acquired_from: formData.acquired_from || null,
-        details_completed: true
+        details_completed: true,
       }
 
       const { data, error: updateError } = await supabase
@@ -49,16 +164,12 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
         .single()
 
       if (updateError) throw updateError
-
-      // Call success callback
+      notifyUserJerseysChanged()
       onSuccess?.(data)
-
-      // Close modal
       onClose()
     } catch (err) {
       console.error('Error updating jersey details:', err)
       setError(err.message || 'Failed to update jersey details')
-      alert(`Error saving details: ${err.message}`)
     } finally {
       setLoading(false)
     }
@@ -73,132 +184,134 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
 
   if (!isOpen || !userJersey) return null
 
+  const fitOptions = [
+    { value: 'mens', label: "Men's" },
+    { value: 'womens', label: "Women's" },
+    { value: 'youth', label: 'Youth' },
+  ]
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+    <div style={backdropStyle} onClick={handleClose}>
+      <div style={dialogStyle} onClick={(e) => e.stopPropagation()}>
+        <div style={headerStyle}>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Edit Jersey Details</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {userJersey.public_jersey?.team_name} - {userJersey.public_jersey?.season}
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', margin: 0 }}>
+              Edit Jersey Details
+            </h2>
+            <p style={{ fontSize: '13px', color: '#6b7280', margin: '4px 0 0' }}>
+              {userJersey.public_jersey?.team_name} · {userJersey.public_jersey?.season}
             </p>
           </div>
           <button
+            type="button"
             onClick={handleClose}
             disabled={loading}
-            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            style={closeBtnStyle}
+            aria-label="Close"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <XMarkIcon style={{ width: '20px', height: '20px' }} />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} style={formStyle}>
+          {error && <div style={errorStyle}>{error}</div>}
 
-          {/* Fit & Size */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Fit & Size</label>
-            <div className="flex gap-3 items-start">
-              <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid #d1d5db' }}>
-                {[
-                  { value: 'mens', label: "Men's" },
-                  { value: 'womens', label: "Women's" },
-                  { value: 'youth', label: 'Youth' }
-                ].map((option, idx) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, jersey_fit: option.value })}
-                    disabled={loading}
-                    style={formData.jersey_fit === option.value
-                      ? { backgroundColor: '#7C3AED', color: 'white' }
-                      : { backgroundColor: 'white', color: '#374151' }
-                    }
-                    className={`px-3 py-2 text-sm font-medium transition-colors hover:opacity-90 disabled:opacity-50${idx > 0 ? ' border-l border-gray-300' : ''}`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            <label style={labelStyle}>Fit & Size</label>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+              <div style={fitButtonRowStyle}>
+                {fitOptions.map((option, idx) => {
+                  const active = formData.jersey_fit === option.value
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, jersey_fit: option.value })}
+                      disabled={loading}
+                      style={{
+                        padding: '8px 14px',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        border: 'none',
+                        borderLeft: idx > 0 ? '1px solid #d1d5db' : 'none',
+                        backgroundColor: active ? '#7C3AED' : 'white',
+                        color: active ? 'white' : '#374151',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
               </div>
               <input
                 type="text"
                 value={formData.size}
                 onChange={(e) => setFormData({ ...formData, size: e.target.value })}
                 placeholder="e.g., M, L, XL"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ minWidth: 0 }}
+                style={{ ...inputStyle, flex: 1, minWidth: '120px' }}
                 disabled={loading}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Condition */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Purchased</label>
+              <label style={labelStyle}>Purchased</label>
               <select
                 value={formData.condition}
                 onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                style={inputStyle}
                 disabled={loading}
               >
                 <option value="new">New</option>
                 <option value="used">Used</option>
               </select>
             </div>
-
-            {/* Acquired From */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Acquired From</label>
+              <label style={labelStyle}>Acquired From</label>
               <input
                 type="text"
                 value={formData.acquired_from}
                 onChange={(e) => setFormData({ ...formData, acquired_from: e.target.value })}
                 placeholder="e.g., eBay, Local Shop, Gift"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                style={inputStyle}
                 disabled={loading}
               />
             </div>
           </div>
 
-          {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <label style={labelStyle}>Notes</label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               rows={3}
               placeholder="Any additional notes about this jersey..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              style={{ ...inputStyle, resize: 'vertical', minHeight: '72px' }}
               disabled={loading}
             />
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={loading}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
         </form>
+
+        <div style={footerStyle}>
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={loading}
+            style={cancelBtnStyle(loading)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            style={saveBtnStyle(loading)}
+          >
+            {loading ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
       </div>
     </div>
   )

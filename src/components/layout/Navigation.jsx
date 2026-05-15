@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { supabase } from '../../lib/supabase'
+import { usePendingDetailsCount } from '../../hooks/usePendingDetailsCount'
 import {
   Bars3Icon,
   XMarkIcon,
@@ -28,56 +29,7 @@ export default function Navigation() {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
-  const [pendingDetailsCount, setPendingDetailsCount] = useState(0)
-
-  // Fetch pending details count
-  useEffect(() => {
-    const fetchPendingCount = async () => {
-      if (!user) {
-        setPendingDetailsCount(0)
-        return
-      }
-
-      try {
-        const { count, error } = await supabase
-          .from('user_jerseys')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('details_completed', false)
-
-        if (!error) {
-          setPendingDetailsCount(count || 0)
-        }
-      } catch (err) {
-        console.error('Error fetching pending count:', err)
-      }
-    }
-
-    fetchPendingCount()
-
-    // Set up real-time subscription for user_jerseys changes
-    if (user) {
-      const channel = supabase
-        .channel('user_jerseys_changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'user_jerseys',
-            filter: `user_id=eq.${user.id}`
-          },
-          () => {
-            fetchPendingCount()
-          }
-        )
-        .subscribe()
-
-      return () => {
-        supabase.removeChannel(channel)
-      }
-    }
-  }, [user])
+  const pendingDetailsCount = usePendingDetailsCount()
 
   
   const navigation = [

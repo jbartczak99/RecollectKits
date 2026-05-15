@@ -272,50 +272,13 @@ export const AuthProvider = ({ children }) => {
 
   const approveAccount = async (userId, notes = null) => {
     try {
-      if (!user || !profile?.is_admin) {
-        throw new Error('Admin access required')
-      }
-
-      console.log('Approving account:', { userId, adminId: user.id, notes })
-
-      // First check if user exists
-      const { data: userCheck } = await supabase
-        .from('profiles')
-        .select('id, username, approval_status')
-        .eq('id', userId)
-        .single()
-
-      console.log('User before approval:', userCheck)
-
-      // BYPASS THE DATABASE FUNCTION - do direct UPDATE instead
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          approval_status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: user.id,
-          admin_notes: notes
-        })
-        .eq('id', userId)
-        .select()
-
-      console.log('Direct update result:', { data, error })
-
-      // Check if user status actually changed
-      const { data: userAfter } = await supabase
-        .from('profiles')
-        .select('id, username, approval_status, approved_at, admin_notes')
-        .eq('id', userId)
-        .single()
-
-      console.log('User after approval:', userAfter)
-
-      if (error) {
-        console.error('Database error approving account:', error)
-        throw error
-      }
-
-      console.log('Account approved successfully')
+      // Server-side checks (auth.uid() + is_admin) live inside the RPC so a
+      // non-admin can't bypass this guard by calling supabase directly.
+      const { error } = await supabase.rpc('approve_user_account', {
+        user_id: userId,
+        notes,
+      })
+      if (error) throw error
       return { error: null }
     } catch (error) {
       console.error('Error in approveAccount:', error)
@@ -325,29 +288,16 @@ export const AuthProvider = ({ children }) => {
 
   const rejectAccount = async (userId, notes = null) => {
     try {
-      if (!user || !profile?.is_admin) {
-        throw new Error('Admin access required')
-      }
-
-      // First, call the database function to delete from profiles and log rejection
-      const { error: dbError } = await supabase.rpc('reject_user_account', {
+      // RPC deletes from profiles and logs to user_rejections. It does NOT
+      // delete the auth.users row — that requires the service-role key and
+      // must be handled by a server-side Edge Function. The user is locked
+      // out anyway because the profile (and the gates that depend on it)
+      // are gone.
+      const { error } = await supabase.rpc('reject_user_account', {
         user_id: userId,
-        admin_id: user.id,
-        notes
+        notes,
       })
-
-      if (dbError) throw dbError
-
-      // Then delete the user from Supabase Auth
-      // Note: This requires the service role key, not the anon key
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-
-      if (authError) {
-        console.error('Error deleting user from auth:', authError)
-        // Don't throw here since the profile is already deleted
-        // The user account might still exist in auth but won't be able to access anything
-      }
-
+      if (error) throw error
       return { error: null }
     } catch (error) {
       console.error('Error rejecting account:', error)

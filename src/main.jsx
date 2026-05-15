@@ -3,19 +3,41 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-// Catch any uncaught JS errors and show them visibly
-window.onerror = (msg, src, line, col, err) => {
-  const el = document.getElementById('startup-error')
-  if (el) el.innerHTML = `<strong>JS Error:</strong> ${msg}<br><small>${src}:${line}:${col}</small>`
-  else document.body.insertAdjacentHTML('afterbegin',
-    `<div style="background:#fee2e2;color:#991b1b;padding:16px;font-family:monospace;font-size:13px;position:fixed;top:0;left:0;right:0;z-index:99999" id="startup-error"><strong>JS Error:</strong> ${msg}<br><small>${src}:${line}:${col}</small></div>`)
+// Catch any uncaught JS errors and show them visibly. Use DOM APIs so error
+// content (which may contain HTML from page state) cannot inject markup.
+function ensureErrorOverlay() {
+  let el = document.getElementById('startup-error')
+  if (el) return el
+  el = document.createElement('div')
+  el.id = 'startup-error'
+  el.setAttribute(
+    'style',
+    'background:#fee2e2;color:#991b1b;padding:16px;font-family:monospace;font-size:13px;position:fixed;top:0;left:0;right:0;z-index:99999'
+  )
+  document.body.insertAdjacentElement('afterbegin', el)
+  return el
 }
+
+function appendErrorLine(label, body) {
+  const el = ensureErrorOverlay()
+  if (el.childNodes.length > 0) el.appendChild(document.createElement('br'))
+  const strong = document.createElement('strong')
+  strong.textContent = `${label} `
+  el.appendChild(strong)
+  el.appendChild(document.createTextNode(String(body)))
+}
+
+window.onerror = (msg, src, line, col) => {
+  appendErrorLine('JS Error:', msg)
+  const small = document.createElement('small')
+  small.textContent = `\n${src}:${line}:${col}`
+  small.style.display = 'block'
+  ensureErrorOverlay().appendChild(small)
+}
+
 window.onunhandledrejection = (e) => {
   const msg = e.reason?.message || e.reason || 'Unknown promise rejection'
-  const el = document.getElementById('startup-error')
-  if (el) el.innerHTML += `<br><strong>Promise Error:</strong> ${msg}`
-  else document.body.insertAdjacentHTML('afterbegin',
-    `<div style="background:#fee2e2;color:#991b1b;padding:16px;font-family:monospace;font-size:13px;position:fixed;top:0;left:0;right:0;z-index:99999" id="startup-error"><strong>Promise Error:</strong> ${msg}</div>`)
+  appendErrorLine('Promise Error:', msg)
 }
 
 // React error boundary to catch render crashes

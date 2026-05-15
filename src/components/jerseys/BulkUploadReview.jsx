@@ -673,8 +673,10 @@ export default function BulkUploadReview({ initialData, onBack }) {
     try {
       const fileExt = imageFile.name.split('.').pop()
       const timestamp = new Date().getTime()
-      const fileName = `${user.id}_${timestamp}_${type}_${Math.random().toString(36).slice(2, 8)}.${fileExt}`
-      const filePath = `kit-submissions/${fileName}`
+      // Path: ${user.id}/kit-submissions/... — matches the storage
+      // DELETE policy that scopes deletion to the file's owning folder.
+      const fileName = `${timestamp}_${type}_${Math.random().toString(36).slice(2, 8)}.${fileExt}`
+      const filePath = `${user.id}/kit-submissions/${fileName}`
 
       const { data, error } = await supabase.storage
         .from('jersey-images')

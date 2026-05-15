@@ -1,5 +1,18 @@
 import { ArrowTopRightOnSquareIcon, UserIcon, ClockIcon } from '@heroicons/react/24/outline'
 
+// Only allow http/https URLs to render as a link. Blocks javascript: / data:
+// / vbscript: schemes from being injected via user-submitted source_url.
+function safeExternalUrl(raw) {
+  if (!raw) return null
+  try {
+    const u = new URL(raw)
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.toString()
+  } catch {
+    // fall through
+  }
+  return null
+}
+
 export default function SpotCard({ spot }) {
   const formatPrice = (price, currency) => {
     if (!price) return null
@@ -8,6 +21,8 @@ export default function SpotCard({ spot }) {
       currency: currency || 'USD'
     }).format(price)
   }
+
+  const safeUrl = safeExternalUrl(spot.source_url)
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
@@ -74,15 +89,17 @@ export default function SpotCard({ spot }) {
           </div>
         </div>
 
-        <a
-          href={spot.source_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
-        >
-          <span>View Listing</span>
-          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-        </a>
+        {safeUrl && (
+          <a
+            href={safeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+          >
+            <span>View Listing</span>
+            <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+          </a>
+        )}
 
         {spot.verified && (
           <div className="mt-2 text-center">

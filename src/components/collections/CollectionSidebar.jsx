@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { supabase } from '../../lib/supabase'
+import { usePendingDetailsCount } from '../../hooks/usePendingDetailsCount'
 import DashboardFeedbackBox from './DashboardFeedbackBox'
 
 const NAV_ITEMS = [
@@ -24,6 +25,7 @@ export default function CollectionSidebar() {
   const params = useParams()
   const [searchParams] = useSearchParams()
   const [systemIds, setSystemIds] = useState({ wishlist: null, liked: null })
+  const pendingDetailsCount = usePendingDetailsCount()
 
   useEffect(() => {
     if (!user) return
@@ -95,6 +97,7 @@ export default function CollectionSidebar() {
             const Icon = item.icon
             const active = item.key === activeKey
             const disabled = isDisabled(item)
+            const showBadge = item.key === 'dashboard' && pendingDetailsCount > 0
             const className = active
               ? 'collection-sidebar__item collection-sidebar__item--active'
               : 'collection-sidebar__item'
@@ -108,6 +111,9 @@ export default function CollectionSidebar() {
                 >
                   <Icon className="collection-sidebar__icon" />
                   <span className="collection-sidebar__label">{item.label}</span>
+                  {showBadge && (
+                    <span className="collection-sidebar__badge">{pendingDetailsCount}</span>
+                  )}
                 </button>
               </li>
             )
@@ -128,6 +134,7 @@ export default function CollectionSidebar() {
             const Icon = item.icon
             const active = item.key === activeKey
             const disabled = isDisabled(item)
+            const showBadge = item.key === 'dashboard' && pendingDetailsCount > 0
             const className = active
               ? 'collection-sidebar__pill collection-sidebar__pill--active'
               : 'collection-sidebar__pill'
@@ -141,6 +148,9 @@ export default function CollectionSidebar() {
                 >
                   <Icon style={{ width: 16, height: 16 }} />
                   {item.label}
+                  {showBadge && (
+                    <span className="collection-sidebar__badge">{pendingDetailsCount}</span>
+                  )}
                 </button>
               </li>
             )

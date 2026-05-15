@@ -36,13 +36,12 @@ export function usePublicProfile(username, currentUserId = null) {
         return
       }
 
-      // Visibility check: owners always see their own profile, others need is_public
+      // Visibility is enforced at the DB by RLS:
+      //   - owner can see their own row (id = auth.uid())
+      //   - admins can see any row (is_admin_user())
+      //   - others see public rows (is_public = true)
+      // If the row came back from Supabase, the viewer is authorized.
       const isOwner = currentUserId && profileData.id === currentUserId
-      if (!profileData.is_public && !isOwner) {
-        setError('Profile not found or is private')
-        setLoading(false)
-        return
-      }
 
       setProfile(profileData)
       const userId = profileData.id

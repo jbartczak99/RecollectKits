@@ -28,16 +28,15 @@ export default function LoginForm({ onSuccess, onForgotPassword }) {
 
     if (result.error) {
       if (result.error.message === 'Email not confirmed') {
-        const customMessage = 'Your account is still under review. Please allow 24-48 hours for approval. You will receive an email notification once your account is approved.'
-        alert(customMessage)
-        setError(customMessage)
+        setError(
+          "Please confirm your email before signing in. Check your inbox " +
+          "(and spam folder) for the confirmation link we sent at signup."
+        )
       } else {
         setError(result.error.message)
       }
-      setLoading(false)
-    } else {
-      setLoading(false)
     }
+    setLoading(false)
   }
 
   return (

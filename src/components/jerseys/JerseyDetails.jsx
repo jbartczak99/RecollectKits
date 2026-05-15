@@ -141,24 +141,48 @@ export default function JerseyDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '120px 0' }}>
+        <div
+          className="animate-spin"
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            border: '3px solid #e5e7eb',
+            borderBottomColor: '#16a34a',
+          }}
+        />
       </div>
     )
   }
 
   if (error || !jersey) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Jersey Not Found</h1>
-          <p className="text-gray-600 mb-6">{error || 'This jersey could not be found.'}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 16px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '420px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>Kit Not Found</h1>
+          <p style={{ color: '#6b7280', margin: '0 0 20px', fontSize: '14px' }}>
+            {error || 'This kit could not be found.'}
+          </p>
           <button
+            type="button"
             onClick={handleBack}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              backgroundColor: '#16a34a',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
           >
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            Back to Jerseys
+            <ArrowLeftIcon style={{ width: '16px', height: '16px' }} />
+            Back to Kits
           </button>
         </div>
       </div>
@@ -184,334 +208,408 @@ export default function JerseyDetails() {
     })
   }
 
+  const detailStyles = {
+    page: { display: 'flex', flexDirection: 'column', gap: '20px' },
+    breadcrumb: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      fontSize: '13px',
+      color: '#6b7280',
+      flexWrap: 'wrap',
+    },
+    breadcrumbLink: { color: '#6b7280', textDecoration: 'none' },
+    breadcrumbSep: { color: '#d1d5db' },
+    breadcrumbCurrent: { color: '#111827', fontWeight: 500 },
+    backBtn: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '6px 0',
+      background: 'transparent',
+      border: 'none',
+      color: '#374151',
+      fontSize: '14px',
+      fontWeight: 500,
+      cursor: 'pointer',
+      width: 'fit-content',
+    },
+    grid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr',
+      gap: '24px',
+    },
+    card: {
+      background: '#ffffff',
+      border: '1px solid #e5e7eb',
+      borderRadius: '12px',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+      overflow: 'hidden',
+    },
+    cardPad: { padding: '20px 24px' },
+    mainImageWrap: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#f9fafb',
+      minHeight: '420px',
+      padding: '24px',
+    },
+    mainImage: {
+      maxWidth: '100%',
+      maxHeight: '460px',
+      objectFit: 'contain',
+    },
+    emptyImage: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '8px',
+      color: '#9ca3af',
+      fontSize: '14px',
+      fontWeight: 500,
+    },
+    thumbRow: {
+      display: 'flex',
+      gap: '12px',
+      justifyContent: 'center',
+      padding: '12px 16px',
+      borderTop: '1px solid #f3f4f6',
+      background: '#ffffff',
+    },
+    thumbWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
+    thumb: (active) => ({
+      width: '72px',
+      height: '72px',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      cursor: 'pointer',
+      border: '2px solid',
+      borderColor: active ? '#16a34a' : '#e5e7eb',
+      transition: 'border-color 0.15s, transform 0.15s',
+      background: '#f9fafb',
+    }),
+    thumbImg: { width: '100%', height: '100%', objectFit: 'cover' },
+    thumbLabel: { fontSize: '11px', color: '#6b7280', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' },
+    title: {
+      margin: 0,
+      fontSize: '26px',
+      fontWeight: 700,
+      color: '#111827',
+      lineHeight: 1.2,
+    },
+    playerLine: {
+      margin: '8px 0 0',
+      fontSize: '16px',
+      fontWeight: 600,
+      color: '#16a34a',
+    },
+    playerNumber: { color: '#9ca3af', fontWeight: 400, fontSize: '14px', marginLeft: '6px' },
+    headerDivider: { height: '1px', background: '#e5e7eb', margin: '20px 0' },
+    sectionTitle: {
+      margin: '0 0 12px',
+      fontSize: '13px',
+      fontWeight: 600,
+      color: '#6b7280',
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+    },
+    specRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: '12px',
+      padding: '10px 0',
+      borderBottom: '1px solid #f3f4f6',
+      fontSize: '14px',
+    },
+    specLabel: { color: '#6b7280', fontWeight: 500 },
+    specValue: { color: '#111827', textAlign: 'right' },
+    descriptionText: { margin: 0, fontSize: '14px', color: '#374151', lineHeight: 1.55 },
+    sectionGap: { marginTop: '20px' },
+    actionRow: { display: 'flex', gap: '8px' },
+    actionBtn: ({ active, activeBg, activeBorder, activeColor }) => ({
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '10px 12px',
+      borderRadius: '8px',
+      border: '1px solid',
+      borderColor: active ? activeBorder : '#e5e7eb',
+      backgroundColor: active ? activeBg : '#f9fafb',
+      color: active ? activeColor : '#374151',
+      fontSize: '13px',
+      fontWeight: 500,
+      cursor: 'pointer',
+      transition: 'background-color 0.15s, border-color 0.15s, color 0.15s',
+    }),
+    signInPrompt: { textAlign: 'center', padding: '8px 0' },
+    signInLink: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      padding: '8px 18px',
+      backgroundColor: '#16a34a',
+      color: 'white',
+      borderRadius: '8px',
+      textDecoration: 'none',
+      fontSize: '14px',
+      fontWeight: 500,
+    },
+  }
+
+  const ownsKit = isInMainCollection(jersey.id)
+  const likedKit = hasLiked(jersey.id)
+  const wishedKit = isInWishlist(jersey.id)
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation Breadcrumbs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-            <Link to="/" className="hover:text-gray-700 transition-colors">
-              Home
-            </Link>
-            <span>/</span>
-            <Link to="/jerseys" className="hover:text-gray-700 transition-colors">
-              Kit Database
-            </Link>
-            <span>/</span>
-            <span className="text-gray-900 font-medium">
-              {jersey?.team_name || 'Kit Details'}
-            </span>
-          </nav>
-          <button
-            onClick={handleBack}
-            className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            Back to Kits
-          </button>
-        </div>
-      </div>
+    <div style={detailStyles.page}>
+      <nav style={detailStyles.breadcrumb} aria-label="Breadcrumb">
+        <Link to="/" style={detailStyles.breadcrumbLink}>Home</Link>
+        <span style={detailStyles.breadcrumbSep}>/</span>
+        <Link to="/jerseys" style={detailStyles.breadcrumbLink}>Kit Database</Link>
+        <span style={detailStyles.breadcrumbSep}>/</span>
+        <span style={detailStyles.breadcrumbCurrent}>{jersey?.team_name || 'Kit Details'}</span>
+      </nav>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
-            {/* Left Column - Images */}
-            <div className="space-y-6">
-              {/* Main Image with Gallery directly below */}
-              <div className="space-y-1">
-                {/* Main Image */}
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                  {selectedImage ? (
-                    <div className="flex items-center justify-center bg-gray-50 p-6" style={{minHeight: '400px', maxHeight: '500px'}}>
-                      <img
-                        src={selectedImage}
-                        alt={`${jersey.team_name} ${jersey.jersey_type} kit`}
-                        className="max-w-full max-h-full object-contain"
-                        style={{maxWidth: '400px', maxHeight: '500px'}}
-                        onError={(e) => {
-                          e.target.style.display = 'none'
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center bg-gradient-to-br from-green-100 to-blue-100" style={{minHeight: '400px'}}>
-                      <div className="text-center">
-                        <div className="text-6xl mb-4">👕</div>
-                        <div className="text-lg font-medium text-gray-500">
-                          No Image Available
-                        </div>
-                      </div>
-                    </div>
-                  )}
+      <button type="button" onClick={handleBack} style={detailStyles.backBtn}>
+        <ArrowLeftIcon style={{ width: '16px', height: '16px' }} />
+        Back to Kits
+      </button>
+
+      <div
+        style={{
+          ...detailStyles.grid,
+          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+        }}
+        className="kit-details-grid"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={detailStyles.card}>
+            {selectedImage ? (
+              <div style={detailStyles.mainImageWrap}>
+                <img
+                  src={selectedImage}
+                  alt={`${jersey.team_name} ${jersey.jersey_type} kit`}
+                  style={detailStyles.mainImage}
+                  onError={(e) => { e.target.style.display = 'none' }}
+                />
+              </div>
+            ) : (
+              <div style={{ ...detailStyles.mainImageWrap, background: '#f3f4f6' }}>
+                <div style={detailStyles.emptyImage}>
+                  <span style={{ fontSize: '48px' }}>👕</span>
+                  <span>No image available</span>
                 </div>
+              </div>
+            )}
 
-                {/* Gallery Area */}
-                <div className="flex justify-center">
-                  <div
-                    className="bg-white rounded-lg shadow-md overflow-hidden"
-                    style={{
-                      maxWidth: '400px',
-                      width: '100%'
-                    }}
-                  >
+            {availableImages.length > 1 && (
+              <div style={detailStyles.thumbRow}>
+                {jersey.front_image_url && (
+                  <div style={detailStyles.thumbWrap}>
                     <div
-                      className="bg-gray-50 p-4"
-                      style={{
-                        minHeight: '120px'
-                      }}
+                      style={detailStyles.thumb(selectedImage === jersey.front_image_url)}
+                      onClick={() => setSelectedImage(jersey.front_image_url)}
                     >
-                      <div className="flex gap-4 justify-center items-center h-full">
-                        {/* Front Jersey Thumbnail */}
-                        {jersey.front_image_url && (
-                          <div className="flex flex-col items-center">
-                            <div
-                              className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 ${
-                                selectedImage === jersey.front_image_url
-                                  ? 'border-blue-300 shadow-lg'
-                                  : 'border-white hover:border-gray-200'
-                              }`}
-                              style={{width: '80px', height: '80px', cursor: 'pointer'}}
-                              onClick={() => setSelectedImage(jersey.front_image_url)}
-                            >
-                              <img
-                                src={jersey.front_image_url}
-                                alt="Front jersey"
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover'
-                                }}
-                              />
-                            </div>
-                            <span className="text-gray-700 text-sm mt-1 font-medium">Front</span>
-                          </div>
-                        )}
-
-                        {/* Back Jersey Thumbnail */}
-                        {jersey.back_image_url && (
-                          <div className="flex flex-col items-center">
-                            <div
-                              className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-105 ${
-                                selectedImage === jersey.back_image_url
-                                  ? 'border-blue-300 shadow-lg'
-                                  : 'border-white hover:border-gray-200'
-                              }`}
-                              style={{width: '80px', height: '80px', cursor: 'pointer'}}
-                              onClick={() => setSelectedImage(jersey.back_image_url)}
-                            >
-                              <img
-                                src={jersey.back_image_url}
-                                alt="Back jersey"
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover'
-                                }}
-                              />
-                            </div>
-                            <span className="text-gray-700 text-sm mt-1 font-medium">Back</span>
-                          </div>
-                        )}
-                      </div>
+                      <img src={jersey.front_image_url} alt="Front" style={detailStyles.thumbImg} />
                     </div>
+                    <span style={detailStyles.thumbLabel}>Front</span>
                   </div>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Right Column - Jersey Information */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                
-                {/* Header Section */}
-                <div className="border-b border-gray-200 pb-6 mb-6">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                    {[
-                      jersey.season,
-                      jersey.team_name || 'Unknown Team', 
-                      jersey.jersey_type ? jersey.jersey_type.charAt(0).toUpperCase() + jersey.jersey_type.slice(1) : null
-                    ].filter(Boolean).join(' ')}
-                  </h1>
-                  {jersey.player_name && (
-                    <h2 className="text-xl font-semibold text-green-600">
-                      {jersey.player_id ? (
-                        <Link to={`/players/${jersey.player_id}`} className="hover:underline">
-                          {jersey.player_name}
-                        </Link>
-                      ) : (
-                        jersey.player_name
-                      )}
-                      {(jersey.player_number || jersey.jersey_number) && (
-                        <span className="text-gray-500 font-normal text-lg" style={{ marginLeft: '8px' }}>
-                          #{jersey.player_number || jersey.jersey_number}
-                        </span>
-                      )}
-                    </h2>
-                  )}
-
-                  {/* Link Player Profile (shown for authenticated users when player_name exists but no player_id) */}
-                  {user && jersey.player_name && !jersey.player_id && (
-                    <div className="mt-3">
-                      <WikidataPlayerLinker
-                        jerseyId={jersey.id}
-                        playerName={jersey.player_name}
-                        onLinked={(playerId) => {
-                          setJersey(prev => ({ ...prev, player_id: playerId }))
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Jersey Specifications */}
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-100 pb-2">
-                      Specifications
-                    </h3>
-                    <div className="grid grid-cols-1 gap-3">
-                      {jersey.jersey_type && (
-                        <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                          <span className="font-medium text-gray-600">Type</span>
-                          <span className="text-gray-900">{jersey.jersey_type.charAt(0).toUpperCase() + jersey.jersey_type.slice(1)}</span>
-                        </div>
-                      )}
-                      
-                      {jersey.season && (
-                        <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                          <span className="font-medium text-gray-600">Season</span>
-                          <span className="text-gray-900">{jersey.season}</span>
-                        </div>
-                      )}
-                      
-                      {jersey.league && (
-                        <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                          <span className="font-medium text-gray-600">League</span>
-                          <span className="text-gray-900">{jersey.league}</span>
-                        </div>
-                      )}
-                      
-                      {jersey.manufacturer && (
-                        <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                          <span className="font-medium text-gray-600">Manufacturer</span>
-                          <span className="text-gray-900">{jersey.manufacturer}</span>
-                        </div>
-                      )}
-                      
-                      {(jersey.colors || jersey.primary_color || jersey.secondary_color) && (
-                        <div className="flex justify-between items-start py-2 border-b border-gray-50">
-                          <span className="font-medium text-gray-600">Colors</span>
-                          <span className="text-gray-900 text-right">
-                            {jersey.colors || 
-                             [jersey.primary_color, jersey.secondary_color]
-                               .filter(color => color && color.trim())
-                               .join(', ') || 
-                             'Not specified'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Sponsors */}
-                  {(jersey.main_sponsor || jersey.additional_sponsors) && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-100 pb-2">
-                        Sponsors
-                      </h3>
-                      <div className="grid grid-cols-1 gap-3">
-                        {jersey.main_sponsor && (
-                          <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                            <span className="font-medium text-gray-600">Main Sponsor</span>
-                            <span className="text-gray-900">{jersey.main_sponsor}</span>
-                          </div>
-                        )}
-                        {jersey.additional_sponsors && (
-                          <div className="flex justify-between items-start py-2 border-b border-gray-50">
-                            <span className="font-medium text-gray-600">Additional</span>
-                            <span className="text-gray-900 text-right">{jersey.additional_sponsors}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Description */}
-                  {jersey.description && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 border-b border-gray-100 pb-2">
-                        Description
-                      </h3>
-                      <p className="text-gray-700 leading-relaxed">{jersey.description}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="bg-white rounded-lg shadow-md p-4">
-                {user ? (
-                  <div className="flex gap-2 max-w-xs">
-                    <button
-                      onClick={() => handleLike(jersey.id)}
-                      className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                        hasLiked(jersey.id)
-                          ? 'bg-red-100 text-red-700 border border-red-200'
-                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-                      }`}
+                )}
+                {jersey.back_image_url && (
+                  <div style={detailStyles.thumbWrap}>
+                    <div
+                      style={detailStyles.thumb(selectedImage === jersey.back_image_url)}
+                      onClick={() => setSelectedImage(jersey.back_image_url)}
                     >
-                      {hasLiked(jersey.id) ? (
-                        <HeartIconSolid style={{width: '20px', height: '20px'}} />
-                      ) : (
-                        <HeartIcon style={{width: '20px', height: '20px'}} />
-                      )}
-                      <span style={{fontSize: '12px'}}>{getLikeCount(jersey.id) > 0 ? getLikeCount(jersey.id) : 'Like'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleHave(jersey.id)}
-                      className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                        isInMainCollection(jersey.id)
-                          ? 'bg-green-100 text-green-700 border border-green-200'
-                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-green-50 hover:border-green-200 hover:text-green-600'
-                      }`}
-                    >
-                      <CheckCircleIcon style={{width: '20px', height: '20px'}} />
-                      <span style={{fontSize: '12px'}}>Have</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleWant(jersey.id)}
-                      className={`flex-1 flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                        isInWishlist(jersey.id)
-                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
-                          : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-yellow-50 hover:border-yellow-200 hover:text-yellow-600'
-                      }`}
-                    >
-                      {isInWishlist(jersey.id) ? (
-                        <StarIconSolid style={{width: '20px', height: '20px'}} />
-                      ) : (
-                        <StarIcon style={{width: '20px', height: '20px'}} />
-                      )}
-                      <span style={{fontSize: '12px'}}>Want</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <p className="text-gray-600 mb-4">Sign in to add kits to your collection</p>
-                    <Link
-                      to="/auth"
-                      className="inline-flex items-center px-6 py-3 border border-transparent font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
-                    >
-                      Sign In
-                    </Link>
+                      <img src={jersey.back_image_url} alt="Back" style={detailStyles.thumbImg} />
+                    </div>
+                    <span style={detailStyles.thumbLabel}>Back</span>
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ ...detailStyles.card, ...detailStyles.cardPad }}>
+            <h1 style={detailStyles.title}>
+              {[
+                jersey.season,
+                jersey.team_name || 'Unknown Team',
+                jersey.jersey_type ? jersey.jersey_type.charAt(0).toUpperCase() + jersey.jersey_type.slice(1) : null,
+              ].filter(Boolean).join(' ')}
+            </h1>
+
+            {jersey.player_name && (
+              <p style={detailStyles.playerLine}>
+                {jersey.player_id ? (
+                  <Link to={`/players/${jersey.player_id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                    {jersey.player_name}
+                  </Link>
+                ) : (
+                  jersey.player_name
+                )}
+                {(jersey.player_number || jersey.jersey_number) && (
+                  <span style={detailStyles.playerNumber}>
+                    #{jersey.player_number || jersey.jersey_number}
+                  </span>
+                )}
+              </p>
+            )}
+
+            {user && jersey.player_name && !jersey.player_id && (
+              <div style={{ marginTop: '12px' }}>
+                <WikidataPlayerLinker
+                  jerseyId={jersey.id}
+                  playerName={jersey.player_name}
+                  onLinked={(playerId) => {
+                    setJersey((prev) => ({ ...prev, player_id: playerId }))
+                  }}
+                />
+              </div>
+            )}
+
+            <div style={detailStyles.headerDivider} />
+
+            <h3 style={detailStyles.sectionTitle}>Specifications</h3>
+            <div>
+              {jersey.jersey_type && (
+                <div style={detailStyles.specRow}>
+                  <span style={detailStyles.specLabel}>Type</span>
+                  <span style={detailStyles.specValue}>{jersey.jersey_type.charAt(0).toUpperCase() + jersey.jersey_type.slice(1)}</span>
+                </div>
+              )}
+              {jersey.season && (
+                <div style={detailStyles.specRow}>
+                  <span style={detailStyles.specLabel}>Season</span>
+                  <span style={detailStyles.specValue}>{jersey.season}</span>
+                </div>
+              )}
+              {jersey.league && (
+                <div style={detailStyles.specRow}>
+                  <span style={detailStyles.specLabel}>League</span>
+                  <span style={detailStyles.specValue}>{jersey.league}</span>
+                </div>
+              )}
+              {jersey.manufacturer && (
+                <div style={detailStyles.specRow}>
+                  <span style={detailStyles.specLabel}>Manufacturer</span>
+                  <span style={detailStyles.specValue}>{jersey.manufacturer}</span>
+                </div>
+              )}
+              {(jersey.colors || jersey.primary_color || jersey.secondary_color) && (
+                <div style={detailStyles.specRow}>
+                  <span style={detailStyles.specLabel}>Colors</span>
+                  <span style={detailStyles.specValue}>
+                    {jersey.colors ||
+                      [jersey.primary_color, jersey.secondary_color]
+                        .filter((color) => color && color.trim())
+                        .join(', ') ||
+                      'Not specified'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {(jersey.main_sponsor || jersey.additional_sponsors) && (
+              <div style={detailStyles.sectionGap}>
+                <h3 style={detailStyles.sectionTitle}>Sponsors</h3>
+                {jersey.main_sponsor && (
+                  <div style={detailStyles.specRow}>
+                    <span style={detailStyles.specLabel}>Main</span>
+                    <span style={detailStyles.specValue}>{jersey.main_sponsor}</span>
+                  </div>
+                )}
+                {jersey.additional_sponsors && (() => {
+                  const list = String(jersey.additional_sponsors)
+                    .split(/[\n\r,;|]+/)
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                  if (list.length === 0) return null
+                  return (
+                    <div style={detailStyles.specRow}>
+                      <span style={detailStyles.specLabel}>Additional</span>
+                      <div style={{ ...detailStyles.specValue, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        {list.map((sponsor, i) => (
+                          <span key={i}>{sponsor}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {jersey.description && (
+              <div style={detailStyles.sectionGap}>
+                <h3 style={detailStyles.sectionTitle}>Description</h3>
+                <p style={detailStyles.descriptionText}>{jersey.description}</p>
+              </div>
+            )}
+          </div>
+
+          <div style={{ ...detailStyles.card, ...detailStyles.cardPad }}>
+            {user ? (
+              <div style={detailStyles.actionRow}>
+                <button
+                  type="button"
+                  onClick={() => handleLike(jersey.id)}
+                  style={detailStyles.actionBtn({
+                    active: likedKit,
+                    activeBg: '#fee2e2',
+                    activeBorder: '#fecaca',
+                    activeColor: '#dc2626',
+                  })}
+                >
+                  {likedKit
+                    ? <HeartIconSolid style={{ width: '20px', height: '20px' }} />
+                    : <HeartIcon style={{ width: '20px', height: '20px' }} />}
+                  <span>{getLikeCount(jersey.id) > 0 ? getLikeCount(jersey.id) : 'Like'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleHave(jersey.id)}
+                  style={detailStyles.actionBtn({
+                    active: ownsKit,
+                    activeBg: '#dcfce7',
+                    activeBorder: '#bbf7d0',
+                    activeColor: '#15803d',
+                  })}
+                >
+                  <CheckCircleIcon style={{ width: '20px', height: '20px' }} />
+                  <span>{ownsKit ? 'Owned' : 'Have'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleWant(jersey.id)}
+                  style={detailStyles.actionBtn({
+                    active: wishedKit,
+                    activeBg: '#fef3c7',
+                    activeBorder: '#fde68a',
+                    activeColor: '#b45309',
+                  })}
+                >
+                  {wishedKit
+                    ? <StarIconSolid style={{ width: '20px', height: '20px' }} />
+                    : <StarIcon style={{ width: '20px', height: '20px' }} />}
+                  <span>Want</span>
+                </button>
+              </div>
+            ) : (
+              <div style={detailStyles.signInPrompt}>
+                <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: '14px' }}>
+                  Sign in to add this kit to your collection
+                </p>
+                <Link to="/auth" style={detailStyles.signInLink}>Sign In</Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
           {/* Squad - Players Who Appeared in This Kit */}
           {jersey.team_name && jersey.season && (
@@ -847,8 +945,6 @@ export default function JerseyDetails() {
               </div>
             </div>
           )}
-        </div>
-      </div>
     </div>
   )
 }

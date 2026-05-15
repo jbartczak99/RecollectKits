@@ -35,8 +35,8 @@ export default function RegisterForm({ onSuccess }) {
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long')
       return
     }
 
@@ -152,9 +152,9 @@ export default function RegisterForm({ onSuccess }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          minLength={6}
+          minLength={8}
           style={inputStyle}
-          placeholder="Password (min 6 characters)"
+          placeholder="Password (min 8 characters)"
         />
       </div>
 

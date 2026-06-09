@@ -5,7 +5,8 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // Generated bundles / framework output — never lint or track these.
+  globalIgnores(['dist', 'build', '.react-router']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -24,6 +25,33 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // React Router route modules legitimately export framework conventions
+      // (meta, links, loaders, error boundaries) alongside their component.
+      // Allow those names so they don't trip the fast-refresh rule.
+      'react-refresh/only-export-components': [
+        'warn',
+        {
+          allowConstantExport: true,
+          allowExportNames: [
+            'meta',
+            'links',
+            'headers',
+            'loader',
+            'clientLoader',
+            'action',
+            'clientAction',
+            'ErrorBoundary',
+            'HydrateFallback',
+            'shouldRevalidate',
+            'handle',
+          ],
+        },
+      ],
     },
+  },
+  {
+    // Route config + framework entry: not components, no fast refresh involved.
+    files: ['src/routes.js', 'src/entry.client.jsx', 'react-router.config.js'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 ])

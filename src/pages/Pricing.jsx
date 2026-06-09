@@ -1,3 +1,4 @@
+import { pageMeta } from '../lib/seo'
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -336,6 +337,9 @@ const pricingStyles = `
     outline-offset: 3px;
   }
 `
+
+export const meta = () =>
+  pageMeta({ title: 'Pricing — RecollectKits', path: '/pricing' })
 
 export default function Pricing() {
   const [visibleSections, setVisibleSections] = useState({})

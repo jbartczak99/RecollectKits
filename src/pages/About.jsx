@@ -1,3 +1,8 @@
+import { pageMeta } from '../lib/seo'
+
+export const meta = () =>
+  pageMeta({ title: 'About — RecollectKits', path: '/about' })
+
 export default function About() {
   return (
     <div className="space-y-12">

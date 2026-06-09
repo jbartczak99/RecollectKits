@@ -1,3 +1,4 @@
+import { pageMeta } from '../lib/seo'
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
@@ -308,6 +309,9 @@ const TIER_MESSAGES = {
   club: "Thanks for your interest! We'll reach out within 48 hours to discuss partnership opportunities.",
   retail: "Thanks for your interest! We'll reach out within 48 hours to discuss partnership opportunities."
 }
+
+export const meta = () =>
+  pageMeta({ title: 'Partners — RecollectKits', path: '/partners' })
 
 export default function Partners() {
   const [visibleSections, setVisibleSections] = useState({})

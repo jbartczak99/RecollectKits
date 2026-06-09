@@ -77,7 +77,12 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="mt-6 pt-4 border-t border-gray-200">
-          <p className="text-center text-gray-500 text-sm">
+          {/* yearDisplay derives from new Date() at render time. The prerender
+              bakes the build-time year into the static HTML; the client
+              recomputes it on hydration. These only differ across a New-Year
+              boundary, but suppressHydrationWarning is React's sanctioned way
+              to allow that intentional date-based difference without a warning. */}
+          <p className="text-center text-gray-500 text-sm" suppressHydrationWarning>
             &copy; {yearDisplay} RecollectKits™. All rights reserved.
           </p>
           <p className="text-center text-gray-500 text-sm mt-2">

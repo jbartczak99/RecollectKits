@@ -8,31 +8,37 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 // If a token is invalid for any reason, every request fails — not just authenticated ones.
 // We use a version flag so this only runs once per version bump, not on every load.
 const AUTH_CLEAR_VERSION = '2'
-try {
-  const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
-  const storageKey = `sb-${projectRef}-auth-token`
+// SSR-safety: this block touches localStorage, so it must NEVER run during the
+// Node prerender (ssr: false build). Guarding on `typeof window` keeps module
+// evaluation identical-and-side-effect-free on the server, so prerendered
+// public routes hydrate without drift. localStorage only exists in the browser.
+if (typeof window !== 'undefined') {
+  try {
+    const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
+    const storageKey = `sb-${projectRef}-auth-token`
 
-  // One-time forced clear when version changes (fixes stale tokens from any cause)
-  if (localStorage.getItem('rk_auth_v') !== AUTH_CLEAR_VERSION) {
-    localStorage.removeItem(storageKey)
-    localStorage.setItem('rk_auth_v', AUTH_CLEAR_VERSION)
-    console.warn('Auth session cleared (version update)')
-  } else {
-    // On subsequent loads, still check for expired JWTs
-    const stored = localStorage.getItem(storageKey)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (parsed.access_token) {
-        const payload = JSON.parse(atob(parsed.access_token.split('.')[1]))
-        if (payload.exp && Date.now() / 1000 > payload.exp) {
-          console.warn('Expired auth token found, clearing before client init')
-          localStorage.removeItem(storageKey)
+    // One-time forced clear when version changes (fixes stale tokens from any cause)
+    if (localStorage.getItem('rk_auth_v') !== AUTH_CLEAR_VERSION) {
+      localStorage.removeItem(storageKey)
+      localStorage.setItem('rk_auth_v', AUTH_CLEAR_VERSION)
+      console.warn('Auth session cleared (version update)')
+    } else {
+      // On subsequent loads, still check for expired JWTs
+      const stored = localStorage.getItem(storageKey)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (parsed.access_token) {
+          const payload = JSON.parse(atob(parsed.access_token.split('.')[1]))
+          if (payload.exp && Date.now() / 1000 > payload.exp) {
+            console.warn('Expired auth token found, clearing before client init')
+            localStorage.removeItem(storageKey)
+          }
         }
       }
     }
+  } catch {
+    // If anything goes wrong, just continue
   }
-} catch (e) {
-  // If anything goes wrong, just continue
 }
 
 // Custom fetch that aborts after 10 seconds so requests never hang forever.
@@ -59,11 +65,18 @@ const fetchWithTimeout = (url, options = {}) => {
     .finally(() => clearTimeout(timeoutId))
 }
 
+const isBrowser = typeof window !== 'undefined'
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
+    // All auth persistence/refresh is browser-only. During the Node prerender
+    // (ssr: false) there is no window, so the client configures no localStorage
+    // storage and no refresh timers — keeping module eval side-effect-free and
+    // server/client first render identical.
+    autoRefreshToken: isBrowser,
+    persistSession: isBrowser,
+    detectSessionInUrl: isBrowser,
+    storage: isBrowser ? window.localStorage : undefined,
   },
   global: {
     fetch: fetchWithTimeout

@@ -1,4 +1,8 @@
 import { Link } from 'react-router-dom'
+import { pageMeta } from '../lib/seo'
+
+export const meta = () =>
+  pageMeta({ title: 'Privacy Policy — RecollectKits', path: '/privacy' })
 
 export default function Privacy() {
   return (

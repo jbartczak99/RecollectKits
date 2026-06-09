@@ -1,4 +1,8 @@
 import { Link } from 'react-router-dom'
+import { pageMeta } from '../lib/seo'
+
+export const meta = () =>
+  pageMeta({ title: 'Terms of Service — RecollectKits', path: '/terms' })
 
 export default function Terms() {
   return (

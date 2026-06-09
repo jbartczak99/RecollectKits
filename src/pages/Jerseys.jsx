@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   ExclamationCircleIcon,
@@ -12,6 +12,14 @@ import { useGroupedJerseys } from '../hooks/useGroupedJerseys'
 import JerseySearch from '../components/jerseys/JerseySearch'
 import SelectCollectionModal from '../components/collections/SelectCollectionModal'
 import KitGroupCard from '../components/jerseys/KitGroupCard'
+import { pageMeta } from '../lib/seo'
+
+export const meta = () =>
+  pageMeta({
+    title: 'Browse Football Shirts — RecollectKits',
+    ogTitle: 'Browse Football Shirts — RecollectKits',
+    path: '/jerseys',
+  })
 
 const JERSEY_TYPES = ['home', 'away', 'third', 'special']
 
@@ -144,10 +152,17 @@ export default function Jerseys() {
   const [selectedManufacturers, setSelectedManufacturers] = useState([])
   const [selectedTypes, setSelectedTypes] = useState([])
   const [selectedSeason, setSelectedSeason] = useState('')
-  const [selectedGender, setSelectedGender] = useState(() => {
+  // Initialize deterministically ('') so the prerendered HTML (path '/jerseys',
+  // no query string) and the client's first render are byte-identical. Reading
+  // searchParams in a useState initializer would differ for a '/jerseys?gender='
+  // load and break hydration (#418). The URL value is applied in the effect
+  // below, after hydration.
+  const [selectedGender, setSelectedGender] = useState('')
+
+  useEffect(() => {
     const param = searchParams.get('gender')
-    return param === 'mens' || param === 'womens' ? param : ''
-  })
+    setSelectedGender(param === 'mens' || param === 'womens' ? param : '')
+  }, [searchParams])
 
   const handleGenderChange = useCallback((value) => {
     setSelectedGender(value)

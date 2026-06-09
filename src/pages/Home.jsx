@@ -3,6 +3,18 @@ import { Link } from 'react-router-dom'
 import { useJerseys, useRandomJersey, useMostLikedJersey } from '../hooks/useJerseys'
 import JerseyCard from '../components/jerseys/JerseyCard'
 import WaitlistSignup from '../components/WaitlistSignup'
+import { pageMeta } from '../lib/seo'
+
+export const meta = () =>
+  pageMeta({
+    title: 'RecollectKits — Catalog & Showcase Your Football Shirt Collection',
+    description:
+      "Catalog, organize, and showcase your football shirt collection. Track every kit's story and provenance. Your kits. Your story. Recollected.",
+    ogTitle: 'RecollectKits — Your kits. Your story. Recollected.',
+    ogDescription:
+      'Catalog, organize, and showcase your football shirt collection. Built by collectors, for collectors.',
+    path: '/',
+  })
 
 export default function Home() {
   const { jerseys, loading: jerseysLoading } = useJerseys()

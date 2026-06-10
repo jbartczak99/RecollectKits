@@ -94,12 +94,18 @@ export default async function handler(req, res) {
     // 2. Send confirmation email
     const html = buildConfirmationEmail(firstName, interest);
 
-    await resend.emails.send({
+    const sendResult = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'RecollectKits <hello@recollectkits.com>',
       to: email,
       subject: 'RecollectKits Waitlist Confirmation',
       html,
     });
+
+    // The Resend SDK returns errors instead of throwing — without this check
+    // a failed send still reports success to the signup form
+    if (sendResult.error) {
+      throw new Error(sendResult.error.message);
+    }
 
     return res.status(200).json({ success: true });
   } catch (error) {

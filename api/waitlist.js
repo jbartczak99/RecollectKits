@@ -1,6 +1,12 @@
 import { Resend } from 'resend';
+import { createClient } from '@supabase/supabase-js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+);
 
 const INTEREST_LABELS = {
   collector: 'a Collector',
@@ -31,6 +37,11 @@ function buildConfirmationEmail(firstName, interest) {
     <p style="font-size:16px;line-height:1.6;color:#333;">
       Thanks for signing up! You're now on the RecollectKits launch list${interestLine}.
       We'll send you an email the moment we officially launch.
+    </p>
+
+    <p style="font-size:16px;line-height:1.6;color:#333;">
+      One more thing: we're sending a limited round of <strong>early beta invites</strong>
+      from this list during the World Cup &mdash; so keep an eye on your inbox.
     </p>
 
     <div style="background:#f8f5ff;padding:20px;border-radius:8px;margin:24px 0;">
@@ -78,7 +89,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Add to Resend Audience
+    // 1. Record the signup (interest segment drives beta-invite targeting).
+    // A duplicate email (23505) is fine; any other failure is logged but does
+    // not block the signup — Resend still delivers the confirmation.
+    const { error: dbError } = await supabase.from('waitlist_signups').insert({
+      email: email.toLowerCase(),
+      first_name: firstName,
+      interest: INTEREST_LABELS[interest] ? interest : null,
+    });
+    if (dbError && dbError.code !== '23505') {
+      console.error('Waitlist DB insert failed:', dbError);
+    }
+
+    // 2. Add to Resend Audience
     const contactResult = await resend.contacts.create({
       email,
       firstName,
@@ -91,7 +114,7 @@ export default async function handler(req, res) {
       throw new Error(contactResult.error.message);
     }
 
-    // 2. Send confirmation email
+    // 3. Send confirmation email
     const html = buildConfirmationEmail(firstName, interest);
 
     const sendResult = await resend.emails.send({

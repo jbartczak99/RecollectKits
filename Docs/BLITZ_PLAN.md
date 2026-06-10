@@ -31,7 +31,7 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 - [x] Re-run Supabase advisors — confirm both ERROR findings cleared *(done 6/10 — zero ERROR findings; `auth_users_exposed` + `security_definer_view` gone; anon-definer WARNs 13→5, all intentional)*
 
 **Marketing prep (30 min):**
-- [ ] Confirm waitlist flow works end-to-end (api/waitlist.js → Resend confirmation)
+- [x] Confirm waitlist flow works end-to-end (api/waitlist.js → Resend confirmation) *(done 6/10 — live prod test, confirmation email verified in inbox; send-failure bug fixed; signups now also stored in `waitlist_signups` table with interest segment for beta targeting; email copy now teases beta invites)*
 - [ ] Draft tomorrow's posts: personal IG + LinkedIn + collector Discords. Angle: "The World Cup starts today. I'm building the home for the kits we'll remember it by. Waitlist open." Keep it founder-voice, not ad-voice.
 
 ---
@@ -192,4 +192,5 @@ Per-kit privacy toggle · comments/moderation · collector archetype + gap analy
 *Appended by Claude Code at the end of each working session: date · what shipped · what slipped · decisions made.*
 
 - **2026-06-10:** Plan created. Sprint 0 security items begin tonight.
+- **2026-06-10 (waitlist):** Waitlist e2e verified against prod (test signup → confirmation email received). Shipped: send-failure bug fix in api/waitlist.js; `waitlist_signups` table migration (insert-only RLS, admin-read) capturing email/first_name/interest for June 24 beta targeting; beta-invite tease added to confirmation email. Decisions: one waitlist for both beta and launch — no separate beta funnel; invite codes (June 12) handle conversion. Launch-post drafts delivered for founder edit. Pending: migration paste into prod + git push to deploy.
 - **2026-06-10 (later):** Security block done. Shipped: `pending_accounts` view dropped in prod (founder pasted `sprint0_security_remediation.sql` via SQL editor — MCP still read-only); anon EXECUTE revoked on 8 SECURITY DEFINER functions + trigger fn locked to owner; advisors re-run clean — **both ERROR findings cleared, zero ERRORs remain**. Decisions: (1) kept 5 functions anon-executable on purpose (public-profile/OG read paths + `is_admin_user` used in RLS) — these stay as accepted WARNs; (2) leaked-password protection is Supabase Pro-only → accepted risk, revisit on plan upgrade. Slipped: nothing. Remaining tonight: waitlist end-to-end check + launch-post drafts.

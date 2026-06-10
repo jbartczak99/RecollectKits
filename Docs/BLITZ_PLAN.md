@@ -25,10 +25,10 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 ## TONIGHT (June 10) — 2–3 hours
 
 **Security (non-negotiable before any traffic):**
-- [ ] `DROP VIEW public.pending_accounts;` in production
-- [ ] Revoke anon EXECUTE on the 13 SECURITY DEFINER functions
-- [ ] Enable leaked-password protection (dashboard toggle, 30 seconds)
-- [ ] Re-run Supabase advisors — confirm both ERROR findings cleared
+- [x] `DROP VIEW public.pending_accounts;` in production *(done 6/10 — `sprint0_security_remediation.sql`)*
+- [x] Revoke anon EXECUTE on the 13 SECURITY DEFINER functions *(done 6/10 — 8 revoked + trigger fn fully locked; 5 kept anon-executable by design: `get_public_profile`, `get_public_profile_stats`, `get_public_collections`, `get_top_3_jerseys` (OG/public-profile paths), `is_admin_user` (used in RLS policies))*
+- [ ] ~~Enable leaked-password protection~~ **Blocked: Supabase Pro-only feature; not on Pro plan. Accepted risk for now — revisit if/when upgrading Supabase plan.**
+- [x] Re-run Supabase advisors — confirm both ERROR findings cleared *(done 6/10 — zero ERROR findings; `auth_users_exposed` + `security_definer_view` gone; anon-definer WARNs 13→5, all intentional)*
 
 **Marketing prep (30 min):**
 - [ ] Confirm waitlist flow works end-to-end (api/waitlist.js → Resend confirmation)
@@ -192,3 +192,4 @@ Per-kit privacy toggle · comments/moderation · collector archetype + gap analy
 *Appended by Claude Code at the end of each working session: date · what shipped · what slipped · decisions made.*
 
 - **2026-06-10:** Plan created. Sprint 0 security items begin tonight.
+- **2026-06-10 (later):** Security block done. Shipped: `pending_accounts` view dropped in prod (founder pasted `sprint0_security_remediation.sql` via SQL editor — MCP still read-only); anon EXECUTE revoked on 8 SECURITY DEFINER functions + trigger fn locked to owner; advisors re-run clean — **both ERROR findings cleared, zero ERRORs remain**. Decisions: (1) kept 5 functions anon-executable on purpose (public-profile/OG read paths + `is_admin_user` used in RLS) — these stay as accepted WARNs; (2) leaked-password protection is Supabase Pro-only → accepted risk, revisit on plan upgrade. Slipped: nothing. Remaining tonight: waitlist end-to-end check + launch-post drafts.

@@ -32,7 +32,7 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 
 **Marketing prep (30 min):**
 - [x] Confirm waitlist flow works end-to-end (api/waitlist.js → Resend confirmation) *(done 6/10 — live prod test, confirmation email verified in inbox; send-failure bug fixed; signups now also stored in `waitlist_signups` table with interest segment for beta targeting; email copy now teases beta invites)*
-- [ ] Draft tomorrow's posts: personal IG + LinkedIn + collector Discords. Angle: "The World Cup starts today. I'm building the home for the kits we'll remember it by. Waitlist open." Keep it founder-voice, not ad-voice.
+- [x] Draft tomorrow's posts: personal IG + LinkedIn + collector Discords. Angle: "The World Cup starts today. I'm building the home for the kits we'll remember it by. Waitlist open." Keep it founder-voice, not ad-voice. *(done 6/10 — drafts finished night before opener)*
 
 ---
 
@@ -41,7 +41,7 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 *Goal: every decision made, the build started, every autonomous task queued, marketing on autopilot — so the camping days cost zero momentum. The Saturday before departure is the gift here: a full build block.*
 
 ### Thu June 11 (opener day)
-- [ ] **Post the waitlist push** in the morning (opener traffic peaks early)
+- [ ] **Post the waitlist push** in the morning (opener traffic peaks early) *(in progress 6/11 — posts going out across channels now)*
 - [ ] Evening: finish Sprint 0 — tighten 5 permissive RLS policies, dedupe legacy policies, Postgres upgrade, partner_applications review
 - [ ] Capture live schema as baseline migration; commit; SQL-editor moratorium begins
 
@@ -193,4 +193,5 @@ Per-kit privacy toggle · comments/moderation · collector archetype + gap analy
 
 - **2026-06-10:** Plan created. Sprint 0 security items begin tonight.
 - **2026-06-10 (waitlist):** Waitlist e2e verified against prod (test signup → confirmation email received). Shipped: send-failure bug fix in api/waitlist.js; `waitlist_signups` table migration (insert-only RLS, admin-read) capturing email/first_name/interest for June 24 beta targeting; beta-invite tease added to confirmation email. Decisions: one waitlist for both beta and launch — no separate beta funnel; invite codes (June 12) handle conversion. Launch-post drafts delivered for founder edit. Migration applied to prod + deployed via push; verified live end-to-end (test row + first real signup captured with interest segment).
+- **2026-06-11 (opener day):** Launch posts drafted last night (6/10 marketing-prep item closed). Founder is now working through publishing the waitlist push across channels (IG + LinkedIn + collector Discords) — opener-day morning window, as planned. Remaining today: confirm all posts are out, then evening Sprint 0 finish (RLS tightening, policy dedupe, Postgres upgrade, partner_applications review) + baseline schema migration.
 - **2026-06-10 (later):** Security block done. Shipped: `pending_accounts` view dropped in prod (founder pasted `sprint0_security_remediation.sql` via SQL editor — MCP still read-only); anon EXECUTE revoked on 8 SECURITY DEFINER functions + trigger fn locked to owner; advisors re-run clean — **both ERROR findings cleared, zero ERRORs remain**. Decisions: (1) kept 5 functions anon-executable on purpose (public-profile/OG read paths + `is_admin_user` used in RLS) — these stay as accepted WARNs; (2) leaked-password protection is Supabase Pro-only → accepted risk, revisit on plan upgrade. Slipped: nothing. Remaining tonight: waitlist end-to-end check + launch-post drafts.

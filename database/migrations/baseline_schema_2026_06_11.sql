@@ -8,9 +8,9 @@
 -- moratorium (Sprint 0, Blitz Plan June 11). From this point on, all schema
 -- changes go through committed migration files.
 --
--- NOTE ON POLICIES: section 9 reflects the PRE-sprint0_rls_tightening state.
--- After database/migrations/sprint0_rls_tightening.sql is applied, the
--- policies section must be refreshed (banner marks the section).
+-- NOTE ON POLICIES: section 9 reflects the state AFTER
+-- database/migrations/sprint0_rls_tightening.sql (applied to prod
+-- 2026-06-11 morning, verified against pg_policies + advisors).
 --
 -- Postgres version at capture: supabase-postgres-17.4.1.075
 -- (security patches outstanding — dashboard upgrade pending, see plan).
@@ -973,9 +973,7 @@ ALTER TABLE waitlist_signups ENABLE ROW LEVEL SECURITY;
 
 
 -- ============================================================
--- 9. Policies
--- ████ PRE-TIGHTENING SNAPSHOT — refresh this section after
--- ████ sprint0_rls_tightening.sql is applied to prod.
+-- 9. Policies (post-sprint0_rls_tightening, verified 2026-06-11)
 -- ============================================================
 
 -- badges
@@ -1008,18 +1006,12 @@ CREATE POLICY "Users can insert into their collections" ON collection_jerseys FO
 CREATE POLICY "Users can view collection jerseys for their collections" ON collection_jerseys FOR SELECT
   USING (EXISTS (SELECT 1 FROM collections WHERE collections.id = collection_jerseys.collection_id AND collections.user_id = auth.uid()));
 
--- collections (duplicates present pre-tightening; deduped by sprint0_rls_tightening)
+-- collections
 CREATE POLICY "Public collections are viewable by everyone." ON collections FOR SELECT
   USING (is_public = true OR auth.uid() = user_id);
-CREATE POLICY "Public collections viewable" ON collections FOR SELECT USING (is_public = true);
-CREATE POLICY "Users can view public collections" ON collections FOR SELECT USING (is_public = true);
-CREATE POLICY "Users can view their own collections" ON collections FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert their own collections" ON collections FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can insert their own collections." ON collections FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own collections" ON collections FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can update own collections." ON collections FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own collections" ON collections FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own collections." ON collections FOR DELETE USING (auth.uid() = user_id);
 
 -- dashboard_insight_requests
 CREATE POLICY "Admins update insight requests" ON dashboard_insight_requests FOR UPDATE TO authenticated
@@ -1031,10 +1023,8 @@ CREATE POLICY "Users insert own insight requests" ON dashboard_insight_requests 
 CREATE POLICY "Users see own insight requests, admins see all" ON dashboard_insight_requests FOR SELECT TO authenticated
   USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 
--- jersey_likes
+-- jersey_likes (public read required by anon like-count features)
 CREATE POLICY "Anyone can read likes" ON jersey_likes FOR SELECT USING (true);
-CREATE POLICY "Public Liked Kits viewable" ON jersey_likes FOR SELECT
-  USING (EXISTS (SELECT 1 FROM collections WHERE collections.user_id = jersey_likes.user_id AND collections.name = 'Liked Kits' AND collections.is_public = true));
 CREATE POLICY "Users can delete own likes" ON jersey_likes FOR DELETE USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own likes" ON jersey_likes FOR INSERT WITH CHECK (auth.uid() = user_id);
 
@@ -1048,7 +1038,7 @@ CREATE POLICY "Users insert own submissions" ON jersey_submissions FOR INSERT TO
 CREATE POLICY "Users see own submissions, admins see all" ON jersey_submissions FOR SELECT TO authenticated
   USING (submitted_by = auth.uid() OR EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 
--- kit_squad_cache (the 3 "Authenticated users can ..." policies are removed by sprint0_rls_tightening)
+-- kit_squad_cache (admin-only writes)
 CREATE POLICY "Admins delete kit_squad_cache" ON kit_squad_cache FOR DELETE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Admins insert kit_squad_cache" ON kit_squad_cache FOR INSERT TO authenticated
@@ -1056,33 +1046,23 @@ CREATE POLICY "Admins insert kit_squad_cache" ON kit_squad_cache FOR INSERT TO a
 CREATE POLICY "Admins update kit_squad_cache" ON kit_squad_cache FOR UPDATE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Anyone can view kit_squad_cache" ON kit_squad_cache FOR SELECT USING (true);
-CREATE POLICY "Squad cache viewable by everyone" ON kit_squad_cache FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can insert squad cache" ON kit_squad_cache FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated users can update squad cache" ON kit_squad_cache FOR UPDATE
-  USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated users can delete squad cache" ON kit_squad_cache FOR DELETE
-  USING (auth.role() = 'authenticated');
 
--- notifications (the "Authenticated users can create notifications" policy is
--- replaced with a scoped one by sprint0_rls_tightening)
-CREATE POLICY "Authenticated users can create notifications" ON notifications FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+-- notifications (insert scoped to recipient-or-actor)
+CREATE POLICY "Users create notifications they are part of" ON notifications FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid() OR actor_id = auth.uid());
 CREATE POLICY "Users can update own notifications" ON notifications FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can view own notifications" ON notifications FOR SELECT USING (auth.uid() = user_id);
 
--- partner_applications (INSERT check tightened to status='pending' AND notes IS NULL
--- by sprint0_rls_tightening)
+-- partner_applications (public form; submitters cannot set status/notes)
 CREATE POLICY "Admins can update partner applications" ON partner_applications FOR UPDATE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true))
   WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Admins can view partner applications" ON partner_applications FOR SELECT TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Anyone can submit partner applications" ON partner_applications FOR INSERT TO anon, authenticated
-  WITH CHECK (true);
+  WITH CHECK (status = 'pending' AND notes IS NULL);
 
--- player_careers (the 2 "Authenticated users can ..." policies and the duplicate
--- SELECT are removed by sprint0_rls_tightening)
+-- player_careers (admin-only writes)
 CREATE POLICY "Admins delete player_careers" ON player_careers FOR DELETE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Admins insert player_careers" ON player_careers FOR INSERT TO authenticated
@@ -1090,13 +1070,8 @@ CREATE POLICY "Admins insert player_careers" ON player_careers FOR INSERT TO aut
 CREATE POLICY "Admins update player_careers" ON player_careers FOR UPDATE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Anyone can view player_careers" ON player_careers FOR SELECT USING (true);
-CREATE POLICY "Careers are viewable by everyone" ON player_careers FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can insert careers" ON player_careers FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated users can update careers" ON player_careers FOR UPDATE
-  USING (auth.role() = 'authenticated');
 
--- players (duplicate SELECT removed by sprint0_rls_tightening)
+-- players
 CREATE POLICY "Admins delete players" ON players FOR DELETE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Admins insert players" ON players FOR INSERT TO authenticated
@@ -1104,7 +1079,6 @@ CREATE POLICY "Admins insert players" ON players FOR INSERT TO authenticated
 CREATE POLICY "Admins update players" ON players FOR UPDATE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Anyone can view players" ON players FOR SELECT USING (true);
-CREATE POLICY "Players are viewable by everyone" ON players FOR SELECT USING (true);
 
 -- profiles (admin columns additionally protected by trg_profiles_protect_admin_fields)
 CREATE POLICY "Admins delete profiles" ON profiles FOR DELETE TO authenticated USING (is_admin_user());
@@ -1125,8 +1099,7 @@ CREATE POLICY "Admins can update public jerseys" ON public_jerseys FOR UPDATE
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Public jerseys are viewable by everyone." ON public_jerseys FOR SELECT USING (true);
 
--- team_squads (the 3 "Authenticated users can ..." policies and the duplicate
--- SELECT are removed by sprint0_rls_tightening)
+-- team_squads (admin-only writes)
 CREATE POLICY "Admins delete team_squads" ON team_squads FOR DELETE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Admins insert team_squads" ON team_squads FOR INSERT TO authenticated
@@ -1134,19 +1107,13 @@ CREATE POLICY "Admins insert team_squads" ON team_squads FOR INSERT TO authentic
 CREATE POLICY "Admins update team_squads" ON team_squads FOR UPDATE TO authenticated
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
 CREATE POLICY "Anyone can view team_squads" ON team_squads FOR SELECT USING (true);
-CREATE POLICY "Team squads viewable by everyone" ON team_squads FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can insert team squads" ON team_squads FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated users can update team squads" ON team_squads FOR UPDATE
-  USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated users can delete team squads" ON team_squads FOR DELETE
-  USING (auth.role() = 'authenticated');
 
--- user_badges (open INSERT replaced with self-award-only by sprint0_rls_tightening)
+-- user_badges (self-award only — supports client-side First-100 auto-award;
+-- trigger/RPC hardening deferred)
 CREATE POLICY "Admins can award badges" ON user_badges FOR ALL
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));
-CREATE POLICY "Authenticated users can insert user_badges" ON user_badges FOR INSERT
-  WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Users can award badges to themselves" ON user_badges FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid());
 CREATE POLICY "User badges are viewable by everyone" ON user_badges FOR SELECT USING (true);
 
 -- user_friends
@@ -1161,16 +1128,13 @@ CREATE POLICY "Users can send friend requests" ON user_friends FOR INSERT
 CREATE POLICY "Users can view own friendships" ON user_friends FOR SELECT
   USING (auth.uid() = requester_id OR auth.uid() = addressee_id);
 
--- user_jerseys (duplicates removed by sprint0_rls_tightening)
+-- user_jerseys
 CREATE POLICY "Public All Kits viewable" ON user_jerseys FOR SELECT
   USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = user_jerseys.user_id AND profiles.all_kits_public = true));
 CREATE POLICY "Users can view their own jerseys" ON user_jerseys FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert their own jerseys" ON user_jerseys FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can insert jerseys to their collections." ON user_jerseys FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own jerseys" ON user_jerseys FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can update their own jerseys." ON user_jerseys FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own jerseys" ON user_jerseys FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own jerseys." ON user_jerseys FOR DELETE USING (auth.uid() = user_id);
 
 -- user_rejections
 CREATE POLICY "Admins insert rejections" ON user_rejections FOR INSERT TO authenticated

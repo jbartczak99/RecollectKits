@@ -56,3 +56,6 @@ credentials/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Generated invite-code batches (codes are secrets - never commit)
+database/data/

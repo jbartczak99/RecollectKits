@@ -176,7 +176,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const signUp = async ({ email, password, username, fullName, country }) => {
+  const signUp = async ({ email, password, username, fullName, country, inviteCode }) => {
     try {
       // Note: Don't set global loading here - the form manages its own loading state
       // Setting global loading causes AuthLayout to unmount the form and lose state
@@ -188,6 +188,9 @@ export const AuthProvider = ({ children }) => {
             username,
             full_name: fullName,
             country,
+            // Read by the auth.users signup trigger when
+            // app_settings.require_invite_code is on (closed beta)
+            ...(inviteCode ? { invite_code: inviteCode } : {}),
           }
         }
       })

@@ -1,6 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext.jsx'
+import { supabase } from '../../lib/supabase'
+import {
+  normalizeInviteCode,
+  validateInviteCode,
+  isInviteCodeRequired,
+} from '../../lib/inviteCodes.js'
 import countries from '../../data/countries.js'
+
+const INVITE_ERROR_MESSAGES = {
+  missing: 'An invite code is required during the beta.',
+  not_found: "That invite code isn't valid — double-check for typos.",
+  expired: 'That invite code has expired.',
+  exhausted: 'That invite code has already been used.',
+  error: "We couldn't verify your invite code. Please try again.",
+}
 
 export default function RegisterForm({ onSuccess }) {
   const [email, setEmail] = useState('')
@@ -8,11 +22,21 @@ export default function RegisterForm({ onSuccess }) {
   const [username, setUsername] = useState('')
   const [fullName, setFullName] = useState('')
   const [country, setCountry] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
+  const [inviteRequired, setInviteRequired] = useState(false)
   const [agreeToTerms, setAgreeToTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const { signUp } = useAuth()
+
+  useEffect(() => {
+    let cancelled = false
+    isInviteCodeRequired(supabase).then((required) => {
+      if (!cancelled) setInviteRequired(required)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const inputStyle = {
     width: '100%',
@@ -43,7 +67,26 @@ export default function RegisterForm({ onSuccess }) {
     setLoading(true)
 
     try {
-      const result = await signUp({ email, password, username, fullName, country })
+      // Pre-validate the invite code for a friendly error — the auth trigger
+      // enforces it server-side either way, but its failure surfaces as a
+      // generic signup error.
+      if (inviteRequired) {
+        const verdict = await validateInviteCode(supabase, inviteCode)
+        if (!verdict.valid) {
+          setError(INVITE_ERROR_MESSAGES[verdict.reason] || INVITE_ERROR_MESSAGES.error)
+          setLoading(false)
+          return
+        }
+      }
+
+      const result = await signUp({
+        email,
+        password,
+        username,
+        fullName,
+        country,
+        inviteCode: inviteRequired ? normalizeInviteCode(inviteCode) : undefined,
+      })
 
       if (result.error) {
         setError(result.error.message)
@@ -106,6 +149,26 @@ export default function RegisterForm({ onSuccess }) {
           marginBottom: '16px'
         }}>
           <p style={{ fontSize: '14px', color: '#dc2626', margin: 0 }}>{error}</p>
+        </div>
+      )}
+
+      {inviteRequired && (
+        <div style={{ marginBottom: '16px' }}>
+          <input
+            type="text"
+            id="inviteCode"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value)}
+            required
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            style={inputStyle}
+            placeholder="Invite Code (e.g. RCK-XXXX-XXXX)"
+          />
+          <p style={{ fontSize: '12px', color: '#6b7280', margin: '6px 0 0' }}>
+            RecollectKits is in closed beta — an invite code is required to join.
+          </p>
         </div>
       )}
 

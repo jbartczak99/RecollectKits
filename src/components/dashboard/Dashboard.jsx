@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCollectionStats } from '../../hooks/useCollectionStats'
 import { normalizeCountryName } from '../../utils/countryGeo'
@@ -26,7 +26,7 @@ const buildClubMapSubtitle = (stats) => {
   return `Shaded where your club kits originate — darker means more${detail}`
 }
 
-export default function Dashboard() {
+export default function Dashboard({ onAddKit }) {
   const { stats, loading, error } = useCollectionStats()
   const [mapView, setMapView] = useState('international')
 
@@ -74,7 +74,13 @@ export default function Dashboard() {
         <p className="dashboard__empty-text">
           Add your first kit and we'll start tracking distributions, eras, and your collection growth over time.
         </p>
-        <Link to="/jerseys" className="dashboard__empty-cta">Browse kits to add</Link>
+        {onAddKit ? (
+          <button type="button" onClick={onAddKit} className="dashboard__empty-cta">
+            Find your first kit
+          </button>
+        ) : (
+          <Link to="/jerseys" className="dashboard__empty-cta">Browse kits to add</Link>
+        )}
       </div>
     )
   }

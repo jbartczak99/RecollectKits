@@ -4,12 +4,14 @@ import { PlusIcon } from '@heroicons/react/24/outline'
 import CollectionsList from '../components/collections/CollectionsList'
 import Dashboard from '../components/dashboard/Dashboard'
 import KitSubmissionWizard from '../components/jerseys/KitSubmissionWizard'
+import FindYourKit from '../components/jerseys/FindYourKit'
 
 const VALID_VIEWS = new Set(['dashboard', 'collections'])
 
 export default function Collection() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [openProfileSettings, setOpenProfileSettings] = useState(false)
+  const [showFinder, setShowFinder] = useState(false)
   const [showWizard, setShowWizard] = useState(false)
 
   const viewParam = searchParams.get('view')
@@ -32,10 +34,23 @@ export default function Collection() {
     }
   }, [openProfileSettings, view, searchParams, setSearchParams])
 
-  // The wizard takes over the page when active — same pattern Jerseys.jsx
-  // used before. Cancelling drops back to the prior view (dashboard/collections).
+  // Catalog-first: "+ Add kit" opens the search surface; the submission
+  // wizard is only reachable as its not-found fallback (design decision 6).
+  // Both take over the page — the same pattern the wizard always used.
   if (showWizard) {
     return <KitSubmissionWizard onCancel={() => setShowWizard(false)} />
+  }
+
+  if (showFinder) {
+    return (
+      <FindYourKit
+        onCancel={() => setShowFinder(false)}
+        onAddManually={() => {
+          setShowFinder(false)
+          setShowWizard(true)
+        }}
+      />
+    )
   }
 
   return (
@@ -49,7 +64,7 @@ export default function Collection() {
       >
         <button
           type="button"
-          onClick={() => setShowWizard(true)}
+          onClick={() => setShowFinder(true)}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -78,7 +93,7 @@ export default function Collection() {
           onProfileSettingsClose={() => setOpenProfileSettings(false)}
         />
       ) : (
-        <Dashboard />
+        <Dashboard onAddKit={() => setShowFinder(true)} />
       )}
     </div>
   )

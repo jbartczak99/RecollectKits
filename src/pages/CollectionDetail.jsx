@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase'
+import { kitIdentity } from '../lib/uncataloged'
 import EditCollectionModal from '../components/collections/EditCollectionModal'
 import AddJerseyToCollectionModal from '../components/collections/AddJerseyToCollectionModal'
 import EditUserJerseyModal from '../components/collections/EditUserJerseyModal'
@@ -76,7 +77,8 @@ export default function CollectionDetail() {
           .from('user_jerseys')
           .select(`
             *,
-            public_jersey:public_jerseys(*)
+            public_jersey:public_jerseys(*),
+            submission:jersey_submissions(id, team_name, season, jersey_type, kit_type, front_image_url, back_image_url, player_name, status)
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
@@ -567,7 +569,10 @@ export default function CollectionDetail() {
       ) : (
         <div className="cd-grid">
           {jerseys.map((userJersey) => {
-            const jersey = userJersey.public_jersey
+            // Cataloged rows read from public_jersey; pending (uncataloged)
+            // rows read from their submission — one identity shape for both.
+            const jersey = kitIdentity(userJersey)
+            const catalogId = userJersey.public_jersey?.id
             const needsDetails = userJersey.details_completed === false
             const hasUserDetails = userJersey.jersey_fit || userJersey.size || userJersey.condition || userJersey.acquired_from || userJersey.notes
             const fitLabels = { mens: "Men's", womens: "Women's", youth: 'Youth' }
@@ -578,23 +583,27 @@ export default function CollectionDetail() {
             const isSystemCollection = collection?.name === 'Liked Kits' || collection?.name === 'Wishlist'
             const hasBothImages = jersey?.front_image_url && jersey?.back_image_url
             const cardClassName = needsDetails ? 'cd-card cd-card--attention' : 'cd-card'
+            // Pending kits have no catalog page yet — render without a link.
+            const cardImage = jersey?.front_image_url || jersey?.back_image_url ? (
+              <img
+                src={
+                  hasBothImages
+                    ? (imageStates[userJersey.id] ? jersey.back_image_url : jersey.front_image_url)
+                    : (jersey.front_image_url || jersey.back_image_url)
+                }
+                alt={`${jersey.team_name || ''} ${jersey.jersey_type || ''} kit`}
+              />
+            ) : null
 
             return (
               <div key={userJersey.id} className={cardClassName}>
-                {jersey?.front_image_url || jersey?.back_image_url ? (
-                  <Link to={`/jerseys/${jersey.id}`} className="cd-card__image">
-                    <img
-                      src={
-                        hasBothImages
-                          ? (imageStates[userJersey.id] ? jersey.back_image_url : jersey.front_image_url)
-                          : (jersey.front_image_url || jersey.back_image_url)
-                      }
-                      alt={`${jersey.team_name || ''} ${jersey.jersey_type || ''} kit`}
-                    />
-                  </Link>
+                {jersey.isPending || !catalogId ? (
+                  <div className={cardImage ? 'cd-card__image' : 'cd-card__image cd-card__image--empty'}>
+                    {cardImage || 'No image available'}
+                  </div>
                 ) : (
-                  <Link to={`/jerseys/${jersey?.id}`} className="cd-card__image cd-card__image--empty">
-                    No image available
+                  <Link to={`/jerseys/${catalogId}`} className={cardImage ? 'cd-card__image' : 'cd-card__image cd-card__image--empty'}>
+                    {cardImage || 'No image available'}
                   </Link>
                 )}
 
@@ -628,6 +637,15 @@ export default function CollectionDetail() {
                   </p>
 
                   <div className="cd-badges">
+                    {jersey.isPending && (
+                      <span
+                        className="cd-pill"
+                        title="This kit is awaiting catalog review — it's safe in your collection meanwhile"
+                        style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}
+                      >
+                        Pending review
+                      </span>
+                    )}
                     {jersey?.kit_type && (
                       <span className={`cd-pill ${jersey.kit_type === 'international' ? 'cd-pill--purple' : 'cd-pill--green'}`}>
                         {jersey.kit_type === 'international' ? 'International' : 'Club'}

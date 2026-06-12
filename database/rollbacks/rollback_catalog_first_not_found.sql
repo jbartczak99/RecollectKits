@@ -5,4 +5,4 @@
 -- submission_id links (harmless; identity still readable via join).
 
 DROP FUNCTION IF EXISTS submit_uncataloged_kit(text,text,text,text,text,text,text,text,text,text,text,text,text,text);
-DROP FUNCTION IF EXISTS approve_submission_link(uuid, uuid);
+DROP FUNCTION IF EXISTS approve_submission_link(uuid, uuid, uuid, text);

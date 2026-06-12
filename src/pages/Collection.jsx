@@ -3,8 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { PlusIcon } from '@heroicons/react/24/outline'
 import CollectionsList from '../components/collections/CollectionsList'
 import Dashboard from '../components/dashboard/Dashboard'
-import KitSubmissionWizard from '../components/jerseys/KitSubmissionWizard'
 import FindYourKit from '../components/jerseys/FindYourKit'
+import QuickAddKit from '../components/jerseys/QuickAddKit'
 
 const VALID_VIEWS = new Set(['dashboard', 'collections'])
 
@@ -12,7 +12,7 @@ export default function Collection() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [openProfileSettings, setOpenProfileSettings] = useState(false)
   const [showFinder, setShowFinder] = useState(false)
-  const [showWizard, setShowWizard] = useState(false)
+  const [quickAdd, setQuickAdd] = useState(null) // null | { prefillTeam }
 
   const viewParam = searchParams.get('view')
   const view = VALID_VIEWS.has(viewParam) ? viewParam : 'dashboard'
@@ -34,20 +34,30 @@ export default function Collection() {
     }
   }, [openProfileSettings, view, searchParams, setSearchParams])
 
-  // Catalog-first: "+ Add kit" opens the search surface; the submission
-  // wizard is only reachable as its not-found fallback (design decision 6).
-  // Both take over the page — the same pattern the wizard always used.
-  if (showWizard) {
-    return <KitSubmissionWizard onCancel={() => setShowWizard(false)} />
+  // Catalog-first: "+ Add kit" opens the search surface; the slim QuickAddKit
+  // wizard is only reachable as its not-found fallback (design decisions 5-6).
+  // Both take over the page — the same pattern the old wizard used.
+  if (quickAdd) {
+    return (
+      <QuickAddKit
+        prefillTeam={quickAdd.prefillTeam}
+        onCancel={() => setQuickAdd(null)}
+        onAdded={() => {
+          setQuickAdd(null)
+          setShowFinder(false)
+        }}
+      />
+    )
   }
 
   if (showFinder) {
     return (
       <FindYourKit
         onCancel={() => setShowFinder(false)}
-        onAddManually={() => {
-          setShowFinder(false)
-          setShowWizard(true)
+        onAddManually={(term) => {
+          // Strip any season tokens; the typeahead wants just the team text.
+          const teamText = (term || '').replace(/\b\d{4}([/-]\d{2,4})?\b/g, '').trim()
+          setQuickAdd({ prefillTeam: teamText })
         }}
       />
     )

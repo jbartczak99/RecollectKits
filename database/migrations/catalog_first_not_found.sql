@@ -82,7 +82,9 @@ GRANT EXECUTE ON FUNCTION submit_uncataloged_kit(text,text,text,text,text,text,t
 
 CREATE OR REPLACE FUNCTION approve_submission_link(
   p_submission_id uuid,
-  p_target_public_jersey_id uuid DEFAULT NULL
+  p_target_public_jersey_id uuid DEFAULT NULL,
+  p_player_id uuid DEFAULT NULL,
+  p_admin_notes text DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -93,6 +95,7 @@ DECLARE
   caller uuid := auth.uid();
   sub jersey_submissions%ROWTYPE;
   v_target uuid := p_target_public_jersey_id;
+  v_rows int;
 BEGIN
   IF caller IS NULL THEN
     RAISE EXCEPTION 'not authenticated';
@@ -115,18 +118,26 @@ BEGIN
       RAISE EXCEPTION 'front image required to create a catalog row — attach one to the submission or link an existing kit';
     END IF;
 
+    -- Mirrors the old AdminPanel inline insert: brand doubles as
+    -- manufacturer, jersey_number doubles as player_number, the
+    -- comma-separated sponsor text becomes text[].
     INSERT INTO public_jerseys (
-      team_name, player_name, jersey_number, season, jersey_type, kit_type,
-      competition_gender, league, brand, description, tags,
+      team_name, player_name, player_id, player_number, jersey_number,
+      season, jersey_type, kit_type, competition_gender, league,
+      brand, manufacturer, description, tags,
       front_image_url, back_image_url, additional_image_urls,
-      primary_color, secondary_color, main_sponsor,
+      primary_color, secondary_color, main_sponsor, additional_sponsors,
       created_by, approved_by
     )
     SELECT
-      s.team_name, s.player_name, s.jersey_number, s.season, s.jersey_type, s.kit_type,
-      s.competition_gender, s.league, s.brand, s.description, s.tags,
+      s.team_name, s.player_name, p_player_id,
+      NULLIF(regexp_replace(coalesce(s.jersey_number, ''), '\D', '', 'g'), '')::int,
+      s.jersey_number,
+      s.season, s.jersey_type, s.kit_type, s.competition_gender, s.league,
+      s.brand, s.brand, s.description, s.tags,
       s.front_image_url, s.back_image_url, s.additional_image_urls,
       s.primary_color, s.secondary_color, s.main_sponsor,
+      (SELECT array_agg(trim(x)) FROM unnest(string_to_array(coalesce(s.additional_sponsors, ''), ',')) AS x WHERE trim(x) <> ''),
       s.submitted_by, caller
     FROM jersey_submissions s WHERE s.id = p_submission_id
     RETURNING id INTO v_target;
@@ -141,7 +152,8 @@ BEGIN
       WHERE user_id = sub.submitted_by AND public_jersey_id = v_target
     ) THEN
       UPDATE jersey_submissions
-         SET status = 'duplicate', reviewed_by = caller, reviewed_at = now()
+         SET status = 'duplicate', reviewed_by = caller, reviewed_at = now(),
+             admin_notes = coalesce(p_admin_notes, admin_notes)
        WHERE id = p_submission_id;
       RETURN jsonb_build_object('status', 'duplicate', 'public_jersey_id', v_target);
     END IF;
@@ -153,17 +165,26 @@ BEGIN
   UPDATE user_jerseys
      SET public_jersey_id = v_target
    WHERE submission_id = p_submission_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+
+  -- Old-flow submissions (made before the catalog-first wizard) have no
+  -- pending row — give the submitter the kit, as the old approve flow did.
+  IF v_rows = 0 THEN
+    INSERT INTO user_jerseys (user_id, public_jersey_id, submission_id, details_completed)
+    VALUES (sub.submitted_by, v_target, p_submission_id, false);
+  END IF;
 
   UPDATE jersey_submissions
-     SET status = 'approved', reviewed_by = caller, reviewed_at = now()
+     SET status = 'approved', reviewed_by = caller, reviewed_at = now(),
+         admin_notes = coalesce(p_admin_notes, admin_notes)
    WHERE id = p_submission_id;
 
   RETURN jsonb_build_object('status', 'approved', 'public_jersey_id', v_target);
 END;
 $$;
 
-REVOKE ALL ON FUNCTION approve_submission_link(uuid, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION approve_submission_link(uuid, uuid) TO authenticated;
+REVOKE ALL ON FUNCTION approve_submission_link(uuid, uuid, uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION approve_submission_link(uuid, uuid, uuid, text) TO authenticated;
 
 -- ============================================================
 -- 3. Drop the broken predecessor (referenced submission_data.image_urls,

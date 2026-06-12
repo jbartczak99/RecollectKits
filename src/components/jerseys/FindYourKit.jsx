@@ -3,6 +3,7 @@ import { ArrowLeftIcon, MagnifyingGlassIcon, CheckIcon, PlusIcon } from '@heroic
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { supabase } from '../../lib/supabase'
 import { searchCatalog, addKitInstantly, getCollectionIds } from '../../lib/catalogFirst.js'
+import { trackKitAdded } from '../../lib/analytics'
 
 // Search-first add flow, found path (Docs/CATALOG_FIRST_DESIGN.md decisions
 // 4 & 6). Single entry point for adding a kit: search the catalog, one-click
@@ -57,6 +58,7 @@ export default function FindYourKit({ onCancel, onAddManually }) {
       setInCollection((prev) => new Set(prev).add(kitId))
       if (result.status === 'added') {
         setJustAdded((prev) => new Set(prev).add(kitId))
+        trackKitAdded(inCollection.size + 1)
       }
     } else {
       setAddError('Something went wrong adding that kit. Please try again.')

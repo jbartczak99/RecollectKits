@@ -63,6 +63,21 @@ describe('buildClubRecord', () => {
   })
 })
 
+describe('isYouthTeam', () => {
+  it('flags under-XX and U-XX squads', async () => {
+    const { isYouthTeam } = await import('./import-clubs-wikidata.mjs')
+    expect(isYouthTeam('England national under-17 association football team')).toBe(true)
+    expect(isYouthTeam('Mexico U20')).toBe(true)
+    expect(isYouthTeam('Japan national under-20 football team')).toBe(true)
+  })
+
+  it('keeps senior men and women teams', async () => {
+    const { isYouthTeam } = await import('./import-clubs-wikidata.mjs')
+    expect(isYouthTeam('Brazil national football team')).toBe(false)
+    expect(isYouthTeam("Zambia women's national association football team")).toBe(false)
+  })
+})
+
 describe('mergeByWikidataId', () => {
   it('dedupes rows, unioning aliases', () => {
     const a = buildClubRecord(binding(), 'Premier League')

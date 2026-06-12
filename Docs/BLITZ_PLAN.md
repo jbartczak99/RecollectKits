@@ -51,7 +51,7 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 
 ### Sat June 13 (full build day before departure)
 - [x] Morning: remove manual-approval gate from signup; standard email verification on; strip "24–48 hours" copy; deploy *(done 6/12 evening, a day early — gate component deleted, copy stripped, deployed; founder pastes `remove_manual_approval_gate.sql` which also flips `require_invite_code` ON so signup hands over to invite codes with no open window)*
-- [x] **Catalog-first build, head start:** found path — search-first "Find your kit" entry point → one-click add → instant `user_jerseys` write. Stretch goal if it's flowing: start the not-found path. *(found path done 6/12 evening, a day early — FindYourKit live behind the single "+ Add New Kit" entry; wizard now the not-found fallback; `add_user_jerseys_submission_link.sql` awaiting founder paste; not-found path remains June 20)*
+- [x] **Catalog-first build, head start:** found path — search-first "Find your kit" entry point → one-click add → instant `user_jerseys` write. Stretch goal if it's flowing: start the not-found path. *(found path done 6/12 evening, a day early — FindYourKit live behind the single "+ Add New Kit" entry; wizard now the not-found fallback; `add_user_jerseys_submission_link.sql` applied + verified 6/12; not-found path remains June 20)*
 - [ ] **Launch the autonomous Claude Code batch — all as PRs, nothing merges to prod unattended:**
   - (a) Wikidata import script (48 World Cup nations + EPL + MLS), run against a branch/staging dataset for review
   - (b) Sentry wiring

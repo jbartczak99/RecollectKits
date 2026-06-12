@@ -178,6 +178,10 @@ The pitch writes itself: *"The World Cup is over. Your kits are how you keep it.
 
 Per-kit privacy toggle · comments/moderation · collector archetype + gap analysis · browse-by-club SEO pages · bulk edit · activity feed · day-3/7 email sequences · StorySplat spike (slide to August — the partnership isn't going anywhere) · any Phase 2+ feature, however tempting mid-tournament.
 
+## Idea parking lot (post-launch, not before July 21)
+
+- **"# of players to wear this kit" as a headline stat on kit details** *(founder, 6/12)* — the count already renders as the badge on the "Players to Wear This Kit" squad section (`JerseyDetails.jsx:626`, `${squadData.length} players`); idea is to also surface it as a top-level stat in the kit header area so it's visible without scrolling. Small lift; depends on squad-data coverage (Wikidata imports).
+
 ## Honest risk register
 
 1. **The day job + the return-sprint crunch.** June 19–25 is now the densest stretch of the plan, with zero slack before it (camping) and one buffer day inside it. If it cracks, slip beta to June 29/30 — *not* the launch date; compress beta instead.

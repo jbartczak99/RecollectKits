@@ -1,6 +1,10 @@
 import { startTransition, StrictMode } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { HydratedRouter } from 'react-router/dom'
+import { initSentry } from './lib/sentry'
+
+// Client entry only — never runs during prerender, so module-scope init is safe.
+initSentry()
 
 // Global uncaught-error overlay. Ported from the old main.jsx. This file is the
 // CLIENT entry only — it never runs during the Node prerender, so touching

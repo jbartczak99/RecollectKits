@@ -11,6 +11,7 @@ import {
   TrophyIcon
 } from '@heroicons/react/24/outline'
 import { usePublicProfile } from '../hooks/usePublicProfile'
+import { track, EVENTS } from '../lib/analytics'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import ProfileSettingsModal from '../components/profile/ProfileSettingsModal'
 import { CreatorFounderBadge, CreatorFounderPill, CreatorFounderAvatar } from '../components/profile/CreatorFounderBadge'
@@ -60,6 +61,7 @@ export default function PublicProfile() {
   }, [profile])
 
   const handleShare = async () => {
+    track(EVENTS.SHARE_CLICKED, { surface: 'public_profile' })
     const url = window.location.href
     try {
       await navigator.clipboard.writeText(url)

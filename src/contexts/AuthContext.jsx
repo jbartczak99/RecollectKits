@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { notifyWelcome, checkAndAwardFirst100Badge } from '../lib/notifications'
+import { track, EVENTS } from '../lib/analytics'
 
 const AuthContext = createContext({})
 
@@ -200,6 +201,7 @@ export const AuthProvider = ({ children }) => {
       // If signup successful and user exists, create profile immediately
       if (!error && data.user) {
         console.log('Signup successful, creating profile immediately for:', data.user.email)
+        track(EVENTS.SIGNUP_COMPLETED, { invited: Boolean(inviteCode) })
         await createProfile(data.user)
         // Send welcome notification and check for First 100 badge
         notifyWelcome(data.user.id)

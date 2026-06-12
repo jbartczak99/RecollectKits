@@ -151,7 +151,9 @@ export const AuthProvider = ({ children }) => {
         full_name: user.user_metadata?.full_name || '',
         avatar_url: user.user_metadata?.avatar_url || null,
         country: user.user_metadata?.country || null,
-        approval_status: 'pending',
+        // Manual approval removed June 13, 2026 — invite codes gate signup
+        // (auth.users trigger); accounts are active immediately.
+        approval_status: 'approved',
         requested_at: new Date().toISOString()
       }
       console.log('Profile data to insert:', profileData)

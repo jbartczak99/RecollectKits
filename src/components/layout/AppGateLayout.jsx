@@ -1,18 +1,15 @@
 import { Outlet } from 'react-router-dom'
-import ApprovalGate from '../auth/ApprovalGate'
 import ProtectedRoute from '../auth/ProtectedRoute'
 
-// Wrapper for authenticated app routes: container + approval gate + auth guard.
-// Mirrors the old App.jsx pattern:
-//   <div className="container py-8"><ApprovalGate><ProtectedRoute>…
+// Wrapper for authenticated app routes: container + auth guard.
+// The manual ApprovalGate was removed June 13, 2026 — access is gated at
+// signup by invite codes (see add_invite_codes.sql), not post-signup review.
 export default function AppGateLayout() {
   return (
     <div className="container py-8">
-      <ApprovalGate>
-        <ProtectedRoute>
-          <Outlet />
-        </ProtectedRoute>
-      </ApprovalGate>
+      <ProtectedRoute>
+        <Outlet />
+      </ProtectedRoute>
     </div>
   )
 }

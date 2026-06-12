@@ -121,19 +121,8 @@ export default function RegisterForm({ onSuccess }) {
           Welcome to RecollectKits!
         </h3>
         <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-          Please check your email for the confirmation link.
+          Please check your email for the confirmation link — then you're in.
         </p>
-        <div style={{
-          backgroundColor: '#fffbeb',
-          border: '1px solid #fcd34d',
-          borderRadius: '6px',
-          padding: '12px',
-          textAlign: 'left'
-        }}>
-          <p style={{ fontSize: '12px', color: '#92400e', margin: 0 }}>
-            <span style={{ fontWeight: '600' }}>Note:</span> Your account is now under review. Please allow 24-48 hours for approval.
-          </p>
-        </div>
       </div>
     )
   }

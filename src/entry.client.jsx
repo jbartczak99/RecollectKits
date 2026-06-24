@@ -3,9 +3,6 @@ import { hydrateRoot } from 'react-dom/client'
 import { HydratedRouter } from 'react-router/dom'
 import { initSentry } from './lib/sentry'
 
-// Client entry only — never runs during prerender, so module-scope init is safe.
-initSentry()
-
 // Global uncaught-error overlay. Ported from the old main.jsx. This file is the
 // CLIENT entry only — it never runs during the Node prerender, so touching
 // window/document at module scope here is safe.
@@ -43,6 +40,11 @@ window.onunhandledrejection = (e) => {
   const reason = e.reason?.message || e.reason || 'Unknown promise rejection'
   appendErrorLine('Promise Error:', reason)
 }
+
+// Init AFTER the overlay handlers above so Sentry's global handlers wrap them
+// (chaining the originals) rather than being overwritten — otherwise Sentry
+// would miss uncaught errors and unhandled rejections. No-op until the DSN is set.
+initSentry()
 
 startTransition(() => {
   hydrateRoot(

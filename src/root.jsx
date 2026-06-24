@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Links, Meta, Outlet, Scripts, isRouteErrorResponse, useRouteError } from 'react-router'
+import { captureError } from './lib/sentry'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import ScrollToTop from './components/ScrollToTop'
 import Navigation from './components/layout/Navigation'
@@ -93,6 +95,10 @@ export function ErrorBoundary() {
     ? `${error.status} ${error.statusText}`
     : error?.message || 'Unknown error'
   const stack = error?.stack
+
+  useEffect(() => {
+    if (error && !isRouteErrorResponse(error)) captureError(error)
+  }, [error])
 
   return (
     <div

@@ -22,6 +22,7 @@ import WikidataPlayerPreview from './WikidataPlayerPreview'
 import PartnerApplications from './PartnerApplications'
 import AdminDashboardInsights from './AdminDashboardInsights'
 import WaitlistView from './WaitlistView'
+import { captureError } from '../../lib/sentry' // TEMP: remove with the Sentry test button
 import { searchPlayer, fetchPlayerDetails, mapToPlayerRecord } from '../../utils/wikidata'
 import AdminEmailTemplates from './AdminEmailTemplates'
 import './AdminPanel.css'
@@ -1420,6 +1421,14 @@ export default function AdminPanel() {
 
   const quickActions = [
     { label: 'View waitlist signups', action: () => setExpandedQueue(expandedQueue === 'waitlist' ? null : 'waitlist') },
+    // TEMP — Sentry verification. Remove once a test event is confirmed in Sentry.
+    {
+      label: '🧪 Send Sentry test error',
+      action: () => {
+        captureError(new Error(`Sentry test error (admin panel) — ${new Date().toISOString()}`), { source: 'admin-test-button' })
+        alert('Test error sent. Check your Sentry dashboard — it should appear within a few seconds.')
+      },
+    },
     { label: 'Add kit to database', href: '/jerseys' },
     { label: 'Bulk import players', action: () => setExpandedQueue(expandedQueue === 'players' ? null : 'players') },
     { label: 'Add team / season', href: '/jerseys' },

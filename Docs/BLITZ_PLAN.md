@@ -13,7 +13,7 @@
 | Milestone | Target | Tournament moment |
 |---|---|---|
 | **Waitlist capture live** | June 11 (tomorrow) | Opening match — attention begins |
-| **Closed beta** | June 26 | Knockout rounds begin — drama peaks |
+| **Closed beta** | ~~June 26~~ → **June 29** | Knockout rounds — drama peaks *(slipped 6/24: integration + metadata layer needed; pre-authorized in risk #1; launch date untouched)* |
 | **Public launch** | Week of July 20 | 48–72 hrs after the final, peak afterglow |
 
 The strategy in one line: *capture attention now with the waitlist, convert the most engaged into beta testers mid-tournament, launch publicly into the post-final emotional hangover when everyone wishes the World Cup wasn't over — and a kit collection is how you keep it.*
@@ -73,9 +73,17 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 
 ## RETURN SPRINT — June 19–25 (the compressed Week 1+2)
 
-### Fri June 19 — merge day
-- [ ] Review and land the autonomous batch PRs (invite codes, Sentry, analytics, privacy migration, photo utils)
-- [ ] Run the Wikidata import against prod; review pass on aliases/duplicates
+> **⚠️ REPLAN (June 24).** The return sprint stalled: founder came back from camping and merge day (June 19) never ran, so nothing downstream did. Reality found 6/24: everything *built* on June 12 (found+not-found paths, 6 batch utilities) was sitting unmerged; June 21–22 enrichments (metadata, onboarding, funnel dashboard, empty-state) were never built at all. Beta slipped to **June 29**. **Revised schedule:**
+> - **Tue 6/24 (today):** ✅ merge day done by Claude Code — all 6 branches + not-found merged to master, 79 tests green, build clean (local; not yet pushed). Wikidata re-run fresh (342 clubs). **Founder:** paste 3 migrations + clubs SQL, set Sentry DSN, approve deploy, decide founder-status + creator-leak.
+> - **Wed 6/25:** metadata layer (condition scale, match-worn/signed/player-issue, acquisition price/date) + pending-kit rendering cleanup across owner surfaces (Claude Code).
+> - **Thu 6/26:** QA day — cross-device, 5 fresh-account funnel walks, seed-data ≥80% check, empty-state sweep.
+> - **Fri 6/27:** fix-list burn-down; beta recruitment (15–25); Discord live.
+> - **Sat–Sun 6/28:** buffer + recruitment.
+> - **Mon 6/29:** 🚀 codes out.
+
+### Fri June 19 — merge day → **done June 24**
+- [x] Review and land the autonomous batch PRs (invite codes, Sentry, analytics, privacy migration, photo utils) *(merged to master 6/24, verified 79 tests + build; awaiting founder deploy + migration pastes)*
+- [ ] Run the Wikidata import against prod; review pass on aliases/duplicates *(import re-run fresh 6/24 — `database/data/clubs_import_*_20260624.sql`, 342 clubs; **founder: review CSVs then paste**)*
 
 ### Sat June 20 (big block) — catalog-first build, continued
 - [ ] Finish the not-found path (started June 13 if the stretch goal landed): wizard writes `user_jerseys` immediately (uncataloged) + queues `jersey_submissions` *(BUILT 6/12 as PR branch `feature/catalog-first-not-found` — June 20 becomes review/merge/regression, not build)*
@@ -195,6 +203,7 @@ Per-kit privacy toggle · comments/moderation · collector archetype + gap analy
 
 *Appended by Claude Code at the end of each working session: date · what shipped · what slipped · decisions made.*
 
+- **2026-06-24 (merge day + replan):** Return sprint had stalled — merge day (6/19) never ran, so master sat at the 6/12 state and June 21–22 enrichments were never built. Caught up: **merged all 6 branches + the not-found PR into master in dependency order, zero conflicts** (cherry-picked photo/analytics commits resolved as identical content), **79 tests green, build clean** — local only, NOT pushed (deploy is founder's call). Wikidata import re-run fresh: 342 clubs (21 EPL / 33 MLS / 288 nations), stale 6/12 CSVs removed. Verified prod truth before acting: 4 profiles, 3 waitlist, 5 catalog kits, `require_invite_code=true`, 0 codes — registration correctly closed, nothing broken. **Decision: beta slipped 6/26 → 6/29** (founder: no confirmed testers yet, and the metadata layer the beta is meant to test isn't built; launch 7/20 untouched per risk #1). **Still genuinely unbuilt (not just unmerged):** expanded metadata fields (condition scale, match-worn/signed/player-issue, acquisition price/date) → 6/25 build; pending-kit rendering only done in CollectionDetail (dashboard stats count pending kits as blank-team rows — doesn't crash) → 6/25 cleanup; guided onboarding + bulk-at-signup + activation funnel dashboard + empty-state sweep → deferred/early-beta. **Founder actions queued:** paste `catalog_first_not_found.sql` + `all_kits_public_default_false.sql` + reviewed clubs SQL; set `VITE_SENTRY_DSN`; approve deploy; decide founder-status + creator-leak posture.
 - **2026-06-10:** Plan created. Sprint 0 security items begin tonight.
 - **2026-06-10 (waitlist):** Waitlist e2e verified against prod (test signup → confirmation email received). Shipped: send-failure bug fix in api/waitlist.js; `waitlist_signups` table migration (insert-only RLS, admin-read) capturing email/first_name/interest for June 24 beta targeting; beta-invite tease added to confirmation email. Decisions: one waitlist for both beta and launch — no separate beta funnel; invite codes (June 12) handle conversion. Launch-post drafts delivered for founder edit. Migration applied to prod + deployed via push; verified live end-to-end (test row + first real signup captured with interest segment).
 - **2026-06-12 (not-found path, latest):** The June 20–21 catalog-first back half built as PR branch `feature/catalog-first-not-found` (TDD, 68 tests green; cherry-picked photo+analytics commits as dependencies — identical hunks merge cleanly with those PRs). Contents: `submit_uncataloged_kit` + `approve_submission_link` RPCs (latter replaces the broken `approve_jersey_submission`, handles old-flow submissions, flags duplicates), QuickAddKit slim wizard (team/season/type + optional photo + extras expander), CollectionDetail pending-badge rendering via `kitIdentity()`, AdminPanel approve paths moved to the RPC. **Merge order note for June 19: merge the 5 batch PRs first, then this one; paste `catalog_first_not_found.sql` when merging this.** The return-sprint build load (risk #1) is now mostly review+QA. Decisions pulled forward per founder: merge day can happen morning of 6/13 (Sentry live during camping); founding-collector status + creator-leak posture due before departure.

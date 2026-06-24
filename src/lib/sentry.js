@@ -20,3 +20,24 @@ export function captureError(error, context) {
   if (!dsn) return
   Sentry.captureException(error, context ? { extra: context } : undefined)
 }
+
+// True when VITE_SENTRY_DSN was present at build time (baked into the bundle).
+export function isSentryEnabled() {
+  return Boolean(dsn)
+}
+
+// Diagnostic for the temp admin test button. Returns whether the DSN is in the
+// build and whether the event flushed to Sentry's transport.
+export async function sendTestError() {
+  if (!dsn) return { enabled: false, flushed: false }
+  Sentry.captureException(new Error(`Sentry test error (admin panel) — ${new Date().toISOString()}`), {
+    extra: { source: 'admin-test-button' },
+  })
+  let flushed = false
+  try {
+    flushed = await Sentry.flush(3000)
+  } catch {
+    flushed = false
+  }
+  return { enabled: true, flushed }
+}

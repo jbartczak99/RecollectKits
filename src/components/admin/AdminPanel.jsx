@@ -22,7 +22,7 @@ import WikidataPlayerPreview from './WikidataPlayerPreview'
 import PartnerApplications from './PartnerApplications'
 import AdminDashboardInsights from './AdminDashboardInsights'
 import WaitlistView from './WaitlistView'
-import { captureError } from '../../lib/sentry' // TEMP: remove with the Sentry test button
+import { sendTestError } from '../../lib/sentry' // TEMP: remove with the Sentry test button
 import { searchPlayer, fetchPlayerDetails, mapToPlayerRecord } from '../../utils/wikidata'
 import AdminEmailTemplates from './AdminEmailTemplates'
 import './AdminPanel.css'
@@ -1424,9 +1424,15 @@ export default function AdminPanel() {
     // TEMP — Sentry verification. Remove once a test event is confirmed in Sentry.
     {
       label: '🧪 Send Sentry test error',
-      action: () => {
-        captureError(new Error(`Sentry test error (admin panel) — ${new Date().toISOString()}`), { source: 'admin-test-button' })
-        alert('Test error sent. Check your Sentry dashboard — it should appear within a few seconds.')
+      action: async () => {
+        const r = await sendTestError()
+        if (!r.enabled) {
+          alert('❌ DSN NOT in this build.\n\nVITE_SENTRY_DSN did not reach the deployment. Check: (1) the env var name is exactly VITE_SENTRY_DSN, (2) it is set for the Production environment, (3) you redeployed AFTER adding it.')
+        } else if (r.flushed) {
+          alert('✅ DSN present and event flushed to Sentry.\n\nIf it does NOT appear in the dashboard within ~30s, the DSN value points at the wrong/disabled project.')
+        } else {
+          alert('⚠️ DSN present but the event did not flush.\n\nLikely a network block reaching Sentry. Try another network, or check the DSN value.')
+        }
       },
     },
     { label: 'Add kit to database', href: '/jerseys' },

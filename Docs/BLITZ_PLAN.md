@@ -82,7 +82,8 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 > - **Mon 6/29:** 🚀 codes out.
 >
 > **Beta-prep build queue (founder requests 6/24):**
-> - [ ] **Metadata layer** (the slipped 6/22 item, beta-relevant): condition scale, match-worn/signed/player-issue flags, acquisition price/date. *Awaiting founder calls: scale values, which flags, price-private?*
+> - [x] **Metadata layer** (the slipped 6/22 item) — ✅ done 6/24 (`696cdd6`): condition scale (BNWT/new-no-tags/excellent/good/worn), match-worn/signed/player-issue flags, acquisition price (private) + date; in the edit modal, badges on the owner collection view. **Founder: paste `add_kit_metadata.sql`.** *(Fast-follow: show provenance badges on public profiles too — owner-only for v0.)*
+> - [ ] **Bug — add-to-named-collection broken:** `AddJerseyToCollectionModal` inserts/queries a nonexistent `user_jerseys.collection_id` (collections link via the `collection_jerseys` junction). Flagged 6/12, still unfixed. A tester adding a kit to a custom collection hits it. **Must fix before beta** — separate from metadata.
 > - [x] **Admin waitlist view** — ✅ done 6/24 (`28659bf`): Admin panel → Quick actions → "View waitlist signups" shows total / this-week / interest breakdown + recent-signups table, reading `waitlist_signups` directly. No Resend login. *(Optional later: Resend delivery/open metrics via a server endpoint.)*
 > - [ ] **Club resolver at admin approval** — "Find on Wikidata" search when cataloging a kit whose club isn't in `clubs`: pick the match → insert the canonical club (reuse import logic, ON CONFLICT DO NOTHING) → set the kit's `club_id`; manual-entry fallback for clubs Wikidata lacks. Also processes the `club_suggestions` queue. Most useful once testers are submitting → target beta-week. *(Decided 6/24: approval-time Wikidata search is the right pattern.)*
 

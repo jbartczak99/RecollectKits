@@ -31,18 +31,27 @@ const USER_AGENT = 'RecollectKitsImport/1.0 (https://recollectkits.com)'
 // Collectors own non-qualified nations' kits anyway; the June 19 review
 // pass trims anything odd.
 const SOURCES = {
-  epl: { kind: 'league', qid: 'Q9448', league: 'Premier League' },
-  mls: { kind: 'league', qid: 'Q18543', league: 'MLS' },
+  // countries: gate league results to the league's own nations — UK Q145 for
+  // the PL (drops a mis-tagged Romanian club); US Q30 + Canada Q16 for MLS.
+  epl: { kind: 'league', qid: 'Q9448', league: 'Premier League', countries: ['Q145'] },
+  mls: { kind: 'league', qid: 'Q18543', league: 'MLS', countries: ['Q30', 'Q16'] },
   worldcup: { kind: 'nations', league: 'International' },
 }
 
-function leagueQuery(leagueQid) {
+function leagueQuery(leagueQid, countryQids = []) {
+  // Optional country gate: P118 (league) sometimes carries stale/wrong links
+  // (a Romanian club tagged "Premier League"); restricting to the league's
+  // own countries drops those false positives.
+  const countryGate = countryQids.length
+    ? `?club wdt:P17 ?gateCountry . FILTER(?gateCountry IN (${countryQids.map((q) => 'wd:' + q).join(', ')}))`
+    : ''
   return `
 SELECT ?club ?clubLabel ?shortName ?countryLabel ?cityLabel ?stadiumLabel ?inception ?coords
   (GROUP_CONCAT(DISTINCT ?alias; separator="|") AS ?aliases)
 WHERE {
   ?club wdt:P118 wd:${leagueQid} .
   ?club wdt:P31/wdt:P279* wd:Q476028 .   # association football club — P118 alone also matches players
+  ${countryGate}
   OPTIONAL { ?club wdt:P1813 ?shortName . FILTER(LANG(?shortName) = "en") }
   OPTIONAL { ?club wdt:P17 ?country . }
   OPTIONAL { ?club wdt:P159 ?city . }
@@ -55,17 +64,30 @@ GROUP BY ?club ?clubLabel ?shortName ?countryLabel ?cityLabel ?stadiumLabel ?inc
 }
 
 function nationalTeamsQuery() {
+  // FIFA national teams (men's + women's), filtering out the CONIFA/regional
+  // noise that shares the men's-national-team class. Signals stack:
+  //   * Q135408445 = men's national team (current class, e.g. Brazil);
+  //     Q6979593 = older/broader class still carrying women's teams.
+  //   * P1532 (country for sport) present — FIFA-recognized sporting nations
+  //     carry it; autonomous-region teams (Andalusia, Galicia, Padania…) and
+  //     non-FIFA micro-islands (Kiribati, Falklands…) mostly don't.
+  //   * NOT member (P463) of CONIFA (Q15999031) or N.F.-Board (Q270403) — the
+  //     non-FIFA federations Catalonia/Silesia/Basque/West Papua belong to.
+  //   * ≥10 sitelinks, not dissolved.
+  // Olympic (U-23) sides slip the class net by name → dropped by the JS
+  // youth/olympic filter post-fetch.
   return `
 SELECT ?club ?clubLabel ?shortName ?countryLabel ?inception
   (GROUP_CONCAT(DISTINCT ?alias; separator="|") AS ?aliases)
 WHERE {
-  # Q135408445 = men's national football team (current class, e.g. Brazil);
-  # Q6979593 = older/broader class still carrying women's national teams.
   VALUES ?teamClass { wd:Q135408445 wd:Q6979593 }
   ?club wdt:P31 ?teamClass .
   ?club wdt:P17 ?country .
+  ?club wdt:P1532 ?countryForSport .
   ?club wikibase:sitelinks ?links . FILTER(?links >= 10)
   FILTER NOT EXISTS { ?club wdt:P576 ?dissolved . }
+  FILTER NOT EXISTS { ?club wdt:P463 wd:Q15999031 . }
+  FILTER NOT EXISTS { ?club wdt:P463 wd:Q270403 . }
   OPTIONAL { ?club wdt:P1813 ?shortName . FILTER(LANG(?shortName) = "en") }
   OPTIONAL { ?club wdt:P571 ?inception . }
   OPTIONAL { ?club skos:altLabel ?alias . FILTER(LANG(?alias) = "en") }
@@ -117,11 +139,40 @@ export function buildClubRecord(binding, primaryLeague) {
   }
 }
 
-// Youth sides (U-17/U-20/U-23...) are typed as national teams on Wikidata
-// but are catalog noise. Senior women's teams stay — women's kits are in
-// scope (competition_gender is canonical on public_jerseys).
+// Youth sides (U-17/U-20/U-23...) and Olympic teams (U-23 in all but name)
+// are typed as national teams on Wikidata but are catalog noise. Senior
+// women's teams stay — women's kits are in scope (competition_gender is
+// canonical on public_jerseys).
 export function isYouthTeam(name) {
-  return /\bunder[ -]?\d+\b|\bu-?\d+\b|\byouth\b/i.test(name || '')
+  return /\bunder[ -]?\d+\b|\bu-?\d+\b|\byouth\b|\bolympic\b/i.test(name || '')
+}
+
+// Non-FIFA entities that survive the structural filters because Wikidata
+// models them identically to legitimate non-sovereign FIFA members (P1532
+// set, P17 = a FIFA country, not CONIFA-tagged). Curated from the 2026-06-24
+// review. Kept on purpose: cult-favorite real island associations collectors
+// chase (Greenland, Zanzibar, Isle of Man, Faroe Islands).
+const NON_FIFA_NAMES = new Set([
+  'catalonia national football team',
+  'silesia national football team',
+  'basque country regional football team',
+  'aragon national football team',
+  'asturias autonomous football team',
+  'cantabria autonomous football team',
+  'occitania national football team',
+  'corsica national football team',
+  'shetland association football team',
+  'sark association football team',
+  'alderney official association football team',
+  'sealand national football team',
+  'chechnya national football team',
+  'big kurdistan national football team',
+  'bohemia and moravia national football team',
+  "east germany women's national football team",
+])
+
+export function isExcludedNation(name) {
+  return isYouthTeam(name) || NON_FIFA_NAMES.has((name || '').trim().toLowerCase())
 }
 
 export function mergeByWikidataId(records) {
@@ -187,13 +238,13 @@ async function runSparql(query) {
 
 async function importSource(key) {
   const src = SOURCES[key]
-  const query = src.kind === 'league' ? leagueQuery(src.qid) : nationalTeamsQuery()
+  const query = src.kind === 'league' ? leagueQuery(src.qid, src.countries) : nationalTeamsQuery()
   const bindings = await runSparql(query)
   let records = mergeByWikidataId(bindings.map((b) => buildClubRecord(b, src.league)))
   if (src.kind === 'nations') {
     const before = records.length
-    records = records.filter((r) => !isYouthTeam(r.name))
-    console.log(`[${key}] filtered ${before - records.length} youth teams`)
+    records = records.filter((r) => !isExcludedNation(r.name))
+    console.log(`[${key}] filtered ${before - records.length} youth/olympic/non-FIFA teams`)
   }
   console.log(`[${key}] ${records.length} teams fetched`)
   if (key === 'worldcup' && records.length < 48) {

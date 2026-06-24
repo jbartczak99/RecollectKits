@@ -71,10 +71,34 @@ describe('isYouthTeam', () => {
     expect(isYouthTeam('Japan national under-20 football team')).toBe(true)
   })
 
+  it('flags Olympic (U-23) sides', async () => {
+    const { isYouthTeam } = await import('./import-clubs-wikidata.mjs')
+    expect(isYouthTeam('Portugal Olympic football team')).toBe(true)
+    expect(isYouthTeam('Brazil Olympic football team')).toBe(true)
+  })
+
   it('keeps senior men and women teams', async () => {
     const { isYouthTeam } = await import('./import-clubs-wikidata.mjs')
     expect(isYouthTeam('Brazil national football team')).toBe(false)
     expect(isYouthTeam("Zambia women's national association football team")).toBe(false)
+  })
+})
+
+describe('isExcludedNation', () => {
+  it('excludes youth/olympic and curated non-FIFA regionals', async () => {
+    const { isExcludedNation } = await import('./import-clubs-wikidata.mjs')
+    expect(isExcludedNation('Mexico U20')).toBe(true)
+    expect(isExcludedNation('Portugal Olympic football team')).toBe(true)
+    expect(isExcludedNation('Catalonia national football team')).toBe(true)
+    expect(isExcludedNation('Sealand national football team')).toBe(true)
+  })
+
+  it('keeps FIFA members and cult island associations', async () => {
+    const { isExcludedNation } = await import('./import-clubs-wikidata.mjs')
+    expect(isExcludedNation('Brazil men’s national football team')).toBe(false)
+    expect(isExcludedNation('Greenland national football team')).toBe(false)
+    expect(isExcludedNation('Faroe Islands men’s national football team')).toBe(false)
+    expect(isExcludedNation("England women's national football team")).toBe(false)
   })
 })
 

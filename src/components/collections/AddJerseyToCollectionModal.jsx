@@ -69,38 +69,62 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
     setError(null)
 
     try {
-      // Check if jersey already exists in this collection
-      const { data: existing } = await supabase
+      // Collection membership lives in the collection_jerseys junction, not on
+      // user_jerseys. Find-or-create the user's ownership row, then link it.
+      const { data: existingUserJersey } = await supabase
         .from('user_jerseys')
         .select('id')
-        .eq('collection_id', collection.id)
+        .eq('user_id', user.id)
         .eq('public_jersey_id', selectedJersey.id)
-        .single()
+        .maybeSingle()
 
-      if (existing) {
+      let userJerseyId
+      let createdNew = false
+      if (existingUserJersey) {
+        userJerseyId = existingUserJersey.id
+      } else {
+        const { data: newUserJersey, error: insertError } = await supabase
+          .from('user_jerseys')
+          .insert({
+            user_id: user.id,
+            public_jersey_id: selectedJersey.id,
+            jersey_fit: jerseyDetails.jersey_fit || 'mens',
+            size: jerseyDetails.size || null,
+            condition: jerseyDetails.condition || null,
+            notes: jerseyDetails.notes || null,
+            acquired_from: jerseyDetails.acquired_from || null,
+            details_completed: true,
+            created_at: new Date().toISOString()
+          })
+          .select('id')
+          .single()
+        if (insertError) throw insertError
+        userJerseyId = newUserJersey.id
+        createdNew = true
+      }
+
+      // Already linked to this collection?
+      const { data: existingLink } = await supabase
+        .from('collection_jerseys')
+        .select('id')
+        .eq('collection_id', collection.id)
+        .eq('user_jersey_id', userJerseyId)
+        .maybeSingle()
+
+      if (existingLink) {
         setError('This jersey is already in this collection')
         setSaving(false)
         return
       }
 
-      // Insert into user_jerseys
-      const { data, error: insertError } = await supabase
-        .from('user_jerseys')
+      const { error: linkError } = await supabase
+        .from('collection_jerseys')
         .insert({
           collection_id: collection.id,
-          user_id: user.id,
-          public_jersey_id: selectedJersey.id,
-          jersey_fit: jerseyDetails.jersey_fit || 'mens',
-          size: jerseyDetails.size || null,
-          condition: jerseyDetails.condition,
-          notes: jerseyDetails.notes || null,
-          acquired_from: jerseyDetails.acquired_from || null,
+          user_jersey_id: userJerseyId,
           created_at: new Date().toISOString()
         })
-        .select()
-        .single()
-
-      if (insertError) throw insertError
+      if (linkError) throw linkError
 
       // Reset form
       setSelectedJersey(null)
@@ -113,11 +137,11 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
         acquired_from: ''
       })
 
-      // Check for kit milestones
-      checkAndNotifyMilestone(user.id)
+      // Milestone count only changes when a new kit was actually added
+      if (createdNew) checkAndNotifyMilestone(user.id)
 
       // Call success callback
-      onSuccess?.(data)
+      onSuccess?.({ id: userJerseyId })
 
       // Show success message briefly then close
       setTimeout(() => {

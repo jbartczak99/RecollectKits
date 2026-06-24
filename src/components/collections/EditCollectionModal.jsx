@@ -72,15 +72,18 @@ export default function EditCollectionModal({ isOpen, onClose, collection, onSuc
     setError(null)
 
     try {
-      // First delete all user_jerseys in this collection
-      const { error: deleteJerseysError } = await supabase
-        .from('user_jerseys')
+      // Remove this collection's membership links only — the user KEEPS their
+      // kits (they live in user_jerseys; collection_jerseys is just the
+      // junction). The old code deleted from user_jerseys by a nonexistent
+      // collection_id, which would have destroyed owned kits.
+      const { error: unlinkError } = await supabase
+        .from('collection_jerseys')
         .delete()
         .eq('collection_id', collection.id)
 
-      if (deleteJerseysError) throw deleteJerseysError
+      if (unlinkError) throw unlinkError
 
-      // Then delete the collection
+      // Then delete the collection itself
       const { error: deleteCollectionError } = await supabase
         .from('collections')
         .delete()

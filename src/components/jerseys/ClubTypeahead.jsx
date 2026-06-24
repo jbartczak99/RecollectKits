@@ -53,11 +53,11 @@ const selectedCardStyle = {
   borderRadius: '8px',
 }
 
-export default function ClubTypeahead({ value, clubName, onSelect }) {
+export default function ClubTypeahead({ value, clubName, onSelect, initialQuery = '' }) {
   const { user } = useAuth()
   const [clubs, setClubs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
   const [focused, setFocused] = useState(false)
   const [mode, setMode] = useState('search') // 'search' | 'suggest' | 'submittedSuggestion'
   const [suggestion, setSuggestion] = useState({ name: '', country: '', league: '' })

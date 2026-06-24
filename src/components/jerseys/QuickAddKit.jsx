@@ -28,6 +28,9 @@ const fieldStyle = { marginBottom: '14px' }
 export default function QuickAddKit({ prefillTeam = '', onAdded, onCancel }) {
   const { user } = useAuth()
   const [teamName, setTeamName] = useState(prefillTeam)
+  // clubs.id when picked from the typeahead; null for free-typed suggestions.
+  // ClubTypeahead needs `value` set to render its selected chip.
+  const [clubId, setClubId] = useState(null)
   const [season, setSeason] = useState('')
   const [jerseyType, setJerseyType] = useState('home')
   const [kitType, setKitType] = useState('club')
@@ -140,9 +143,10 @@ export default function QuickAddKit({ prefillTeam = '', onAdded, onCancel }) {
         <div style={fieldStyle}>
           <label style={labelStyle}>Club or national team *</label>
           <ClubTypeahead
-            value={null}
+            value={clubId}
             clubName={teamName}
-            onSelect={({ name }) => setTeamName(name || '')}
+            initialQuery={prefillTeam}
+            onSelect={({ id, name }) => { setClubId(id); setTeamName(name || '') }}
           />
         </div>
 

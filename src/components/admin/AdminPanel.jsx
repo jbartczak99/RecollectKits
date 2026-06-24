@@ -324,70 +324,26 @@ export default function AdminPanel() {
     setProcessingAction(true)
     try {
       if (modalAction === 'approve') {
-        // Copy to public_jerseys table FIRST (before marking as approved)
-        const jerseyData = {
-          team_name: selectedSubmission.team_name,
-          season: selectedSubmission.season,
-          jersey_type: selectedSubmission.jersey_type,
-          manufacturer: selectedSubmission.brand,
-          league: selectedSubmission.league,
-          kit_type: selectedSubmission.kit_type,
-          front_image_url: selectedSubmission.front_image_url,
-          back_image_url: selectedSubmission.back_image_url,
-          primary_color: selectedSubmission.primary_color,
-          secondary_color: selectedSubmission.secondary_color,
-          description: selectedSubmission.description,
-          created_by: selectedSubmission.submitted_by,
-          player_name: selectedSubmission.player_name || null,
-          player_number: selectedSubmission.jersey_number || null,
-          competition_gender: selectedSubmission.competition_gender || null,
-          main_sponsor: selectedSubmission.main_sponsor || null,
-          additional_sponsors: selectedSubmission.additional_sponsors
-            ? (Array.isArray(selectedSubmission.additional_sponsors)
-                ? selectedSubmission.additional_sponsors
-                : selectedSubmission.additional_sponsors.split(',').map(s => s.trim()).filter(Boolean))
-            : null,
-        }
-
         // Auto-link player if submission has a player name
+        let playerId = null
         if (selectedSubmission.player_name && selectedSubmission.player_name.trim()) {
-          const playerId = await findOrCreatePlayer(selectedSubmission.player_name)
-          if (playerId) {
-            jerseyData.player_id = playerId
-          }
+          playerId = await findOrCreatePlayer(selectedSubmission.player_name)
         }
 
-        const { data: newJersey, error: insertError } = await supabase
-          .from('public_jerseys')
-          .insert(jerseyData)
-          .select()
-          .single()
-
-        if (insertError) throw insertError
-
-        // Only mark as approved AFTER successful insert to public_jerseys
-        const { error: updateError } = await supabase
-          .from('jersey_submissions')
-          .update({
-            status: 'approved',
-            admin_notes: adminNotes || null,
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: user.id
+        // Atomic approval: creates the catalog row, links the submitter's
+        // pending collection row (or inserts one for old-flow submissions),
+        // marks approved. Replaces the old three-step inline flow.
+        const { data: approval, error: approveError } = await supabase
+          .rpc('approve_submission_link', {
+            p_submission_id: selectedSubmission.id,
+            p_target_public_jersey_id: null,
+            p_player_id: playerId,
+            p_admin_notes: adminNotes || null,
           })
-          .eq('id', selectedSubmission.id)
 
-        if (updateError) throw updateError
-
-        // Add to submitter's "All Kits" collection with details_completed: false
-        if (newJersey && selectedSubmission.submitted_by) {
-          await supabase
-            .from('user_jerseys')
-            .insert({
-              user_id: selectedSubmission.submitted_by,
-              public_jersey_id: newJersey.id,
-              details_completed: false,
-              created_at: new Date().toISOString()
-            })
+        if (approveError) throw approveError
+        if (approval?.status === 'duplicate') {
+          alert('Submitter already has this kit cataloged — submission marked as duplicate for manual merge.')
         }
 
       } else if (modalAction === 'reject') {
@@ -601,14 +557,12 @@ export default function AdminPanel() {
 
       setIsSaving(true)
       try {
-        // First save the changes
+        // Save the edits to the submission first (status stays pending —
+        // the approval RPC requires it and reads these edited values)
         const { error: updateError } = await supabase
           .from('jersey_submissions')
           .update({
             ...editedData,
-            status: 'approved',
-            reviewed_at: new Date().toISOString(),
-            reviewed_by: user.id,
             updated_at: new Date().toISOString(),
             updated_by: user.id
           })
@@ -616,59 +570,27 @@ export default function AdminPanel() {
 
         if (updateError) throw updateError
 
-        // Then copy to public_jerseys table with edited data
-        const jerseyData = {
-          team_name: editedData.team_name,
-          season: editedData.season,
-          jersey_type: editedData.jersey_type,
-          manufacturer: editedData.brand,
-          league: editedData.league,
-          kit_type: editedData.kit_type || submission.kit_type,
-          front_image_url: submission.front_image_url,
-          back_image_url: submission.back_image_url,
-          primary_color: editedData.primary_color,
-          secondary_color: editedData.secondary_color,
-          description: editedData.description,
-          created_by: submission.submitted_by,
-          player_name: editedData.player_name || null,
-          player_number: editedData.jersey_number || null,
-          competition_gender: submission.competition_gender || null,
-          main_sponsor: editedData.main_sponsor || null,
-          additional_sponsors: editedData.additional_sponsors
-            ? (Array.isArray(editedData.additional_sponsors)
-                ? editedData.additional_sponsors
-                : editedData.additional_sponsors.split(',').map(s => s.trim()).filter(Boolean))
-            : null,
-        }
-
         // Auto-link player if submission has a player name
+        let playerId = null
         const playerName = editedData.player_name || submission.player_name
         if (playerName && playerName.trim()) {
-          const playerId = await findOrCreatePlayer(playerName)
-          if (playerId) {
-            jerseyData.player_id = playerId
-          }
+          playerId = await findOrCreatePlayer(playerName)
         }
 
-        const { data: newJersey, error: insertError } = await supabase
-          .from('public_jerseys')
-          .insert(jerseyData)
-          .select()
-          .single()
+        // Atomic approval from the (now edited) submission: creates the
+        // catalog row, links the submitter's pending collection row (or
+        // inserts one for old-flow submissions), marks approved.
+        const { data: approval, error: approveError } = await supabase
+          .rpc('approve_submission_link', {
+            p_submission_id: submission.id,
+            p_target_public_jersey_id: null,
+            p_player_id: playerId,
+            p_admin_notes: null,
+          })
 
-        if (insertError) throw insertError
-
-        // Add to submitter's "All Kits" collection with details_completed: false
-        // User will need to fill in size, condition, etc.
-        if (newJersey && submission.submitted_by) {
-          await supabase
-            .from('user_jerseys')
-            .insert({
-              user_id: submission.submitted_by,
-              public_jersey_id: newJersey.id,
-              details_completed: false,
-              created_at: new Date().toISOString()
-            })
+        if (approveError) throw approveError
+        if (approval?.status === 'duplicate') {
+          alert('Submitter already has this kit cataloged — submission marked as duplicate for manual merge.')
         }
 
         // Close modal first

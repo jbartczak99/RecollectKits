@@ -82,7 +82,7 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 > - **Mon 6/29:** 🚀 codes out.
 
 ### Fri June 19 — merge day → **done June 24**
-- [x] Review and land the autonomous batch PRs (invite codes, Sentry, analytics, privacy migration, photo utils) *(merged to master 6/24, verified 79 tests + build; awaiting founder deploy + migration pastes)*
+- [x] Review and land the autonomous batch PRs (invite codes, Sentry, analytics, privacy migration, photo utils) *(merged to master 6/24, 79 tests + build green; 3 migrations + clubs import pasted to prod (308 clubs, RPCs live); **deployed to prod 6/24 — `da16c63`**. Pending founder: Sentry DSN, post-deploy smoke test)*
 - [ ] Run the Wikidata import against prod; review pass on aliases/duplicates *(import re-run + cleaned 6/24 — founder flagged data quality; tightened to drop non-FIFA noise: **304 clubs** (20 EPL / 33 MLS / 251 nations incl. women's + cult island associations). `database/data/clubs_import_*_20260624.sql`; **founder: review CSVs then paste 3 files**)*
 
 ### Sat June 20 (big block) — catalog-first build, continued

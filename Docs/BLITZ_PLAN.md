@@ -83,7 +83,7 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 
 ### Fri June 19 — merge day → **done June 24**
 - [x] Review and land the autonomous batch PRs (invite codes, Sentry, analytics, privacy migration, photo utils) *(merged to master 6/24, verified 79 tests + build; awaiting founder deploy + migration pastes)*
-- [ ] Run the Wikidata import against prod; review pass on aliases/duplicates *(import re-run fresh 6/24 — `database/data/clubs_import_*_20260624.sql`, 342 clubs; **founder: review CSVs then paste**)*
+- [ ] Run the Wikidata import against prod; review pass on aliases/duplicates *(import re-run + cleaned 6/24 — founder flagged data quality; tightened to drop non-FIFA noise: **304 clubs** (20 EPL / 33 MLS / 251 nations incl. women's + cult island associations). `database/data/clubs_import_*_20260624.sql`; **founder: review CSVs then paste 3 files**)*
 
 ### Sat June 20 (big block) — catalog-first build, continued
 - [ ] Finish the not-found path (started June 13 if the stretch goal landed): wizard writes `user_jerseys` immediately (uncataloged) + queues `jersey_submissions` *(BUILT 6/12 as PR branch `feature/catalog-first-not-found` — June 20 becomes review/merge/regression, not build)*

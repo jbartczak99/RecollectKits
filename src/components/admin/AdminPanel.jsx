@@ -21,6 +21,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx'
 import WikidataPlayerPreview from './WikidataPlayerPreview'
 import PartnerApplications from './PartnerApplications'
 import AdminDashboardInsights from './AdminDashboardInsights'
+import WaitlistView from './WaitlistView'
 import { searchPlayer, fetchPlayerDetails, mapToPlayerRecord } from '../../utils/wikidata'
 import AdminEmailTemplates from './AdminEmailTemplates'
 import './AdminPanel.css'
@@ -1418,6 +1419,7 @@ export default function AdminPanel() {
   ]
 
   const quickActions = [
+    { label: 'View waitlist signups', action: () => setExpandedQueue(expandedQueue === 'waitlist' ? null : 'waitlist') },
     { label: 'Add kit to database', href: '/jerseys' },
     { label: 'Bulk import players', action: () => setExpandedQueue(expandedQueue === 'players' ? null : 'players') },
     { label: 'Add team / season', href: '/jerseys' },
@@ -1507,7 +1509,6 @@ export default function AdminPanel() {
                       justifyContent: 'space-between',
                       width: '100%',
                       padding: '14px 0',
-                      borderBottom: '1px solid #f3f4f6',
                       background: 'none',
                       border: 'none',
                       borderBottom: '1px solid #f3f4f6',
@@ -1554,7 +1555,6 @@ export default function AdminPanel() {
                         gap: '10px',
                         width: '100%',
                         padding: '14px 16px',
-                        borderBottom: '1px solid #f3f4f6',
                         background: 'none',
                         border: 'none',
                         borderBottom: '1px solid #f3f4f6',
@@ -1596,6 +1596,11 @@ export default function AdminPanel() {
             ) : (
               pendingAccounts.map(renderAccountRow)
             )}
+          </div>
+        )}
+        {expandedQueue === 'waitlist' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '24px' }}>
+            <WaitlistView />
           </div>
         )}
         {expandedQueue === 'partners' && (

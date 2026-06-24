@@ -6,6 +6,7 @@ import { submitUncatalogedKit } from '../../lib/uncataloged.js'
 import { compressImage } from '../../lib/photoUtils'
 import { trackKitAdded } from '../../lib/analytics'
 import ClubTypeahead from './ClubTypeahead'
+import SeasonTypeahead from './SeasonTypeahead'
 
 // Slim not-found wizard (Docs/CATALOG_FIRST_DESIGN.md decision 5).
 // Required: team, season, kit type. Photo encouraged, everything else
@@ -146,21 +147,20 @@ export default function QuickAddKit({ prefillTeam = '', onAdded, onCancel }) {
             value={clubId}
             clubName={teamName}
             initialQuery={prefillTeam}
-            onSelect={({ id, name }) => { setClubId(id); setTeamName(name || '') }}
+            onSelect={({ id, name, primary_league }) => {
+              setClubId(id)
+              setTeamName(name || '')
+              // A picked club already tells us club vs. international —
+              // infer kitType and hide the toggle (see below).
+              if (id) setKitType(primary_league === 'International' ? 'international' : 'club')
+            }}
           />
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <div style={{ ...fieldStyle, flex: 1 }}>
             <label style={labelStyle}>Season *</label>
-            <input
-              type="text"
-              value={season}
-              onChange={(e) => setSeason(e.target.value)}
-              placeholder="e.g. 2024/25 or 2014"
-              required
-              style={inputStyle}
-            />
+            <SeasonTypeahead value={season} onChange={setSeason} />
           </div>
           <div style={{ ...fieldStyle, flex: 1 }}>
             <label style={labelStyle}>Kit *</label>
@@ -170,27 +170,31 @@ export default function QuickAddKit({ prefillTeam = '', onAdded, onCancel }) {
           </div>
         </div>
 
-        <div style={fieldStyle}>
-          <label style={labelStyle}>Club or international?</label>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[['club', 'Club'], ['international', 'International']].map(([v, label]) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setKitType(v)}
-                style={{
-                  flex: 1, padding: '8px', borderRadius: '8px', fontSize: '13px',
-                  fontWeight: 500, cursor: 'pointer',
-                  border: kitType === v ? '1px solid #16a34a' : '1px solid #d1d5db',
-                  backgroundColor: kitType === v ? '#f0fdf4' : 'white',
-                  color: kitType === v ? '#16a34a' : '#6b7280',
-                }}
-              >
-                {label}
-              </button>
-            ))}
+        {/* Club-vs-international is only asked when the team was free-typed
+            (a suggestion); a picked club already determines it. */}
+        {!clubId && (
+          <div style={fieldStyle}>
+            <label style={labelStyle}>Club or international?</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[['club', 'Club'], ['international', 'International']].map(([v, label]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setKitType(v)}
+                  style={{
+                    flex: 1, padding: '8px', borderRadius: '8px', fontSize: '13px',
+                    fontWeight: 500, cursor: 'pointer',
+                    border: kitType === v ? '1px solid #16a34a' : '1px solid #d1d5db',
+                    backgroundColor: kitType === v ? '#f0fdf4' : 'white',
+                    color: kitType === v ? '#16a34a' : '#6b7280',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div style={fieldStyle}>
           <label style={labelStyle}>Photo (optional, but it helps a lot)</label>

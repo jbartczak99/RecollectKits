@@ -114,13 +114,13 @@ export default function ClubTypeahead({ value, clubName, onSelect, initialQuery 
   }, [value, clubName, clubs])
 
   const handlePick = (club) => {
-    onSelect({ id: club.id, name: club.name, source: 'clubs' })
+    onSelect({ id: club.id, name: club.name, primary_league: club.primary_league, source: 'clubs' })
     setQuery('')
     setFocused(false)
   }
 
   const handleClear = () => {
-    onSelect({ id: null, name: '', source: null })
+    onSelect({ id: null, name: '', primary_league: null, source: null })
     setQuery('')
     setFocused(true)
   }

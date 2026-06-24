@@ -11,6 +11,7 @@ import {
   TableCellsIcon
 } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
+import { compressImage } from '../../lib/photoUtils'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import countries from '../../data/countries'
 import ClubTypeahead from './ClubTypeahead'
@@ -897,7 +898,10 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
     if (!imageFile) return null
 
     try {
-      const fileExt = imageFile.name.split('.').pop()
+      // Strip EXIF (GPS, device info) and cap dimensions before anything
+      // leaves the browser. Falls back to the original file on failure.
+      const processed = await compressImage(imageFile)
+      const fileExt = processed.name.split('.').pop()
       const timestamp = new Date().getTime()
       // Path: ${user.id}/kit-submissions/... — keeps the first folder
       // segment equal to auth.uid() so the storage DELETE policy
@@ -908,7 +912,7 @@ const KitReviewForm = ({ formData, handleFormChange, nextStep, prevStep, current
 
       const { data, error } = await supabase.storage
         .from('jersey-images')
-        .upload(filePath, imageFile)
+        .upload(filePath, processed)
 
       if (error) throw error
 

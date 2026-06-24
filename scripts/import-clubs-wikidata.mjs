@@ -209,7 +209,11 @@ export function buildClubsInsertSql(records) {
   return (
     'INSERT INTO clubs (name, short_name, aliases, country, city, primary_league, founded_year, latitude, longitude, stadium_name, wikidata_id, source) VALUES\n' +
     rows.join(',\n') +
-    '\nON CONFLICT (wikidata_id) DO NOTHING;\n'
+    // Bare ON CONFLICT DO NOTHING (no target) skips rows colliding on ANY
+    // unique constraint — wikidata_id OR name — and inserts the rest. A
+    // targeted (wikidata_id) clause misses pre-existing rows that have the
+    // same name but no/other wikidata_id, aborting the whole atomic insert.
+    '\nON CONFLICT DO NOTHING;\n'
   )
 }
 

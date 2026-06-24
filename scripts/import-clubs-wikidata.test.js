@@ -113,10 +113,11 @@ describe('mergeByWikidataId', () => {
 })
 
 describe('buildClubsInsertSql', () => {
-  it('emits one INSERT with ON CONFLICT (wikidata_id) DO NOTHING', () => {
+  it('emits one INSERT with a target-less ON CONFLICT DO NOTHING (skips name OR wikidata_id dupes)', () => {
     const sql = buildClubsInsertSql([buildClubRecord(binding(), 'Premier League')])
     expect(sql).toContain('INSERT INTO clubs')
-    expect(sql).toContain('ON CONFLICT (wikidata_id) DO NOTHING')
+    expect(sql).toContain('ON CONFLICT DO NOTHING')
+    expect(sql).not.toContain('ON CONFLICT (wikidata_id)')
     expect(sql).toContain("'Q9617'")
   })
 

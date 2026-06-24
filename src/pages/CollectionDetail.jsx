@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { supabase } from '../lib/supabase'
 import { kitIdentity } from '../lib/uncataloged'
+import { conditionLabel } from '../lib/kitMetadata'
 import EditCollectionModal from '../components/collections/EditCollectionModal'
 import AddJerseyToCollectionModal from '../components/collections/AddJerseyToCollectionModal'
 import EditUserJerseyModal from '../components/collections/EditUserJerseyModal'
@@ -653,6 +654,18 @@ export default function CollectionDetail() {
                     )}
                     {jersey?.jersey_type && <span className="cd-pill cd-pill--blue">{jersey.jersey_type}</span>}
                     {jersey?.manufacturer && <span className="cd-pill cd-pill--gray">{jersey.manufacturer}</span>}
+                    {userJersey.match_worn && (
+                      <span className="cd-pill" style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>Match-worn</span>
+                    )}
+                    {userJersey.signed && (
+                      <span className="cd-pill" style={{ backgroundColor: '#ede9fe', color: '#5b21b6', border: '1px solid #ddd6fe' }}>Signed</span>
+                    )}
+                    {userJersey.player_issue && (
+                      <span className="cd-pill" style={{ backgroundColor: '#e0f2fe', color: '#075985', border: '1px solid #bae6fd' }}>Player-issue</span>
+                    )}
+                    {userJersey.condition && (
+                      <span className="cd-pill cd-pill--gray">{conditionLabel(userJersey.condition)}</span>
+                    )}
                   </div>
 
                   {isSystemCollection && userJersey.added_to_collection_at && (

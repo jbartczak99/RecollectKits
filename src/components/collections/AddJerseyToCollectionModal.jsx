@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { XMarkIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext.jsx'
 import { checkAndNotifyMilestone } from '../../lib/notifications'
+import { CONDITION_OPTIONS } from '../../lib/kitMetadata'
 
 export default function AddJerseyToCollectionModal({ isOpen, onClose, collection, onSuccess }) {
   const { user } = useAuth()
@@ -17,7 +18,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
   const [jerseyDetails, setJerseyDetails] = useState({
     jersey_fit: 'mens',
     size: '',
-    condition: 'new',
+    condition: '',
     notes: '',
     acquired_from: ''
   })
@@ -107,7 +108,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
       setJerseyDetails({
         jersey_fit: 'mens',
         size: '',
-        condition: 'new',
+        condition: '',
         notes: '',
         acquired_from: ''
       })
@@ -139,7 +140,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
       setJerseyDetails({
         jersey_fit: 'mens',
         size: '',
-        condition: 'new',
+        condition: '',
         notes: '',
         acquired_from: ''
       })
@@ -230,7 +231,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
                           {jersey.team_name}
                         </h3>
                         <p className="text-xs text-gray-600">
-                          {jersey.season} • {jersey.jersey_type}
+                          {jersey.season} â€¢ {jersey.jersey_type}
                         </p>
                         {jersey.player_name && (
                           <p className="text-xs text-gray-500 mt-1">{jersey.player_name}</p>
@@ -250,8 +251,8 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
                   {selectedJersey.team_name}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  {selectedJersey.season} • {selectedJersey.jersey_type}
-                  {selectedJersey.player_name && ` • ${selectedJersey.player_name}`}
+                  {selectedJersey.season} â€¢ {selectedJersey.jersey_type}
+                  {selectedJersey.player_name && ` â€¢ ${selectedJersey.player_name}`}
                 </p>
                 <button
                   type="button"
@@ -261,7 +262,7 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 mt-2"
                 >
-                  ← Choose different jersey
+                  â† Choose different jersey
                 </button>
               </div>
 
@@ -303,14 +304,16 @@ export default function AddJerseyToCollectionModal({ isOpen, onClose, collection
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Condition */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Purchased</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
                   <select
                     value={jerseyDetails.condition}
                     onChange={(e) => setJerseyDetails({ ...jerseyDetails, condition: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="new">New</option>
-                    <option value="used">Used</option>
+                    <option value="">Selectâ€¦</option>
+                    {CONDITION_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
                   </select>
                 </div>
 

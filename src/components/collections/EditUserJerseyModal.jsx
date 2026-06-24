@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import { notifyUserJerseysChanged } from '../../hooks/usePendingDetailsCount'
+import { CONDITION_OPTIONS, PROVENANCE_FLAGS, parsePrice } from '../../lib/kitMetadata'
 
 const backdropStyle = {
   position: 'fixed',
@@ -122,9 +123,14 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
   const [formData, setFormData] = useState({
     jersey_fit: 'mens',
     size: '',
-    condition: 'new',
+    condition: '',
     notes: '',
     acquired_from: '',
+    match_worn: false,
+    signed: false,
+    player_issue: false,
+    acquisition_price: '',
+    acquisition_date: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -134,9 +140,14 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
       setFormData({
         jersey_fit: userJersey.jersey_fit || 'mens',
         size: userJersey.size || '',
-        condition: userJersey.condition || 'new',
+        condition: userJersey.condition || '',
         notes: userJersey.notes || '',
         acquired_from: userJersey.acquired_from || '',
+        match_worn: userJersey.match_worn || false,
+        signed: userJersey.signed || false,
+        player_issue: userJersey.player_issue || false,
+        acquisition_price: userJersey.acquisition_price != null ? String(userJersey.acquisition_price) : '',
+        acquisition_date: userJersey.acquisition_date || '',
       })
     }
   }, [userJersey])
@@ -150,9 +161,14 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
       const updateData = {
         jersey_fit: formData.jersey_fit || 'mens',
         size: formData.size || null,
-        condition: formData.condition,
+        condition: formData.condition || null,
         notes: formData.notes || null,
         acquired_from: formData.acquired_from || null,
+        match_worn: formData.match_worn,
+        signed: formData.signed,
+        player_issue: formData.player_issue,
+        acquisition_price: parsePrice(formData.acquisition_price),
+        acquisition_date: formData.acquisition_date || null,
         details_completed: true,
       }
 
@@ -257,15 +273,17 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={labelStyle}>Purchased</label>
+              <label style={labelStyle}>Condition</label>
               <select
                 value={formData.condition}
                 onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
                 style={inputStyle}
                 disabled={loading}
               >
-                <option value="new">New</option>
-                <option value="used">Used</option>
+                <option value="">Select…</option>
+                {CONDITION_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -275,6 +293,50 @@ export default function EditUserJerseyModal({ isOpen, onClose, userJersey, onSuc
                 value={formData.acquired_from}
                 onChange={(e) => setFormData({ ...formData, acquired_from: e.target.value })}
                 placeholder="e.g., eBay, Local Shop, Gift"
+                style={inputStyle}
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Provenance</label>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              {PROVENANCE_FLAGS.map((f) => (
+                <label key={f.key} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#374151', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData[f.key]}
+                    onChange={(e) => setFormData({ ...formData, [f.key]: e.target.checked })}
+                    disabled={loading}
+                    style={{ width: '16px', height: '16px', accentColor: '#7C3AED' }}
+                  />
+                  {f.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelStyle}>Acquisition price</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={formData.acquisition_price}
+                onChange={(e) => setFormData({ ...formData, acquisition_price: e.target.value })}
+                placeholder="e.g., 80"
+                style={inputStyle}
+                disabled={loading}
+              />
+              <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0' }}>Private — only you can see this.</p>
+            </div>
+            <div>
+              <label style={labelStyle}>Acquisition date</label>
+              <input
+                type="date"
+                value={formData.acquisition_date}
+                onChange={(e) => setFormData({ ...formData, acquisition_date: e.target.value })}
                 style={inputStyle}
                 disabled={loading}
               />

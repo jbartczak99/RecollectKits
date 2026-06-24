@@ -83,7 +83,7 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 >
 > **Beta-prep build queue (founder requests 6/24):**
 > - [ ] **Metadata layer** (the slipped 6/22 item, beta-relevant): condition scale, match-worn/signed/player-issue flags, acquisition price/date. *Awaiting founder calls: scale values, which flags, price-private?*
-> - [ ] **Admin waitlist view** — read `waitlist_signups` in the admin panel (count, interest breakdown, recent signups) so the founder watches signups without logging into Resend/Supabase. Pure Supabase read, admin-gated (RLS already allows). Small, self-contained. *(Optional later: Resend delivery/open metrics via a server endpoint.)*
+> - [x] **Admin waitlist view** — ✅ done 6/24 (`28659bf`): Admin panel → Quick actions → "View waitlist signups" shows total / this-week / interest breakdown + recent-signups table, reading `waitlist_signups` directly. No Resend login. *(Optional later: Resend delivery/open metrics via a server endpoint.)*
 > - [ ] **Club resolver at admin approval** — "Find on Wikidata" search when cataloging a kit whose club isn't in `clubs`: pick the match → insert the canonical club (reuse import logic, ON CONFLICT DO NOTHING) → set the kit's `club_id`; manual-entry fallback for clubs Wikidata lacks. Also processes the `club_suggestions` queue. Most useful once testers are submitting → target beta-week. *(Decided 6/24: approval-time Wikidata search is the right pattern.)*
 
 ### Fri June 19 — merge day → **done June 24**

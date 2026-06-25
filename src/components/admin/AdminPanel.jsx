@@ -38,6 +38,8 @@ export default function AdminPanel() {
   const [showModal, setShowModal] = useState(false)
   const [modalAction, setModalAction] = useState(null) // 'approve' or 'reject'
   const [adminNotes, setAdminNotes] = useState('')
+  const [resolvedClub, setResolvedClub] = useState(null) // { id, name } to link at approval
+  const [clubResolverOpen, setClubResolverOpen] = useState(false)
   const [processingAction, setProcessingAction] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
@@ -230,11 +232,28 @@ export default function AdminPanel() {
     }
   }, [isAdmin])
 
+  // Best-effort match of a submission's team to an existing club (exact name,
+  // then alias) so cataloged clubs auto-link at approval.
+  async function findClubByName(name) {
+    if (!name?.trim()) return null
+    const trimmed = name.trim()
+    const { data: exact } = await supabase.from('clubs').select('id, name').ilike('name', trimmed).limit(1)
+    if (exact?.length) return exact[0]
+    const { data: byAlias } = await supabase.from('clubs').select('id, name').contains('aliases', [trimmed]).limit(1)
+    return byAlias?.length ? byAlias[0] : null
+  }
+
   const handleAction = async (submission, action) => {
     setSelectedSubmission(submission)
     setModalAction(action)
     setAdminNotes('')
+    setResolvedClub(null)
+    setClubResolverOpen(false)
     setShowModal(true)
+    if (action === 'approve') {
+      const club = await findClubByName(submission.team_name)
+      if (club) setResolvedClub(club)
+    }
   }
 
   const handleShowDetails = (submission) => {
@@ -346,6 +365,9 @@ export default function AdminPanel() {
         if (approveError) throw approveError
         if (approval?.status === 'duplicate') {
           alert('Submitter already has this kit cataloged — submission marked as duplicate for manual merge.')
+        } else if (resolvedClub && approval?.public_jersey_id) {
+          // Link the cataloged kit to its club; the sync trigger canonicalizes team_name.
+          await supabase.from('public_jerseys').update({ club_id: resolvedClub.id }).eq('id', approval.public_jersey_id)
         }
 
       } else if (modalAction === 'reject') {
@@ -1715,7 +1737,7 @@ export default function AdminPanel() {
       {/* Action Modal - rendered via Portal to avoid parent CSS issues */}
       {showModal && selectedSubmission && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 10000 }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxWidth: '28rem', width: '100%' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxWidth: clubResolverOpen ? '40rem' : '28rem', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
                 {modalAction === 'approve' ? (
@@ -1733,6 +1755,28 @@ export default function AdminPanel() {
                 </div>
               </div>
 
+              {modalAction === 'approve' && (
+                <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}>
+                  {clubResolverOpen ? (
+                    <ClubResolver
+                      prefill={selectedSubmission.team_name}
+                      onResolved={(club) => { setResolvedClub(club); setClubResolverOpen(false) }}
+                      onCancel={() => setClubResolverOpen(false)}
+                    />
+                  ) : resolvedClub ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', fontSize: '0.875rem' }}>
+                      <span style={{ color: '#374151' }}>Club: <strong style={{ color: '#16a34a' }}>✓ {resolvedClub.name}</strong> <span style={{ color: '#9ca3af' }}>(linked on approval)</span></span>
+                      <button type="button" onClick={() => setClubResolverOpen(true)} style={{ background: 'none', border: 'none', color: '#7C3AED', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer' }}>Change</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', fontSize: '0.875rem' }}>
+                      <span style={{ color: '#6b7280' }}>Club not in catalog — kit won’t be club-linked.</span>
+                      <button type="button" onClick={() => setClubResolverOpen(true)} style={{ background: 'none', border: 'none', color: '#7C3AED', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer' }}>Add from Wikidata</button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div style={{ marginBottom: '1rem' }}>
                 <label htmlFor="admin-notes" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '0.5rem' }}>
                   Admin Notes (Optional)
@@ -1749,7 +1793,7 @@ export default function AdminPanel() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={() => { setShowModal(false); setClubResolverOpen(false) }}
                   disabled={processingAction}
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#374151', backgroundColor: '#f3f4f6', borderRadius: '0.5rem', border: 'none', cursor: 'pointer', opacity: processingAction ? 0.5 : 1 }}
                 >

@@ -197,6 +197,13 @@ export default function AdminClubs() {
     })
   }, [clubs, search])
 
+  // The full list is long (300+). Show a capped slice until the admin searches,
+  // so the page stays short and the unlinked-kits tool above it is reachable.
+  const VISIBLE_LIMIT = 50
+  const isSearching = search.trim().length > 0
+  const visibleClubs = isSearching ? filteredClubs : filteredClubs.slice(0, VISIBLE_LIMIT)
+  const hiddenCount = filteredClubs.length - visibleClubs.length
+
   const openCreate = () => {
     setEditingClub(null)
     setForm(EMPTY_FORM)
@@ -354,6 +361,11 @@ export default function AdminClubs() {
         />
       </div>
 
+      {/* Unlinked-kits tool first — it's the high-value action, not the 300+ list */}
+      {!loading && clubs.length > 0 && (
+        <BackfillUnlinkedKits clubs={clubs} onLinked={fetchClubs} />
+      )}
+
       {loading ? (
         <div className="admin-clubs__loading">
           <div className="admin-clubs__spinner" />
@@ -367,7 +379,7 @@ export default function AdminClubs() {
         </div>
       ) : (
         <div className="admin-clubs__list">
-          {filteredClubs.map((club) => {
+          {visibleClubs.map((club) => {
             const count = kitCountByClub[club.id] || 0
             return (
               <div key={club.id} className="club-row">
@@ -418,11 +430,12 @@ export default function AdminClubs() {
               </div>
             )
           })}
+          {hiddenCount > 0 && (
+            <div className="admin-clubs__empty" style={{ padding: '16px', fontSize: '14px' }}>
+              Showing {visibleClubs.length} of {filteredClubs.length} clubs — search by name, alias, country, or league to find the rest.
+            </div>
+          )}
         </div>
-      )}
-
-      {!loading && clubs.length > 0 && (
-        <BackfillUnlinkedKits clubs={clubs} onLinked={fetchClubs} />
       )}
 
       {modalOpen && (

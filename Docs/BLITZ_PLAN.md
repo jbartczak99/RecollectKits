@@ -87,22 +87,50 @@ The strategy in one line: *capture attention now with the waitlist, convert the 
 > - [x] **Admin waitlist view** — ✅ done 6/24 (`28659bf`): Admin panel → Quick actions → "View waitlist signups" shows total / this-week / interest breakdown + recent-signups table, reading `waitlist_signups` directly. No Resend login. *(Optional later: Resend delivery/open metrics via a server endpoint.)*
 > - [x] **Club resolver** — ✅ v1 + v1.1 done 6/25 (`0bc29c2`, `7cd0caf`). v1: Admin → Quick actions → "Add a club (Wikidata)" → search → preview → add to `clubs` (find-or-create) + manual fallback. v1.1: the approve modal auto-matches the submission team to an existing club (name/alias) and stamps `public_jerseys.club_id` on approval (sync trigger canonicalizes team_name); if no match, inline "Add from Wikidata" resolves + links in one pass. Live-verified against Wikidata. *(Remaining nicety, non-beta-critical: a `club_suggestions`-queue processor + applying v1.1 to the detail-modal "approve with changes" path, which still approves without auto-link.)*
 
-### Fri June 19 — merge day → **done June 24**
-- [x] Review and land the autonomous batch PRs (invite codes, Sentry, analytics, privacy migration, photo utils) *(merged to master 6/24, 79 tests + build green; 3 migrations + clubs import pasted to prod (308 clubs, RPCs live); **deployed to prod 6/24 — `da16c63`**. Pending founder: Sentry DSN, post-deploy smoke test)*
-- [ ] Run the Wikidata import against prod; review pass on aliases/duplicates *(import re-run + cleaned 6/24 — founder flagged data quality; tightened to drop non-FIFA noise: **304 clubs** (20 EPL / 33 MLS / 251 nations incl. women's + cult island associations). `database/data/clubs_import_*_20260624.sql`; **founder: review CSVs then paste 3 files**)*
+### ✅ WHERE WE STAND — June 25 (read this first; the old June 19–26 checklists below are reconciled to this)
 
-### Sat June 20 (big block) — catalog-first build, continued
-- [ ] Finish the not-found path (started June 13 if the stretch goal landed): wizard writes `user_jerseys` immediately (uncataloged) + queues `jersey_submissions` *(BUILT 6/12 as PR branch `feature/catalog-first-not-found` — June 20 becomes review/merge/regression, not build)*
-- [ ] Approval linkage: admin approval links canonical record back without touching user data *(BUILT in same PR — `approve_submission_link` RPC + AdminPanel adoption; paste `catalog_first_not_found.sql` at merge)*
-- *(Design decided June 12, found path built June 13 — this should be the back half, not the whole thing.)*
+**Beta opens Mon June 29. The entire build is done, deployed, and in prod.** What's left is QA + recruiting + a few decisions — no more building required.
+
+**✅ DONE & LIVE IN PROD:**
+- Sprint 0 security · Postgres 17.6 · invite-code system (gate handed over, `require_invite_code` ON, 0 codes minted = registration closed)
+- Catalog-first **found** path + **not-found** path (QuickAddKit) + **approval linkage** RPC
+- All 5 batch utilities: **Wikidata import (308 clubs live)** · **Sentry (verified live)** · analytics events (buffering) · `all_kits_public`=false · photo compression/EXIF-strip
+- **Metadata layer** (condition / match-worn-signed-player-issue / acquisition price+date)
+- **Admin waitlist view** · **Club resolver v1+v1.1** (Wikidata add + auto-link at approval)
+- Bug fixes: collection-membership (×2), club typeahead, season picker, kit-type toggle
+
+**🔨 REMAINING BEFORE JUNE 29 — all non-build:**
+- [ ] **QA pass** (founder-driven, Claude fixes): full add flow found+not-found, collections feature, metadata, club resolver; cross-device (iPhone Safari / Android Chrome / desktop); ~5 fresh-account funnel walks; **seed-data check** (does a typical collector find ≥80% of their clubs?)
+- [ ] **Generate + distribute invite codes** June 29 AM (`node scripts/generate-invite-codes.mjs --channel X --count N`) — this is the mechanism that lets testers in
+- [ ] **Recruit 15–25 testers** — ⚠️ note: only **3** on the waitlist, so recruiting is mostly outbound (collector circles + personal network + Josh), not the waitlist alone
+- [ ] **Discord** feedback channel live
+- [ ] **Decision: founder-collector status** (free Pro for life vs. steep lifetime discount) — needed for the recruitment note
+- [ ] **Decision: creator-leak posture** (embrace organic teasers vs. restrict to trusted holders)
+
+**⏸ DEFERRED past beta-open (NOT blocking June 29):**
+- Pending-kit rendering cleanup on dashboard stats (cosmetic — counts pending kits as blank-team rows, doesn't crash)
+- Guided onboarding + bulk-import-at-signup · activation funnel dashboard (events buffer; read raw) · empty-state sweep
+- Public-profile provenance badges · club-resolver `club_suggestions` queue + detail-modal auto-link
+
+**❌ MISSED (windows passed, not actionable):** scheduled social posts June 14–18; pre-camp warm DMs June 11–13.
+
+---
+
+### Fri June 19 — merge day → **done June 24**
+- [x] Review and land the autonomous batch PRs (invite codes, Sentry, analytics, privacy migration, photo utils) *(merged to master 6/24, 79 tests + build green; 3 migrations + clubs import pasted to prod (308 clubs, RPCs live); **deployed to prod 6/24 — `da16c63`**. Sentry DSN set + verified live 6/25)*
+- [x] Run the Wikidata import against prod; review pass on aliases/duplicates *(done 6/24 — cleaned to 304 from Wikidata + 5 originals = **308 clubs live in prod**; non-FIFA noise dropped; founder reviewed CSVs + pasted)*
+
+### Sat June 20 (big block) — catalog-first build, continued → **done (merged/deployed 6/24)**
+- [x] Finish the not-found path: wizard writes `user_jerseys` immediately (uncataloged) + queues `jersey_submissions` *(QuickAddKit live in prod)*
+- [x] Approval linkage: admin approval links canonical record back without touching user data *(`approve_submission_link` RPC live; `catalog_first_not_found.sql` pasted)*
 
 ### Sun June 21 (big block) — catalog-first wrap + onboarding
-- [ ] Collection views render uncataloged kits + subtle pending badge; full wizard regression test
-- [ ] Guided first-kit onboarding (reuses search-first add); surface bulk import at signup
+- [x] Collection views render uncataloged kits + subtle pending badge *(done in CollectionDetail 6/24)* · full wizard regression test → **rolled into QA pass (see Where We Stand)**
+- [ ] Guided first-kit onboarding (reuses search-first add); surface bulk import at signup → **⏸ DEFERRED past beta-open**
 
 ### Mon June 22
-- [ ] Metadata fields: condition scale v0, match-worn/signed/player-issue flags, acquisition price/date
-- [ ] Activation funnel dashboard live; empty-state sweep
+- [x] Metadata fields: condition scale v0, match-worn/signed/player-issue flags, acquisition price/date *(done 6/24 — `696cdd6` + `add_kit_metadata.sql`)*
+- [ ] Activation funnel dashboard live → **⏸ DEFERRED** (events buffer; read raw) · empty-state sweep → **rolled into QA pass**
 
 ### Tue June 23 — QA day
 - [ ] Cross-device pass (iPhone Safari / Android Chrome / desktop); funnel walk-through ×5 fresh accounts; fix list triaged same-day

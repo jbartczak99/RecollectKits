@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircleIcon, LinkIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, LinkIcon, ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
+import ClubResolver from './ClubResolver'
 
 const normalize = (s) => String(s || '').trim().toLowerCase()
 
@@ -20,6 +21,7 @@ export default function BackfillUnlinkedKits({ clubs, onLinked }) {
   const [busy, setBusy] = useState(false)
   const [pickerState, setPickerState] = useState({}) // teamName -> selected club id
   const [linkingName, setLinkingName] = useState(null)
+  const [resolvingName, setResolvingName] = useState(null) // teamName with the Wikidata resolver open
   const [error, setError] = useState('')
 
   const fetchUnlinked = async () => {
@@ -206,77 +208,99 @@ export default function BackfillUnlinkedKits({ clubs, onLinked }) {
           const hasOne = row.matches.length === 1
           const hasMany = row.matches.length > 1
           const picked = pickerState[row.name] || ''
-          const pickClubFromAll = clubs.find((c) => c.id === picked)
+          const isResolving = resolvingName === row.name
 
           return (
-            <div key={row.name} className="backfill-row">
-              <div className="backfill-row__primary">
-                <span className="backfill-row__name">"{row.name}"</span>
-                <span className="backfill-row__count">
-                  {row.count} {row.count === 1 ? 'kit' : 'kits'}
-                </span>
+            <div key={row.name}>
+              <div className="backfill-row">
+                <div className="backfill-row__primary">
+                  <span className="backfill-row__name">"{row.name}"</span>
+                  <span className="backfill-row__count">
+                    {row.count} {row.count === 1 ? 'kit' : 'kits'}
+                  </span>
+                </div>
+
+                <div className="backfill-row__action">
+                  {hasOne ? (
+                    <>
+                      <span className="backfill-row__suggest">
+                        Matches <strong>{row.matches[0].name}</strong>
+                      </span>
+                      <button
+                        type="button"
+                        className="club-btn club-btn--primary"
+                        onClick={() => linkOne(row.name, row.matches[0].id)}
+                        disabled={isLinking || busy}
+                      >
+                        <LinkIcon style={{ width: '1rem', height: '1rem' }} />
+                        {isLinking ? 'Linking…' : 'Link'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <select
+                        className="backfill-row__select"
+                        value={picked}
+                        onChange={(e) =>
+                          setPickerState((prev) => ({ ...prev, [row.name]: e.target.value }))
+                        }
+                        disabled={isLinking || busy}
+                      >
+                        <option value="">
+                          {hasMany ? `${row.matches.length} possible matches…` : 'Pick a club…'}
+                        </option>
+                        {hasMany && (
+                          <optgroup label="Matches">
+                            {row.matches.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        <optgroup label="All clubs">
+                          {clubs
+                            .filter((c) => !hasMany || !row.matches.some((m) => m.id === c.id))
+                            .map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                        </optgroup>
+                      </select>
+                      <button
+                        type="button"
+                        className="club-btn club-btn--primary"
+                        onClick={() => linkOne(row.name, picked)}
+                        disabled={!picked || isLinking || busy}
+                      >
+                        <LinkIcon style={{ width: '1rem', height: '1rem' }} />
+                        {isLinking ? 'Linking…' : 'Link'}
+                      </button>
+                      {/* Club not in the DB at all? Find + add it from Wikidata, then link in one pass. */}
+                      <button
+                        type="button"
+                        className="club-btn club-btn--secondary"
+                        onClick={() => setResolvingName(isResolving ? null : row.name)}
+                        disabled={isLinking || busy}
+                      >
+                        <MagnifyingGlassIcon style={{ width: '1rem', height: '1rem' }} />
+                        {isResolving ? 'Close' : 'Find on Wikidata'}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
 
-              <div className="backfill-row__action">
-                {hasOne ? (
-                  <>
-                    <span className="backfill-row__suggest">
-                      Matches <strong>{row.matches[0].name}</strong>
-                    </span>
-                    <button
-                      type="button"
-                      className="club-btn club-btn--primary"
-                      onClick={() => linkOne(row.name, row.matches[0].id)}
-                      disabled={isLinking || busy}
-                    >
-                      <LinkIcon style={{ width: '1rem', height: '1rem' }} />
-                      {isLinking ? 'Linking…' : 'Link'}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <select
-                      className="backfill-row__select"
-                      value={picked}
-                      onChange={(e) =>
-                        setPickerState((prev) => ({ ...prev, [row.name]: e.target.value }))
-                      }
-                      disabled={isLinking || busy}
-                    >
-                      <option value="">
-                        {hasMany ? `${row.matches.length} possible matches…` : 'Pick a club…'}
-                      </option>
-                      {hasMany && (
-                        <optgroup label="Matches">
-                          {row.matches.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      <optgroup label={hasMany ? 'All clubs' : 'All clubs'}>
-                        {clubs
-                          .filter((c) => !hasMany || !row.matches.some((m) => m.id === c.id))
-                          .map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name}
-                            </option>
-                          ))}
-                      </optgroup>
-                    </select>
-                    <button
-                      type="button"
-                      className="club-btn club-btn--primary"
-                      onClick={() => linkOne(row.name, picked)}
-                      disabled={!picked || isLinking || busy}
-                    >
-                      <LinkIcon style={{ width: '1rem', height: '1rem' }} />
-                      {isLinking ? 'Linking…' : 'Link'}
-                    </button>
-                  </>
-                )}
-              </div>
+              {isResolving && (
+                <div style={{ padding: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', marginTop: '6px', background: '#fafafa' }}>
+                  <ClubResolver
+                    prefill={row.name}
+                    onResolved={async (club) => { await linkOne(row.name, club.id); setResolvingName(null) }}
+                    onCancel={() => setResolvingName(null)}
+                  />
+                </div>
+              )}
             </div>
           )
         })}

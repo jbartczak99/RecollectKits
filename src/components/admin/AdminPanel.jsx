@@ -22,6 +22,7 @@ import WikidataPlayerPreview from './WikidataPlayerPreview'
 import PartnerApplications from './PartnerApplications'
 import AdminDashboardInsights from './AdminDashboardInsights'
 import WaitlistView from './WaitlistView'
+import ClubResolver from './ClubResolver'
 import { searchPlayer, fetchPlayerDetails, mapToPlayerRecord } from '../../utils/wikidata'
 import AdminEmailTemplates from './AdminEmailTemplates'
 import './AdminPanel.css'
@@ -1420,6 +1421,7 @@ export default function AdminPanel() {
 
   const quickActions = [
     { label: 'View waitlist signups', action: () => setExpandedQueue(expandedQueue === 'waitlist' ? null : 'waitlist') },
+    { label: 'Add a club (Wikidata)', action: () => setExpandedQueue(expandedQueue === 'addclub' ? null : 'addclub') },
     { label: 'Add kit to database', href: '/jerseys' },
     { label: 'Bulk import players', action: () => setExpandedQueue(expandedQueue === 'players' ? null : 'players') },
     { label: 'Add team / season', href: '/jerseys' },
@@ -1601,6 +1603,14 @@ export default function AdminPanel() {
         {expandedQueue === 'waitlist' && (
           <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '24px' }}>
             <WaitlistView />
+          </div>
+        )}
+        {expandedQueue === 'addclub' && (
+          <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', marginBottom: '24px', padding: '24px' }}>
+            <ClubResolver
+              onResolved={(club) => alert(`"${club.name}" is in the catalog — it'll now appear in the club typeahead.`)}
+              onCancel={() => setExpandedQueue(null)}
+            />
           </div>
         )}
         {expandedQueue === 'partners' && (

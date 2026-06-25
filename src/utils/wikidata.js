@@ -217,6 +217,114 @@ export async function searchTeamEntity(teamName) {
   }
 }
 
+// --- Club resolver (admin: roll an unknown club into the clubs table) ---
+
+const P_SHORT_NAME = 'P1813'
+const P_COUNTRY = 'P17'
+const P_LOCATION = 'P159' // headquarters location
+const P_VENUE = 'P115'     // home venue
+const P_INCEPTION = 'P571'
+// Football club instance types (exclude national teams — this resolves clubs).
+const CLUB_TYPES = ['Q476028', 'Q15944511', 'Q847017', 'Q14752149']
+
+/**
+ * Search Wikidata for football clubs matching a name. Filters candidates to
+ * club instance types via one batched claims fetch. Returns
+ * { data: [{ wikidataId, name, description }], error }.
+ */
+export async function searchClubWikidata(name) {
+  try {
+    const url = `${WIKIDATA_API}?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&type=item&limit=20&format=json&origin=*`
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Wikidata search failed: ${response.status}`)
+    const json = await response.json()
+    const candidates = json.search || []
+    if (candidates.length === 0) return { data: [], error: null }
+
+    const ids = candidates.map((c) => c.id).join('|')
+    const entityUrl = `${WIKIDATA_API}?action=wbgetentities&ids=${ids}&props=claims&format=json&origin=*`
+    const entityResponse = await fetch(entityUrl)
+    const entities = entityResponse.ok ? (await entityResponse.json()).entities || {} : {}
+
+    const clubs = []
+    for (const candidate of candidates) {
+      const instanceClaims = entities[candidate.id]?.claims?.[P_INSTANCE_OF] || []
+      const isClub = instanceClaims.some((c) => CLUB_TYPES.includes(c.mainsnak?.datavalue?.value?.id))
+      // Keep confirmed clubs; if we couldn't load claims, fall back to keeping all.
+      if (isClub || instanceClaims.length === 0) {
+        clubs.push({
+          wikidataId: candidate.id,
+          name: candidate.label || candidate.id,
+          description: candidate.description || '',
+          confirmed: isClub,
+        })
+      }
+    }
+    // Confirmed clubs first.
+    clubs.sort((a, b) => (b.confirmed ? 1 : 0) - (a.confirmed ? 1 : 0))
+    return { data: clubs, error: null }
+  } catch (err) {
+    return { data: [], error: err.message }
+  }
+}
+
+/**
+ * Fetch a club's details from Wikidata by QID, resolving linked entity labels.
+ * Returns { data: <details>, error }.
+ */
+export async function fetchClubWikidata(wikidataId) {
+  try {
+    const url = `${WIKIDATA_API}?action=wbgetentities&ids=${wikidataId}&props=labels|aliases|claims&languages=en&format=json&origin=*`
+    const response = await fetch(url)
+    if (!response.ok) throw new Error(`Wikidata fetch failed: ${response.status}`)
+    const entity = (await response.json()).entities?.[wikidataId]
+    if (!entity) throw new Error('Club not found on Wikidata')
+
+    const claims = entity.claims || {}
+    const firstId = (p) => claims[p]?.[0]?.mainsnak?.datavalue?.value?.id || null
+    const [country, city, stadiumName] = await Promise.all([
+      resolveEntityLabel(firstId(P_COUNTRY)),
+      resolveEntityLabel(firstId(P_LOCATION)),
+      resolveEntityLabel(firstId(P_VENUE)),
+    ])
+    const inception = claims[P_INCEPTION]?.[0]?.mainsnak?.datavalue?.value?.time
+    const aliases = (entity.aliases?.en || []).map((a) => a.value)
+
+    return {
+      data: {
+        wikidataId,
+        name: entity.labels?.en?.value || wikidataId,
+        shortName: claims[P_SHORT_NAME]?.[0]?.mainsnak?.datavalue?.value?.text || null,
+        aliases,
+        country,
+        city,
+        stadiumName,
+        foundedYear: inception ? parseWikidataYear(inception) : null,
+      },
+      error: null,
+    }
+  } catch (err) {
+    return { data: null, error: err.message }
+  }
+}
+
+/** Map fetched club details to a clubs-table insert record (pure). */
+export function mapToClubRecord(details) {
+  const aliases = new Set((details.aliases || []).map((a) => a.trim()).filter(Boolean))
+  if (details.shortName) aliases.add(details.shortName)
+  return {
+    name: details.name,
+    short_name: details.shortName || null,
+    aliases: [...aliases],
+    country: details.country || null,
+    city: details.city || null,
+    stadium_name: details.stadiumName || null,
+    founded_year: Number.isFinite(details.foundedYear) ? details.foundedYear : null,
+    wikidata_id: details.wikidataId,
+    source: 'wikidata',
+  }
+}
+
 const SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
 
 /**

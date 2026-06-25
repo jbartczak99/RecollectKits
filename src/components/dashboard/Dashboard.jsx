@@ -99,13 +99,18 @@ export default function Dashboard({ onAddKit }) {
   ].filter((d) => d.value > 0)
 
   // Per-club pin list for the club map view: one entry per (country, team)
-  // pair the user owns, with coords resolved via the static city lookup.
-  // Clubs whose city isn't in cityCoords are silently skipped (no pin).
+  // the user owns. Use the club's own coordinates when present (precise,
+  // global); fall back to the static city lookup. Clubs with neither are
+  // silently skipped (no pin).
   const clubPins = (stats.clubsList || [])
     .map((c) => {
-      const coords = cityToCoords(c.city, c.country)
-      if (!coords) return null
-      const [lat, lng] = coords
+      let lat = c.lat
+      let lng = c.lng
+      if (lat == null || lng == null) {
+        const coords = cityToCoords(c.city, c.country)
+        if (!coords) return null
+        ;[lat, lng] = coords
+      }
       return {
         team: c.team,
         city: c.city,

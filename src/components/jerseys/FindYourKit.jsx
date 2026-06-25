@@ -67,8 +67,11 @@ export default function FindYourKit({ onCancel, onAddManually }) {
 
   const notFoundPrompt = (
     <div style={{ textAlign: 'center', padding: '24px 16px' }}>
-      <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '12px' }}>
+      <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '4px' }}>
         Can&apos;t find your kit in the catalog?
+      </p>
+      <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '12px' }}>
+        Our catalog is just getting started — add yours and we&apos;ll get it cataloged.
       </p>
       <button
         type="button"

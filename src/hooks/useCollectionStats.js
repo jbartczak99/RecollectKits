@@ -109,8 +109,10 @@ function computeStats(rows) {
       }
       if (country) {
         clubCountryCounts[country] = (clubCountryCounts[country] || 0) + 1
-        // Only kits linked to a clubs row can drop a pin (city lives there).
-        if (r.team && r.clubCity) {
+        // Drop a pin when the kit is club-linked and we can place it — via the
+        // club's own coords (preferred) or its city (resolved downstream).
+        const hasCoords = r.clubLat != null && r.clubLng != null
+        if (r.team && (r.clubCity || hasCoords)) {
           const key = `${country}|${r.team}`
           if (clubByTeam[key]) {
             clubByTeam[key].count += 1
@@ -119,6 +121,8 @@ function computeStats(rows) {
               team: r.team,
               city: r.clubCity,
               country,
+              lat: hasCoords ? r.clubLat : null,
+              lng: hasCoords ? r.clubLng : null,
               count: 1,
             }
           }
@@ -240,8 +244,9 @@ export function useCollectionStats() {
             created_at,
             public_jersey:public_jerseys(
               team_name, manufacturer, league, season, kit_type, competition_gender,
-              club:clubs(country, city)
-            )
+              club:clubs(country, city, latitude, longitude)
+            ),
+            submission:jersey_submissions(team_name, brand, league, season, kit_type, competition_gender)
           `)
           .eq('user_id', user.id)
 
@@ -249,19 +254,25 @@ export function useCollectionStats() {
         if (cancelled) return
 
         const rows = (data || []).map((r) => {
-          const pj = r.public_jersey || {}
+          // Cataloged kits read from public_jersey; pending (uncataloged) kits
+          // read from their submission so they still count in the stats instead
+          // of rendering as blank-team rows. Pending kits have no club link.
+          const pj = r.public_jersey
+          const sub = r.submission
           return {
             created_at: r.created_at,
-            team: pj.team_name || null,
-            manufacturer: pj.manufacturer || null,
-            league: pj.league || null,
-            year: parseSeasonYear(pj.season),
-            kitType: pj.kit_type || null,
-            // Set when the jersey is linked to a clubs row. Trusted ahead of
-            // the league-based heuristic for club country shading.
-            clubCountry: pj.club?.country || null,
-            clubCity: pj.club?.city || null,
-            competitionGender: pj.competition_gender || null,
+            team: (pj?.team_name ?? sub?.team_name) || null,
+            manufacturer: (pj?.manufacturer ?? sub?.brand) || null,
+            league: (pj?.league ?? sub?.league) || null,
+            year: parseSeasonYear(pj?.season ?? sub?.season),
+            kitType: (pj?.kit_type ?? sub?.kit_type) || null,
+            // Set only when linked to a clubs row (cataloged). Trusted ahead of
+            // the league→country heuristic for club shading; coords drop the pin.
+            clubCountry: pj?.club?.country || null,
+            clubCity: pj?.club?.city || null,
+            clubLat: pj?.club?.latitude ?? null,
+            clubLng: pj?.club?.longitude ?? null,
+            competitionGender: (pj?.competition_gender ?? sub?.competition_gender) || null,
           }
         })
 

@@ -282,10 +282,12 @@ export async function fetchClubWikidata(wikidataId) {
 
     const claims = entity.claims || {}
     const firstId = (p) => claims[p]?.[0]?.mainsnak?.datavalue?.value?.id || null
-    const [country, city, stadiumName] = await Promise.all([
+    const venueId = firstId(P_VENUE)
+    const [country, city, stadiumName, coords] = await Promise.all([
       resolveEntityLabel(firstId(P_COUNTRY)),
       resolveEntityLabel(firstId(P_LOCATION)),
-      resolveEntityLabel(firstId(P_VENUE)),
+      resolveEntityLabel(venueId),
+      resolveEntityCoords(venueId),
     ])
     const inception = claims[P_INCEPTION]?.[0]?.mainsnak?.datavalue?.value?.time
     const aliases = (entity.aliases?.en || []).map((a) => a.value)
@@ -299,6 +301,8 @@ export async function fetchClubWikidata(wikidataId) {
         country,
         city,
         stadiumName,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
         foundedYear: inception ? parseWikidataYear(inception) : null,
       },
       error: null,
@@ -319,6 +323,8 @@ export function mapToClubRecord(details) {
     country: details.country || null,
     city: details.city || null,
     stadium_name: details.stadiumName || null,
+    latitude: Number.isFinite(details.latitude) ? details.latitude : null,
+    longitude: Number.isFinite(details.longitude) ? details.longitude : null,
     founded_year: Number.isFinite(details.foundedYear) ? details.foundedYear : null,
     wikidata_id: details.wikidataId,
     source: 'wikidata',
@@ -397,6 +403,24 @@ ORDER BY ?playerLabel
 
 // Cache for resolved entity labels
 const labelCache = new Map()
+
+// Resolve an entity's coordinate location (P625), e.g. a stadium's lat/long.
+async function resolveEntityCoords(entityId) {
+  if (!entityId) return { latitude: null, longitude: null }
+  try {
+    const url = `${WIKIDATA_API}?action=wbgetentities&ids=${entityId}&props=claims&format=json&origin=*`
+    const response = await fetch(url)
+    if (!response.ok) return { latitude: null, longitude: null }
+    const json = await response.json()
+    const coord = json.entities?.[entityId]?.claims?.P625?.[0]?.mainsnak?.datavalue?.value
+    if (coord && typeof coord.latitude === 'number' && typeof coord.longitude === 'number') {
+      return { latitude: coord.latitude, longitude: coord.longitude }
+    }
+    return { latitude: null, longitude: null }
+  } catch {
+    return { latitude: null, longitude: null }
+  }
+}
 
 async function resolveEntityLabel(entityId) {
   if (!entityId) return null

@@ -10,6 +10,8 @@ describe('mapToClubRecord', () => {
     country: 'Germany',
     city: 'Dortmund',
     stadiumName: 'Signal Iduna Park',
+    latitude: 51.4926,
+    longitude: 7.4518,
     foundedYear: 1909,
   }
 
@@ -21,10 +23,18 @@ describe('mapToClubRecord', () => {
       country: 'Germany',
       city: 'Dortmund',
       stadium_name: 'Signal Iduna Park',
+      latitude: 51.4926,
+      longitude: 7.4518,
       founded_year: 1909,
       wikidata_id: 'Q41420',
       source: 'wikidata',
     })
+  })
+
+  it('nulls coordinates when absent', () => {
+    const r = mapToClubRecord({ ...base, latitude: null, longitude: undefined })
+    expect(r.latitude).toBeNull()
+    expect(r.longitude).toBeNull()
   })
 
   it('dedupes aliases and includes the short name', () => {
